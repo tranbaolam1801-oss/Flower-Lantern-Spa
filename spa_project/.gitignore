@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+/staticfiles/
+
+# Media — giữ ảnh dịch vụ, bỏ upload của user
+media/
+!media/services/
+!media/services/**
+
+# Static videos — quá nặng, không push lên git
+# static/videos/
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.env
+*.pem
+
+# Database
+db.sqlite3
+db.sqlite3-shm
+db.sqlite3-wal
+test_db.sqlite3
+
+# Script tạm, không phải code dự án
+checkpoint_db.py
+repair_db.py
+wt.py
+_patch_js.py
+appointments/api_head.txt

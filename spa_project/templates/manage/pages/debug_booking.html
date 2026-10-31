@@ -1,0 +1,104 @@
+{% extends "manage/base.html" %}
+
+{% load static %}
+
+{% block title %}Debug Booking{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>🔍 Debug Booking Requests</h1>
+
+  <div class="alert alert-info">
+    <strong>Đang debug...</strong> Mở console (F12) để xem chi tiết!
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5>Bước 1: Test API</h5>
+      <button class="btn btn-primary" onclick="testAPI()">Test API Endpoint</button>
+      <pre id="apiResult"></pre>
+
+      <hr>
+
+      <h5>Bước 2: Test Import</h5>
+      <button class="btn btn-success" onclick="testImport()">Test Import Module</button>
+      <pre id="importResult"></pre>
+
+      <hr>
+
+      <h5>Bước 3: Test Render</h5>
+      <button class="btn btn-warning" onclick="testRender()">Test Render Function</button>
+      <pre id="renderResult"></pre>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // Test API
+  window.testAPI = async function() {
+    console.log('=== TEST API ===');
+    const result = document.getElementById('apiResult');
+
+    try {
+      const response = await fetch('/api/booking-requests/');
+      const data = await response.json();
+
+      console.log('API Response:', data);
+      result.textContent = JSON.stringify(data, null, 2);
+
+      if (data.success) {
+        result.textContent += `\n\n✅ SUCCESS! Found ${data.appointments?.length || 0} bookings`;
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      result.textContent = `❌ ERROR: ${error.message}`;
+    }
+  };
+
+  // Test Import
+  window.testImport = async function() {
+    console.log('=== TEST IMPORT ===');
+    const result = document.getElementById('importResult');
+
+    try {
+      const module = await import('/static/js/appointments/api-client.js');
+      console.log('Module loaded:', module);
+
+      result.textContent = `✅ Module loaded!\n`;
+      result.textContent += `Available exports: ${Object.keys(module).join(', ')}`;
+    } catch (error) {
+      console.error('Import Error:', error);
+      result.textContent = `❌ ERROR: ${error.message}`;
+    }
+  };
+
+  // Test Render
+  window.testRender = async function() {
+    console.log('=== TEST RENDER ===');
+    const result = document.getElementById('renderResult');
+
+    try {
+      // Import scheduler module
+      const scheduler = await import('/static/js/appointments/scheduler.js');
+      console.log('Scheduler loaded:', scheduler);
+
+      // Call render function
+      if (scheduler.veBangYeuCauDatLich) {
+        await scheduler.veBangYeuCauDatLich();
+        result.textContent = '✅ Render function called! Check console for details.';
+      } else {
+        result.textContent = '❌ Function veBangYeuCauDatLich not found!';
+      }
+    } catch (error) {
+      console.error('Render Error:', error);
+      result.textContent = `❌ ERROR: ${error.message}\n\n${error.stack}`;
+    }
+  };
+
+  console.log('🔧 Debug page loaded!');
+  console.log('Available commands:');
+  console.log('  - testAPI()');
+  console.log('  - testImport()');
+  console.log('  - testRender()');
+</script>
+{% endblock %}

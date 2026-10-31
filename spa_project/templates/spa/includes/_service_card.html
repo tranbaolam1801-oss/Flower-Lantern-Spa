@@ -1,0 +1,52 @@
+{% load spa_filters %}
+
+<div class="sl-card" onclick="window.location='{% url 'spa_services:service_detail' service.id %}'" style="cursor:pointer">
+
+  <div class="sl-card__img-wrap">
+    <span class="sl-card__cat">{{ service.category.name }}</span>
+    <img class="sl-card__img"
+         src="{{ service.get_image_url }}"
+         alt="{{ service.name }}"
+         loading="lazy">
+    {% if service.min_duration %}
+    <span class="sl-card__duration">
+      {% if service.min_duration == service.max_duration %}
+        {{ service.min_duration }} phút
+      {% else %}
+        {{ service.min_duration }}–{{ service.max_duration }} phút
+      {% endif %}
+    </span>
+    {% endif %}
+  </div>
+
+  <div class="sl-card__body">
+    <h3 class="sl-card__name">{{ service.name }}</h3>
+    <p class="sl-card__desc">{{ service.short_description|default:service.description }}</p>
+
+    {% if service.variant_count %}
+    <p class="sl-card__meta">
+      <i class="fas fa-layer-group"></i>
+      {{ service.variant_count }} gói dịch vụ
+    </p>
+    {% endif %}
+
+    <div class="sl-card__footer">
+      <div class="sl-card__price">
+        {% if service.min_price %}
+          <span class="sl-card__price-label">Từ</span>
+          {% if service.min_price == service.max_price %}
+            {{ service.min_price|vnd }}
+          {% else %}
+            {{ service.min_price|vnd }} – {{ service.max_price|vnd }}
+          {% endif %}
+        {% else %}
+          Liên hệ
+        {% endif %}
+      </div>
+      <a href="{% url 'spa_services:service_detail' service.id %}" class="sl-card__cta">
+        Xem chi tiết <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+      </a>
+    </div>
+  </div>
+
+</div>

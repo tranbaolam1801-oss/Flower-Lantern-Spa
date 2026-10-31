@@ -1,0 +1,629 @@
+{% extends 'spa/base.html' %}
+{% block title %}Đặt lịch hẹn - Spa ANA{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/booking.css' %}?v={% now 'His' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+  <div class="container">
+    <h1>Đặt Lịch Hẹn</h1>
+    <p class="subtitle">Chọn dịch vụ và thời gian phù hợp với bạn</p>
+  </div>
+</section>
+
+<div class="booking-wrap">
+
+  {% if form.non_field_errors %}
+  <div class="alert-danger-ana">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</span>
+  </div>
+  {% endif %}
+
+  {% if form.errors %}
+  <div class="alert-danger-ana">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>
+      Vui lòng kiểm tra lại thông tin:
+      {% for field in form %}{% for e in field.errors %}{{ field.label }}: {{ e }} {% endfor %}{% endfor %}
+    </span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'appointments:booking' %}" id="bookingForm" novalidate>
+    {% csrf_token %}
+    {# booker = người đang đăng nhập — hidden, không cho sửa #}
+    {{ form.booker_name }}
+    {{ form.booker_phone }}
+    <div class="booking-grid">
+
+      <!-- ═══ LEFT: Thông tin khách sử dụng dịch vụ ═══ -->
+      <div class="customer-sidebar">
+        <div class="bk-card">
+          <h4 class="bk-section-title">
+            <i class="fas fa-user"></i>
+            Thông tin khách sử dụng dịch vụ
+          </h4>
+          <div class="bk-field">
+            <label class="bk-label">Họ và tên <span class="req">*</span></label>
+            <input type="text"
+                   name="customer_name_snapshot"
+                   id="customerNameSnapshot"
+                   class="bk-input"
+                   value="{{ customer_profile.full_name }}"
+                   placeholder="Nhập họ và tên"
+                   required>
+          </div>
+
+          <div class="bk-field">
+            <label class="bk-label">Số điện thoại</label>
+            <input type="tel"
+                   name="customer_phone_snapshot"
+                   id="customerPhoneSnapshot"
+                   class="bk-input"
+                   value="{{ customer_profile.phone }}"
+                   placeholder="Nhập số điện thoại">
+          </div>
+
+          <div class="bk-field">
+            <label class="bk-label">Email</label>
+            <input type="email"
+                   name="customer_email_snapshot"
+                   id="customerEmailSnapshot"
+                   class="bk-input"
+                   value="{{ customer_profile.user.email }}"
+                   placeholder="Nhập email">
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RIGHT: Dịch vụ + Ngày giờ + Ghi chú + Submit ═══ -->
+      <div class="booking-main">
+
+        <!-- Card: Dịch vụ & Thời gian -->
+        <div class="bk-card">
+          <h4 class="bk-section-title">
+            <i class="fas fa-spa"></i>
+            Dịch vụ &amp; Thời gian
+          </h4>
+
+          <div class="row g-3">
+            <!-- Cột trái: Chọn dịch vụ & gói -->
+            <div class="col-md-6">
+              <div class="bk-field">
+                <label class="bk-label" for="{{ form.service.id_for_label }}">
+                  Chọn dịch vụ <span class="req">*</span>
+                </label>
+                {{ form.service }}
+                <!-- thông báo lỗi của input này -->
+                {% for e in form.service.errors %}
+                  <div class="bk-error">{{ e }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="bk-field">
+                <label class="bk-label" for="{{ form.service_variant.id_for_label }}">
+                  Gói dịch vụ <span class="req">*</span>
+                </label>
+                {{ form.service_variant }}
+                {% for e in form.service_variant.errors %}
+                  <div class="bk-error">{{ e }}</div>
+                {% endfor %}
+              </div>
+
+              <!-- Service info -->
+              <div class="service-info-box">
+                <div class="service-info-item">
+                  <i class="far fa-clock"></i>
+                  <span>Thời lượng</span>
+                  <span class="value" id="serviceDuration">—</span>
+                </div>
+                <div class="service-info-item">
+                  <i class="fas fa-tag"></i>
+                  <span>Giá dự kiến</span>
+                  <span class="value" id="servicePrice">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Ngày & giờ + Summary -->
+            <div class="col-md-6">
+              <div class="bk-field">
+                <label class="bk-label" for="{{ form.appointment_date.id_for_label }}">
+                  Ngày hẹn <span class="req">*</span>
+                </label>
+                {{ form.appointment_date }}
+                {% for e in form.appointment_date.errors %}
+                  <div class="bk-error">{{ e }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="bk-field">
+                <label class="bk-label" for="{{ form.appointment_time.id_for_label }}">
+                  Giờ hẹn <span class="req">*</span>
+                </label>
+                {{ form.appointment_time }}
+                {% for e in form.appointment_time.errors %}
+                  <div class="bk-error">{{ e }}</div>
+                {% endfor %}
+                <p style="font-size:.75rem;color:var(--text-muted);margin-top:.4rem;">
+                  <i class="far fa-clock" style="margin-right:.25rem;"></i>
+                  Giờ làm việc: 9:00 – 21:00
+                </p>
+              </div>
+
+              <!-- Booking Summary (hiện khi đủ thông tin) -->
+              <!-- Ẩn box này có đến khi điền đầy đủ thông tin  -->
+              <div class="booking-summary" id="bookingSummary" style="display:none;">
+                <h5 class="bk-section-title">
+                  <i class="fas fa-clipboard-check"></i>
+                  Tóm tắt lịch hẹn
+                </h5>
+                <div class="summary-row">
+                  <span class="s-label">Dịch vụ</span>
+                  <span class="s-value" id="summaryService">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="s-label">Gói</span>
+                  <span class="s-value" id="summaryVariant">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="s-label">Ngày</span>
+                  <span class="s-value" id="summaryDate">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="s-label">Giờ</span>
+                  <span class="s-value" id="summaryTime">—</span>
+                </div>
+                <div class="summary-row total">
+                  <span class="s-label">Tổng tiền</span>
+                  <span class="s-value" id="summaryTotal">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Ghi chú -->
+        <div class="bk-card">
+          <h4 class="bk-section-title">
+            <i class="far fa-sticky-note"></i>
+            Ghi chú thêm
+          </h4>
+          {{ form.booker_notes }}
+          {% for e in form.booker_notes.errors %}
+            <div class="bk-error">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-book">
+          <i class="fas fa-calendar-check"></i>
+          <span>Xác nhận đặt lịch</span>
+        </button>
+
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * JAVASCRIPT CHO TRANG ĐẶT LỊCH (BOOKING PAGE)
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Chức năng chính:
+ * 1. Load danh sách dịch vụ và gói dịch vụ từ backend
+ * 2. Tự động chọn dịch vụ nếu user click từ trang services
+ * 3. Cập nhật gói dịch vụ khi user chọn dịch vụ khác
+ * 4. Validate giờ đặt lịch (không được vượt giờ đóng cửa 21:00)
+ * 5. Hiển thị tóm tắt booking (summary) khi user chọn đủ thông tin
+ * 6. Prevent submit form nếu giờ không hợp lệ
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ */
+
+// ─────────────────────────────────────────────────────────────────────
+// 1. LẤY DỮ LIỆU TỪ DJANGO BACKEND
+// ─────────────────────────────────────────────────────────────────────
+// Django render biến services_variants_json thành JSON object
+// Ví dụ: {"1": [{"id": 1, "label": "Gói 60 phút", "price": 500000, ...}]}
+// ─────────────────────────────────────────────────────────────────────
+const servicesVariantsData = {{ services_variants_json|safe }};
+
+// ────────────────────────────────────────────────────────────────────
+// 2. CHẠY KHI TRANG WEB ĐÃ LOAD XONG (DOMContentLoaded)
+// ─────────────────────────────────────────────────────────────────────
+// Tương tự như $(document).ready() trong jQuery
+// ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+
+  // ═══════════════════════════════════════════════════════════════════
+  // A. SETUP NGÀY ĐẶT LỊCH (DATE INPUT)
+  // ═══════════════════════════════════════════════════════════════════
+  // - Lấy thẻ <input type="date"> từ DOM
+  // - Set ngày tối thiểu = hôm nay (không chọn ngày quá khứ)
+  // - Set giá trị mặc định = hôm nay
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Lấy thẻ input date bằng ID (Django tự sinh id="id_appointment_date")
+  const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
+
+  // Tính ngày hôm nay theo giờ địa phương (format: YYYY-MM-DD)
+  const _now = new Date();
+  const today = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+
+  // Nếu thẻ input tồn tại:
+  if (dateInput) {
+    // Set attribute min="2026-04-28" → User không chọn ngày trước đó
+    dateInput.setAttribute('min', today);
+
+    // Set giá trị mặc định = hôm nay → User không cần chọn lại
+    dateInput.value = today;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // B. LẤY CÁC THẺ HTML CẦN DÙNG (DOM ELEMENTS)
+  // ═══════════════════════════════════════════════════════════════════
+  // Tương tự như: $("#serviceSelect") trong jQuery
+  // ─────────────────────────────────────────────────────────────────
+
+  // Dropdown chọn dịch vụ (Massage, Facial, Gội đầu...)
+  const serviceSelect = document.getElementById('{{ form.service.id_for_label }}');
+
+  // Dropdown chọn gói dịch vụ (Gói 60 phút, Gói 90 phút...)
+  const variantSelect = document.getElementById('id_service_variant');
+
+  // Thẻ span hiển thị thời lượng (ví dụ: "60 phút")
+  const durationSpan  = document.getElementById('serviceDuration');
+
+  // Thẻ span hiển thị giá tiền (ví dụ: "500.000 VNĐ")
+  const priceSpan     = document.getElementById('servicePrice');
+
+  // Input chọn giờ đặt lịch
+  const timeInput     = document.getElementById('{{ form.appointment_time.id_for_label }}');
+
+  // ═══════════════════════════════════════════════════════════════════
+  // C. LẤY CÁC THẺ TRONG SUMMARY BOX (TÓM TẮT BOOKING)
+  // ═══════════════════════════════════════════════════════════════════
+  // Summary box hiển thị tóm tắt khi user chọn đủ thông tin
+  // ═══════════════════════════════════════════════════════════════════
+
+  const summaryBox     = document.getElementById('bookingSummary');  // Cả box summary
+  const sumService     = document.getElementById('summaryService');  // Tên dịch vụ
+  const sumVariant     = document.getElementById('summaryVariant');  // Tên gói dịch vụ
+  const sumDate        = document.getElementById('summaryDate');     // Ngày đặt
+  const sumTime        = document.getElementById('summaryTime');     // Giờ đặt
+  const sumTotal       = document.getElementById('summaryTotal');    // Tổng tiền
+
+  // ═══════════════════════════════════════════════════════════════════
+  // D. PRE-SELECT TỪ URL (CHỌN TRƯỚC TỪ LINK)
+  // ═══════════════════════════════════════════════════════════════════
+  // Nếu user click "Đặt lịch" từ trang services detail
+  // URL sẽ là: /booking/?service_id=3&variant=5
+  // Script này sẽ tự động chọn dịch vụ 3 và variant 5
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Đọc parameters từ URL (?service_id=3&variant=5) window.location.search chỉ lấy phần Query string (sau dấu ?)
+  const urlParams = new URLSearchParams(window.location.search); 
+
+  // Lấy service_id từ URL (có thể là ?service_id= hoặc ?service=)
+  const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
+
+  // Lấy variant ID từ URL (?variant=5)
+  const variantIdFromUrl = urlParams.get('variant');
+
+  // Nếu có service_id trong URL → Tự động chọn dropdown
+  if (serviceIdFromUrl && serviceSelect) {
+    serviceSelect.value = serviceIdFromUrl;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // E. FUNCTION: CẬP NHẬT DROPDOWN GÓI DỊCH VỤ
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user chọn "Massage" → Load các gói Massage
+  // Khi user chọn "Facial" → Load các gói Facial
+  // ═══════════════════════════════════════════════════════════════════
+  function updateVariants() {
+    // Nếu thẻ select không tồn tại → Thoát
+    if (!serviceSelect || !variantSelect) return;
+
+    // Lấy danh sách variants của dịch vụ đã chọn
+    // Ví dụ: serviceSelect.value = "1" → variants = [{"id": 1, ...}, {"id": 2, ...}]
+    const variants = servicesVariantsData[serviceSelect.value] || [];
+
+    // Xóa tất cả options cũ
+    variantSelect.innerHTML = '<option value="">— Chọn gói dịch vụ —</option>';
+
+    // Loop qua mỗi variant → Tạo <option> mới (dùng arrow function)
+    variants.forEach((v) => {
+      // Tạo thẻ <option> mới
+      const opt = document.createElement('option');
+
+      // Set value = ID của variant
+      opt.value = v.id;
+
+      // Set text hiển thị: "Gói 60 phút — 500.000 VNĐ (60 phút)"
+      opt.textContent = v.label + ' — ' + v.price.toLocaleString('vi-VN') + ' VNĐ (' + v.duration_minutes + ' phút)';
+
+      // Lưu thông tin vào data-attributes (để dùng sau này)
+      opt.dataset.duration = v.duration_minutes;  // Thời lượng (phút)
+      opt.dataset.price    = v.price;             // Giá tiền
+      opt.dataset.label    = v.label;             // Tên gói
+
+      // Thêm option vào dropdown
+      variantSelect.appendChild(opt);
+    });
+
+    // Nếu có variant ID từ URL → Tự động chọn
+    if (variantIdFromUrl) {
+      variantSelect.value = variantIdFromUrl;
+    }
+    // Nếu chỉ có 1 variant duy nhất → Tự động chọn
+    else if (variants.length === 1) {
+      variantSelect.value = variants[0].id;
+    }
+
+    // Cập nhật thông tin hiển thị và summary
+    updateServiceInfo();
+    updateSummary();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // F. HẰNG SỐ (CONSTANTS)
+  // ═══════════════════════════════════════════════════════════════════
+  const SPA_CLOSE_HOUR = 21;      // Spa đóng cửa lúc 21h
+  const SPA_CLOSE_MINUTES = 0;    // 0 phút
+  const DEFAULT_DURATION = 60;    // Thời lượng mặc định 60 phút
+
+  // ═══════════════════════════════════════════════════════════════════
+  // G. FUNCTION: LẤY THỜI LƯỢNG CỦA GÓI ĐÃ CHỌN
+  // ═══════════════════════════════════════════════════════════════════
+  function getSelectedDuration() {
+    // Nếu không có variant → Trả về 60 phút mặc định
+    if (!variantSelect) return DEFAULT_DURATION;
+
+    // Lấy option đang được chọn
+    const opt = variantSelect.options[variantSelect.selectedIndex];
+
+    // Nếu option có value và có data-duration → Trả về duration
+    // Ngược lại → Trả về 60 phút mặc định
+    return (opt && opt.value && opt.dataset.duration)
+      ? parseInt(opt.dataset.duration)
+      : DEFAULT_DURATION;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // H. FUNCTION: VALIDATE GIỜ KẾT THÚC (KHÔNG VƯỢT 21H)
+  // ═══════════════════════════════════════════════════════════════════
+  // Ví dụ: Gói 90 phút → Giờ trễ nhất = 19:30 (kết thúc 21:00)
+  // ═══════════════════════════════════════════════════════════════════
+  function validateEndTime() {
+    // Nếu user chưa chọn giờ → Thoát
+    if (!timeInput || !timeInput.value) return;
+
+    // Lấy giờ user chọn (ví dụ: "19:30" → h=19, m=30)
+    const [h, m] = timeInput.value.split(':').map(Number);
+
+    // Lấy thời lượng gói đã chọn
+    const duration = getSelectedDuration();
+
+    // Tính giờ bắt đầu (tính bằng phút từ 0h)
+    // Ví dụ: 19:30 → 19*60 + 30 = 1170 phút
+    const startMins = h * 60 + m;
+
+    // Tính giờ kết thúc
+    // Ví dụ: 1170 + 90 = 1260 phút = 21:00
+    const endMins = startMins + duration;
+
+    // Tính giờ đóng cửa (21:00 → 21*60 + 0 = 1260 phút)
+    const closeMins = SPA_CLOSE_HOUR * 60 + SPA_CLOSE_MINUTES;
+
+    // ═══════════════════════════════════════════════════════════════
+    // Tính giờ bắt đầu trễ nhất hợp lệ
+    // ═══════════════════════════════════════════════════════════════
+    // latestStart = closeTime - duration
+    // Ví dụ: 21:00 - 90 phút = 19:30
+    const latestStartMins = closeMins - duration;
+    const latestH = Math.floor(latestStartMins / 60);  // 19
+    const latestM = latestStartMins % 60;              // 30
+    const latestStr = `${String(latestH).padStart(2,'0')}:${String(latestM).padStart(2,'0')}`;  // "19:30"
+
+    // ═══════════════════════════════════════════════════════════════
+    // Set max attribute cho input time
+    // ═══════════════════════════════════════════════════════════════
+    // <input type="time" max="19:30"> → Browser sẽ không cho chọn sau 19:30
+    timeInput.setAttribute('max', latestStr);
+
+    // ═══════════════════════════════════════════════════════════════
+    // Hiển thị lỗi nếu giờ không hợp lệ
+    // ═══════════════════════════════════════════════════════════════
+    let errEl = document.getElementById('timeEndError');
+
+    // Nếu chưa có thẻ lỗi → Tạo mới
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'timeEndError';
+      errEl.className = 'bk-error';
+      errEl.style.display = 'none';
+      timeInput.parentNode.appendChild(errEl);  // Thêm vào sau input time
+    }
+
+    // Nếu giờ kết thúc > 21:00 → Hiển thị lỗi
+    if (endMins > closeMins) {
+      errEl.textContent = `Spa đóng cửa lúc 21:00. Với gói ${duration} phút, giờ bắt đầu trễ nhất là ${latestStr}.`;
+      errEl.style.display = 'block';  // Hiển thị lỗi
+      return false;  // Validate FAIL
+    } else {
+      errEl.style.display = 'none';  // Ẩn lỗi
+      return true;  // Validate OK
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // I. FUNCTION: CẬP NHẬT THÔNG TIN DỊCH VỤ (INFO BOX)
+  // ═══════════════════════════════════════════════════════════════════
+  // Hiển thị thời lượng và giá tiền của gói đã chọn
+  // ═══════════════════════════════════════════════════════════════════
+  function updateServiceInfo() {
+    // Nếu không có variant select → Thoát
+    if (!variantSelect) return;
+
+    // Lấy option đang được chọn
+    const opt = variantSelect.options[variantSelect.selectedIndex];
+
+    // Nếu user đã chọn gói → Hiển thị thông tin
+    if (opt && opt.value) {
+      // Hiển thị: "60 phút"
+      if (durationSpan) durationSpan.textContent = opt.dataset.duration + ' phút';
+
+      // Hiển thị: "500.000 VNĐ"
+      if (priceSpan) priceSpan.textContent = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+    }
+    // Nếu user chưa chọn → Hiển thị dash
+    else {
+      if (durationSpan) durationSpan.textContent = '—';
+      if (priceSpan)    priceSpan.textContent    = '—';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // J. FUNCTION: CẬP NHẬT SUMMARY BOX (TÓM TẮT BOOKING)
+  // ═══════════════════════════════════════════════════════════════════
+  // Hiển thị tóm tắt khi user chọn ĐỦ thông tin:
+  // - Dịch vụ ✓
+  // - Gói dịch vụ ✓
+  // - Ngày ✓
+  // - Giờ ✓
+  // ═══════════════════════════════════════════════════════════════════
+  function updateSummary() {
+    // Nếu không có summary box → Thoát
+    if (!summaryBox) return;
+
+    // Lấy các option đã chọn
+    const svcOpt = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex] : null;
+    const varOpt = variantSelect ? variantSelect.options[variantSelect.selectedIndex] : null;
+    const dateVal = dateInput ? dateInput.value : '';
+    const timeVal = timeInput ? timeInput.value : '';
+
+    // ═══════════════════════════════════════════════════════════════
+    // Nếu user đã chọn ĐỦ thông tin → Hiển thị summary
+    // ═══════════════════════════════════════════════════════════════
+    if (svcOpt && svcOpt.value && varOpt && varOpt.value && dateVal && timeVal) {
+      summaryBox.style.display = 'block';  // Hiển thị box
+
+      // Tên dịch vụ (ví dụ: "Massage toàn thân")
+      if (sumService) sumService.textContent = svcOpt.textContent;
+
+      // Tên gói (lấy từ data-label, nếu không có → cắt từ text)
+      if (sumVariant) {
+        sumVariant.textContent = varOpt.dataset.label || varOpt.textContent.split('—')[0].trim();
+      }
+
+      // Ngày (format: "Thứ Ba, 28/04/2026")
+      if (sumDate && dateVal) {
+        const d = new Date(dateVal + 'T00:00:00');
+        sumDate.textContent = d.toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+
+      // Giờ (ví dụ: "14:30")
+      if (sumTime) sumTime.textContent = timeVal;
+
+      // Tổng tiền (ví dụ: "500.000 VNĐ")
+      if (sumTotal && varOpt.dataset.price) {
+        sumTotal.textContent = parseFloat(varOpt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+      }
+    }
+    // ═══════════════════════════════════════════════════════════════
+    // Nếu user chưa chọn ĐỦ → Ẩn summary
+    // ═══════════════════════════════════════════════════════════════
+    else {
+      summaryBox.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // K. ĐĂNG KÝ EVENT LISTENERS (LẮNG NGHE SỰ KIỆN)
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user thay đổi lựa chọn → Chạy function tương ứng
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Khi user chọn dịch vụ khác → Cập nhật danh sách gói
+  if (serviceSelect) {
+    serviceSelect.addEventListener('change', updateVariants);
+
+    // Load variants ngay khi trang mở (nếu có pre-select từ URL)
+    setTimeout(updateVariants, 50);
+  }
+
+  // Khi user chọn gói khác → Cập nhật info + summary + validate giờ
+  if (variantSelect) {
+    variantSelect.addEventListener('change', function () {
+      updateServiceInfo();
+      updateSummary();
+      validateEndTime();
+    });
+  }
+
+  // Khi user đổi ngày → Cập nhật summary
+  if (dateInput) {
+    dateInput.addEventListener('change', updateSummary);
+  }
+
+  // Khi user chọn giờ
+  if (timeInput) {
+    // Set giờ mở cửa (9:00) và đóng cửa (21:00)
+    timeInput.setAttribute('min', '09:00');
+    timeInput.setAttribute('max', '21:00');
+
+    // Khi giờ thay đổi → Cập nhật summary + validate
+    timeInput.addEventListener('change', function() {
+      updateSummary();
+      validateEndTime();
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // L. PREVENT SUBMIT NẾU GIỜ KHÔNG HỢP LỆ
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user click "Xác nhận đặt lịch" → Validate trước khi submit
+  // ═══════════════════════════════════════════════════════════════════
+  const bookingForm = timeInput ? timeInput.closest('form') : null;
+
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', function(e) {
+      // Nếu validate FAIL → Chặn submit
+      if (!validateEndTime()) {
+        e.preventDefault();  // Ngăn form submit
+        timeInput.focus();   // Focus vào input time để user sửa
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // M. INITIALIZE (KHỞI TẠO)
+  // ═══════════════════════════════════════════════════════════════════
+  // Chạy các function lần đầu khi trang load
+  // ─────────────────────────────────────────────────────────────────
+  setTimeout(updateSummary, 100);      // Update summary sau 100ms
+  setTimeout(validateEndTime, 150);    // Validate giờ sau 150ms
+
+  // ═══════════════════════════════════════════════════════════════════
+  // END: DOMContentLoaded event
+  // ═══════════════════════════════════════════════════════════════════
+});
+</script>
+{% endblock %}
