@@ -15,7 +15,7 @@ sqlDescribe('real SQL Server catalog integration',()=>{
   let runner:QueryRunner;
   let app:INestApplication;
   beforeAll(async()=>{
-    if(process.env.DB_NAME !== 'FlowerLanternSpa_Dev') throw new Error('Integration tests require the isolated development database');
+    if(process.env.DB_NAME !== 'FlowerLanternSpa_Test') throw new Error('Integration tests require the dedicated test database');
     const options = databaseOptions(process.env);
     if(!options) throw new Error('SQL configuration required');
     source = await new DataSource(options).initialize();

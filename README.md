@@ -54,3 +54,10 @@ Không bật test này với database khách hàng. Test không mô phỏng giao
 ## Tài liệu
 
 `docs/` giữ nguyên nguồn. `scripts/audit-sources.ps1` trích xuất paragraph/table và diagram vào `audit/extracted/` (ignored vì chứa tài liệu và thông tin gốc). `audit/FIGMA_FRAME_INVENTORY.md` ghi frame lấy từ live MCP. Đọc file trạng thái để tiếp tục công việc chưa hoàn tất.
+# Ghi chú khôi phục Authentication
+
+Đọc `PROJECT_STATUS.md` và `audit/RECOVERY_2026-11-10.md` trước khi tiếp tục. Giữ nguyên công việc Auth/entities chưa commit. `backend/.env` cần `JWT_SECRET` riêng tối thiểu 32 bytes, không dùng secret mẫu và không commit.
+
+SQL script UTF-8 phải chạy với `sqlcmd -b -I -f 65001`. Không chạy lại initialization/seed trên database đang dùng để sửa lỗi. Repair seed đã áp dụng được ghi trong TEST_REPORT.
+
+E2E chạy server riêng trên 5183/3100 sau `npm.cmd run build`, dùng `backend/.env` nhưng không sửa file này. `npm.cmd run test:e2e` chạy foundation; bật `RUN_AUTH_E2E=1` và cấp `E2E_DEV_PASSWORD` của tài khoản seed development để chạy thêm login 4 vai trò. Không dùng thông tin khách hàng thật. `PLAYWRIGHT_BROWSERS_PATH=C:/Spa/.playwright` dùng browser đã cài local.

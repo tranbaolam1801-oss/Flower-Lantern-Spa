@@ -1,5 +1,44 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## Phiên khôi phục 2026-11-10 (kết quả mới; phần bên dưới là lịch sử)
+
+### Trước sửa
+
+- `npm.cmd run typecheck`: PASS, exit 0.
+- `npm.cmd run lint`: PASS, exit 0.
+- `npm.cmd test`: 22 PASS, 4 SQL skipped, exit 0. Tests không bắt được lỗi thiếu AuthProvider trên trình duyệt.
+- `sqlcmd -b -I -S localhost -E -d FlowerLanternSpa_Dev -Q ...`: truy vấn chỉ đọc. Sandbox ban đầu lỗi Windows credentials; chạy ngoài sandbox thành công. Xác nhận 16 bảng, 20 giường, số bản ghi 5/6/3/1/13 và filtered indexes. Không chạy lại seed/migration.
+
+### Sau nối Auth và sửa bảo mật
+
+- `npm.cmd test`: 30 PASS, 6 SQL skipped, exit 0 (trước khi thêm 9 test RBAC).
+- `$env:RUN_SQL_INTEGRATION='1'; $env:DB_AUTH='windows'; $env:DB_HOST='localhost'; $env:DB_NAME='FlowerLanternSpa_Dev'; npm.cmd test`: **36/36 PASS**, 5 suites, exit 0. Gồm 4 catalog SQL tests và 2 Auth SQL tests; Argon2id/JWT thật, SQL thật.
+- Auth SQL: login/me, khóa tài khoản vô hiệu request có cookie cũ; 5 lần sai dẫn tới khóa 15 phút, từ chối mật khẩu đúng khi còn khóa, cho phép sau expiry, reset count. Fixtures `AUTHSQL001`, `TESTCAT` rollback; read-only kiểm tra số còn lại bằng 0. TaiKhoan vẫn 5, KhoaDangNhap 0.
+- HTTP security: CSRF header/origin, whitelist DTO, HttpOnly/SameSite, JWT issuer/audience/algorithm, thiếu secret, invalid/expired token, quyền mới từ SQL, SQL outage 503, logout clear cookie. Đây là contract tests với SQL double, không được tính là SQL integration.
+- Build tạm thời trong lúc nối provider thất bại do thiếu trường context; đã sửa. `npm.cmd run build` sau sửa PASS, exit 0. Có warning annotation từ Zod, không phải build error.
+
+### Playwright và lỗi seed phát hiện được
+
+- Lần đầu bị chiếm cổng 5173; chuyển E2E sang cổng riêng 5183/3100, không dừng server cũ.
+- Lần kế tiếp 3 PASS / 4 FAIL: cả bốn role login trả 403. Truy vấn chỉ đọc xác nhận mojibake trong VaiTro/TrangThai do seed cũ thiếu UTF-8 codepage.
+- Đã đọc/rà `database/repairs/001-auth-seed-utf8.sql`, chạy `sqlcmd -b -I -f 65001 -S localhost -E -d FlowerLanternSpa_Dev -i database/repairs/001-auth-seed-utf8.sql`: PASS exit 0. Chỉ sửa exact corrupted values của seed trong transaction; không đổi hashes/schema/IDs và không rerun seed.
+- Lệnh E2E: đặt `PLAYWRIGHT_BROWSERS_PATH=C:/Spa/.playwright`, `RUN_AUTH_E2E=1`, `E2E_DEV_PASSWORD` lấy từ fixture development đã có, rồi `npm.cmd run test:e2e`. Không ghi giá trị mật khẩu vào báo cáo.
+- Sau repair: **7/7 PASS**, exit 0, 19.2s. Bốn vai trò đăng nhập thật qua UI/API/SQL, reload giữ phiên, route ngăn nhầm vai trò, logout xóa HttpOnly cookie, route sau logout quay về login. Ba ca nền tảng validation/password visibility/assets/React liveness PASS.
+- Screenshot login 1440 và 390 nằm trong test-results (ignored); đã xem ảnh desktop. Đây không phải nghiệm thu pixel-perfect tất cả Figma screens.
+
+### Chưa chứng minh
+
+Concurrency lockout nhiều connection; thu hồi token bị sao chép sau logout; dashboard Figma; mọi UC chưa triển khai; concurrency booking; SePay; backup/restore. Không dùng các PASS trên để đánh dấu M3 hoặc toàn dự án hoàn tất.
+
+### Kiểm tra cuối lát cắt phục hồi
+
+- `npm.cmd run typecheck`: PASS exit 0.
+- `npm.cmd run lint`: PASS exit 0.
+- `npm.cmd run build`: PASS exit 0 (warning annotation Zod như trên).
+- `npm.cmd test`: **39 PASS, 6 SQL skipped**, 4 suites PASS, exit 0. Thêm 9 kiểm thử RolesGuard: staff/manager có quyền, thiếu quyền, khách có quyền gán nhầm, unauthenticated, Chủ Spa và Quản trị không được coi đồng nghĩa.
+- Sáu SQL tests đã chạy thành công ở lần opt-in 36/36 phía trên; không cộng 6 skipped của lần cuối thành PASS mới.
+- Hai dashboard bổ sung thông báo lỗi logout sau lần E2E 7/7; typecheck/lint/build pass sau thay đổi này. Chưa có test browser nhánh mất mạng khi logout.
+
 Cập nhật: 2026-11-10 (Asia/Bangkok)
 
 ## Môi trường kiểm thử

@@ -13,3 +13,7 @@ Nguồn chính: Prompt.md; SRS và Figma theo thứ tự ưu tiên đã quy đ�
 9. **Local handoff:** README, backup/restore đã thử, kiểm tra readiness; chỉ bàn hosting sau nghiệm thu và yêu cầu riêng.
 
 Mỗi milestone cập nhật PROJECT_STATUS, TRACEABILITY_MATRIX, TEST_REPORT và OPEN_QUESTIONS. Không đánh dấu UC hoàn thành chỉ vì build pass.
+
+## Tiếp tục sau khôi phục 2026-11-10
+
+M3 đang thực hiện: migration 003/filtered indexes đã tồn tại; entities/Auth Antigravity được giữ và sửa tiếp. Login React đã nối API thật; lockout/SQL/Auth tests đã chạy. Còn dashboard Figma, permission matrix/concurrency tests, entity/schema audit và migration runner. Không thay thế chín milestone trên.

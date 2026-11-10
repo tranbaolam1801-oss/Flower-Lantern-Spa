@@ -21,3 +21,10 @@ Cập nhật 2026-11-10. Không tự sửa tài liệu gốc hoặc database `Fl
 | Q15 | Figma có nhiều bố cục khác nhau cho lịch cá nhân (table/cards/grid), số giường/sidebar thay đổi giữa frame | Inventory live metadata lưu ở audit/FIGMA_FRAME_INVENTORY.md. Cần đối chiếu context/screenshot từng frame; chỉ frame login đã lấy design context. |
 
 SePay là provider duy nhất. Chưa triển khai webhook nên chưa xác minh tài liệu SePay hiện hành; phải thực hiện trước milestone 7. Không dùng suy đoán HMAC từ kế hoạch phụ làm hợp đồng tích hợp.
+
+## Cập nhật sau khôi phục
+
+- Q05: KhoaDangNhap đã tồn tại qua migration 003, xác minh read-only; payment/giá lịch sử/nguồn lịch vẫn chưa áp dụng.
+- Q15: Lấy thêm live context/screenshot `1:49090`; dashboard vẫn placeholder, chưa nghiệm thu.
+- Q16: Seed cũ thiếu `-f 65001` tạo mojibake dù số bản ghi đúng. Đã áp dụng repair có điều kiện, không chạy lại seed.
+- Q10 còn mở: Ghi nhớ chưa có policy riêng, reset/registration chưa triển khai; JWT giữ thời hạn 7 ngày từ Auth Antigravity. Cần chốt vòng đời phiên/cơ chế thu hồi token đã sao chép sau logout trước nghiệm thu bảo mật cuối.

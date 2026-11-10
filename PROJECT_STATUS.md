@@ -1,5 +1,21 @@
 # Trạng thái dự án
 
+## Khôi phục mới nhất 2026-11-10 — thay thế trạng thái cũ bên dưới
+
+M3 đang thực hiện, **chưa hoàn tất**. Git `master`, commit `9fbc82e`; giữ toàn bộ thay đổi Auth/entities/frontend chưa commit. Chi tiết: [audit/RECOVERY_2026-11-10.md](audit/RECOVERY_2026-11-10.md).
+
+Đã xác minh read-only: 16 bảng (15 business + KhoaDangNhap), 20 giường, 5 tài khoản/6 quyền/3 nhân viên/1 khách/13 account-permission links. Không chạy lại seed/migration. Phát hiện seed mojibake và đã sửa exact corrupted values trong transaction, không đổi hashes/schema.
+
+Đã nối AuthProvider/routes và login/me/logout thật; Argon2id, JWT HttpOnly, refresh phiên; CSRF header/origin; bỏ JWT fallback; đọc lại quyền/trạng thái SQL; lockout transaction/range locks. Backend 36 tests PASS gồm 6 SQL thật, fixture rollback đã kiểm chứng. Xem TEST_REPORT cho E2E.
+
+Còn thiếu: dashboard nhân viên/quản lý/chủ spa/khách đúng Figma (hiện placeholder), permission matrix tests, concurrency lockout, migration runner/checksum và entity/schema audit. UC_2–10, SePay, toàn bộ media audit chưa nghiệm thu.
+
+Kiểm tra cuối lát cắt: typecheck/lint/build PASS; 39 unit/API tests PASS (đã bổ sung 9 RolesGuard tests), 6 SQL integration đã PASS ở lần opt-in trước; 7/7 Playwright PASS. Permission guard unit matrix đã có, còn gắn permission vào các endpoint nghiệp vụ khi triển khai. Chưa commit vì M3 còn đang thực hiện; các file được giữ trong working tree.
+
+Bước tiếp theo: hoàn thiện dashboard shell từ live Figma và kiểm thử quyền/concurrent lockout để nghiệm thu M3, rồi M4 booking. Giữ nguyên kế hoạch chín milestone. SQL UTF-8 dùng `sqlcmd -b -I -f 65001`; không chạy initialize trên database có dữ liệu. E2E dùng cổng riêng 3100/5183, giữ server cũ 3000/5173.
+
+## Báo cáo lịch sử trước khôi phục (không phải trạng thái hiện tại)
+
 Cập nhật: 2026-11-10 (Asia/Bangkok).
 
 ## Điểm bắt đầu

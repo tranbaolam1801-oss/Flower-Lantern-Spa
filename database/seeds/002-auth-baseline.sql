@@ -1,7 +1,10 @@
 -- 002-auth-baseline.sql
 -- Seed initial permissions and accounts for development and testing.
 -- Idempotent: checks for existence before inserting.
+-- UTF-8 REQUIRED: sqlcmd -b -I -f 65001 -S localhost -E -d FlowerLanternSpa_Dev -i database/seeds/002-auth-baseline.sql
 
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 SET NOCOUNT ON;
 
 -- 1. Permissions (dbo.Quyen)

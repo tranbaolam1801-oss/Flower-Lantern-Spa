@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-test('UC_1 required fields and visibility, no simulated login',async({page})=>{
+test('UC_1 required fields and password visibility',async({page})=>{
   await page.goto('/dang-nhap');
   await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
   await expect(page.getByText('Không được để trống!',{exact:true})).toHaveCount(2);
@@ -8,9 +8,8 @@ test('UC_1 required fields and visibility, no simulated login',async({page})=>{
   await expect(page.locator('#password')).toHaveAttribute('type','text');
   await page.getByRole('button',{name:'Ẩn mật khẩu'}).click();
   await expect(page.locator('#password')).toHaveAttribute('type','password');
-  await page.locator('#phone').fill('0000000000');
-  await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
-  await expect(page.getByRole('status')).toContainText('đang được triển khai');
+  await page.getByRole('button',{name:'Quên mật khẩu?'}).click();
+  await expect(page.getByRole('alert')).toContainText('khôi phục mật khẩu chưa được triển khai');
 });
 test('Figma login assets load at design geometry',async({page})=>{
   await page.goto('/dang-nhap');

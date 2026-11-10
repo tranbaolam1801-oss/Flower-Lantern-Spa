@@ -1,11 +1,20 @@
 import { Injectable, OnApplicationShutdown, ServiceUnavailableException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
 import { databaseOptions } from './config';
 
 @Injectable()
 export class DatabaseService implements OnApplicationShutdown {
   private source?: DataSource;
   private connecting?: Promise<DataSource>;
+
+  async getDataSource(): Promise<DataSource> {
+    return await this.connect();
+  }
+
+  async getRepository<T extends ObjectLiteral>(target: EntityTarget<T>): Promise<Repository<T>> {
+    const source = await this.connect();
+    return source.getRepository(target);
+  }
 
   private async connect(): Promise<DataSource> {
     if (this.source?.isInitialized) return this.source;

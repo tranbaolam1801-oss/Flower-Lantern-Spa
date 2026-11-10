@@ -4,7 +4,7 @@
 
 | UC | Nghiệp vụ | BR | Figma node tham chiếu | Route | API | SQL tables | Tests/trạng thái |
 |---|---|---|---|---|---|---|---|
-| UC_1 | Đăng nhập | BR-UC1-01/02 | 5:21070 | /dang-nhap | POST /api/auth/login; GET /api/auth/me; POST /api/auth/logout | TaiKhoan, Quyen, TaiKhoanQuyen | UI validation có; auth chưa triển khai; tests/foundation.spec.ts (UI) |
+| UC_1 | Đăng nhập | BR-UC1-01/02; NFR-05 | 5:21070; shell quản trị 1:49090 | /dang-nhap; /admin/lich-hen; /lich-hen-cua-toi | POST /api/auth/login; GET /api/auth/me; POST /api/auth/logout | TaiKhoan, Quyen, TaiKhoanQuyen, KhoaDangNhap, NhanVien, KhachHang | Auth thật đã nối; auth.spec.ts, security.spec.ts, roles.guard.spec.ts, auth.sql.integration.spec.ts, tests/auth.spec.ts; chưa nghiệm thu dashboard/đầy đủ UC |
 | UC_2.1 | Tạo lịch hẹn | BR-UC2.1-01..04 | 1:33652 | /admin/lich-hen | POST /api/bookings | LichHen, KhachSuDungDichVu, Giuong, GoiDichVu, ThanhToan | Chưa triển khai; Chưa viết; cần main/alternate/exception + RBAC |
 | UC_2.2 | Xem lịch theo giường | BR-UC2.2-01 | 1:49090 | /admin/lich-hen | GET /api/bookings | LichHen, KhachSuDungDichVu, Giuong | Chưa triển khai; Chưa viết; cần main/alternate/exception + RBAC |
 | UC_2.3 | Cập nhật lịch | BR-UC2.3-01..03 | 1:46088 | /admin/lich-hen | PATCH /api/bookings/:id | LichHen, KhachSuDungDichVu, ThanhToan | Chưa triển khai; Chưa viết; cần main/alternate/exception + RBAC |
