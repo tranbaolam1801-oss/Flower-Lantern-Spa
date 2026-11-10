@@ -1,0 +1,14 @@
+node_modules/
+.npm-cache/
+.playwright/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+test-results/
+playwright-report/
+audit/extracted/
+*.log
+*.tsbuildinfo
+*.bak

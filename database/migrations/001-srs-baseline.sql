@@ -1,0 +1,95 @@
+-- SRS 7.2 baseline. NEW EMPTY development database only.
+-- No DROP/ALTER, no production synchronization, no payment integration extension.
+-- Disputed status vocabulary intentionally has no CHECK enum; see OPEN_QUESTIONS.md.
+CREATE TABLE dbo.TaiKhoan (
+ MaTaiKhoan CHAR(10) NOT NULL PRIMARY KEY,
+ TenDangNhap VARCHAR(50) NOT NULL UNIQUE,
+ SoDienThoai VARCHAR(15) NOT NULL CHECK(SoDienThoai NOT LIKE '%[^0-9]%'),
+ MatKhauBam VARCHAR(255) NOT NULL,
+ VaiTro NVARCHAR(30) NOT NULL,
+ TrangThai NVARCHAR(30) NOT NULL
+);
+CREATE TABLE dbo.Quyen (
+ MaQuyen CHAR(10) NOT NULL PRIMARY KEY, TenQuyen NVARCHAR(100) NOT NULL UNIQUE
+);
+CREATE TABLE dbo.TaiKhoanQuyen (
+ MaTaiKhoan CHAR(10) NOT NULL REFERENCES dbo.TaiKhoan(MaTaiKhoan),
+ MaQuyen CHAR(10) NOT NULL REFERENCES dbo.Quyen(MaQuyen),
+ PRIMARY KEY(MaTaiKhoan,MaQuyen)
+);
+CREATE TABLE dbo.LichSuPhanQuyen (
+ MaLichSu CHAR(10) NOT NULL PRIMARY KEY,
+ MaTaiKhoanThucHien CHAR(10) NOT NULL REFERENCES dbo.TaiKhoan(MaTaiKhoan),
+ MaTaiKhoanDuocPhanQuyen CHAR(10) NOT NULL REFERENCES dbo.TaiKhoan(MaTaiKhoan),
+ ThoiDiem DATETIME NOT NULL CHECK(ThoiDiem <= GETDATE()),
+ NoiDungThayDoi NVARCHAR(500) NULL
+);
+CREATE TABLE dbo.KhachHang (
+ MaKhachHang CHAR(10) NOT NULL PRIMARY KEY,
+ MaTaiKhoan CHAR(10) NULL UNIQUE REFERENCES dbo.TaiKhoan(MaTaiKhoan),
+ HoTen NVARCHAR(50) NOT NULL,
+ SoDienThoai CHAR(10) NOT NULL CHECK(SoDienThoai NOT LIKE '%[^0-9]%'),
+ NgaySinh DATE NULL CHECK(NgaySinh < GETDATE()), KenhLienHe NVARCHAR(50) NULL,
+ GioiTinh NVARCHAR(10) NULL, DiaChi NVARCHAR(255) NULL, GhiChu NVARCHAR(500) NULL,
+ NgayTao DATETIME NOT NULL DEFAULT GETDATE()
+);
+CREATE TABLE dbo.NhanVien (
+ MaNhanVien CHAR(10) NOT NULL PRIMARY KEY,
+ MaTaiKhoan CHAR(10) NULL UNIQUE REFERENCES dbo.TaiKhoan(MaTaiKhoan),
+ HoTen NVARCHAR(50) NOT NULL,
+ SoDienThoai CHAR(10) NOT NULL CHECK(SoDienThoai NOT LIKE '%[^0-9]%'),
+ Email VARCHAR(100) NULL, GioiTinh NVARCHAR(10) NULL,
+ NgaySinh DATE NULL CHECK(NgaySinh < GETDATE()), DiaChi NVARCHAR(255) NULL,
+ GhiChu NVARCHAR(500) NULL, TrangThaiLamViec NVARCHAR(30) NOT NULL, TrangThaiHoSo NVARCHAR(30) NOT NULL
+);
+CREATE TABLE dbo.DanhMuc (
+ MaDanhMuc CHAR(10) NOT NULL PRIMARY KEY, TenDanhMuc NVARCHAR(100) NOT NULL, TrangThai NVARCHAR(30) NOT NULL
+);
+CREATE TABLE dbo.DichVu (
+ MaDichVu CHAR(10) NOT NULL PRIMARY KEY,
+ MaDanhMuc CHAR(10) NOT NULL REFERENCES dbo.DanhMuc(MaDanhMuc),
+ TenDichVu NVARCHAR(150) NOT NULL, HinhAnh VARCHAR(255) NULL, MoTaNgan NVARCHAR(255) NULL,
+ MoTaChiTiet NVARCHAR(MAX) NULL, LoiIch NVARCHAR(MAX) NULL, QuyTrinhThucHien NVARCHAR(MAX) NULL,
+ DoiTuongPhuHop NVARCHAR(255) NULL, ThongTinLieuTrinhVaLuuY NVARCHAR(MAX) NULL, TrangThai NVARCHAR(30) NOT NULL
+);
+CREATE TABLE dbo.GoiDichVu (
+ MaGoi CHAR(10) NOT NULL PRIMARY KEY, MaDichVu CHAR(10) NOT NULL REFERENCES dbo.DichVu(MaDichVu),
+ TenGoi NVARCHAR(100) NOT NULL, ThoiLuong INT NOT NULL CHECK(ThoiLuong>0), Gia MONEY NOT NULL CHECK(Gia>=0)
+);
+CREATE TABLE dbo.LichHen (
+ MaLichHen CHAR(10) NOT NULL PRIMARY KEY, MaKhachHang CHAR(10) NULL REFERENCES dbo.KhachHang(MaKhachHang),
+ HoTenNguoiDat NVARCHAR(50) NOT NULL,
+ SoDienThoaiNguoiDat CHAR(10) NOT NULL CHECK(SoDienThoaiNguoiDat NOT LIKE '%[^0-9]%'),
+ EmailNguoiDat VARCHAR(100) NULL, GhiChu NVARCHAR(500) NULL,
+ NgayHen DATE NOT NULL, GioHen TIME NOT NULL, ThoiGianDat DATETIME NOT NULL DEFAULT GETDATE(),
+ TrangThaiLichHen NVARCHAR(30) NOT NULL, TrangThaiThanhToan NVARCHAR(30) NOT NULL
+);
+CREATE TABLE dbo.Giuong (MaGiuong CHAR(10) NOT NULL PRIMARY KEY);
+CREATE TABLE dbo.KhachSuDungDichVu (
+ MaChiTiet CHAR(10) NOT NULL PRIMARY KEY,
+ MaLichHen CHAR(10) NOT NULL REFERENCES dbo.LichHen(MaLichHen),
+ MaGoi CHAR(10) NOT NULL REFERENCES dbo.GoiDichVu(MaGoi),
+ MaGiuong CHAR(10) NULL REFERENCES dbo.Giuong(MaGiuong), TenKhach NVARCHAR(50) NOT NULL,
+ SoDienThoai CHAR(10) NULL CHECK(SoDienThoai NOT LIKE '%[^0-9]%'),
+ ThoiDiemBatDau DATETIME NOT NULL, ThoiDiemKetThuc DATETIME NOT NULL,
+ CONSTRAINT CK_KhachSuDungDichVu_Interval CHECK(ThoiDiemKetThuc>ThoiDiemBatDau)
+);
+CREATE TABLE dbo.ThanhToan (
+ MaThanhToan CHAR(10) NOT NULL PRIMARY KEY, MaLichHen CHAR(10) NOT NULL REFERENCES dbo.LichHen(MaLichHen),
+ SoTienThanhToan MONEY NOT NULL CHECK(SoTienThanhToan>=0),
+ NgayGhiNhan DATETIME NOT NULL CHECK(NgayGhiNhan<=GETDATE()), TrangThaiGiaoDich NVARCHAR(30) NOT NULL,
+ KhoanHoanTien MONEY NULL DEFAULT 0 CHECK(KhoanHoanTien>=0)
+);
+CREATE TABLE dbo.DanhGia (
+ MaDanhGia CHAR(10) NOT NULL PRIMARY KEY,
+ MaLichHen CHAR(10) NOT NULL REFERENCES dbo.LichHen(MaLichHen),
+ MaKhachHang CHAR(10) NOT NULL REFERENCES dbo.KhachHang(MaKhachHang),
+ MaDichVu CHAR(10) NOT NULL REFERENCES dbo.DichVu(MaDichVu),
+ SoSao TINYINT NOT NULL CHECK(SoSao BETWEEN 1 AND 5), NoiDungDanhGia NVARCHAR(1000) NULL,
+ NgayDanhGia DATETIME NOT NULL DEFAULT GETDATE()
+);
+CREATE TABLE dbo.PhanHoi (
+ MaPhanHoi CHAR(10) NOT NULL PRIMARY KEY,
+ MaDanhGia CHAR(10) NOT NULL REFERENCES dbo.DanhGia(MaDanhGia),
+ MaNhanVien CHAR(10) NOT NULL REFERENCES dbo.NhanVien(MaNhanVien), NoiDungPhanHoi NVARCHAR(1000) NOT NULL
+);
