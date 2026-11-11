@@ -28,6 +28,7 @@ export interface AuthUser {
 }
 
 export interface JwtPayload {
+  jti?: string;
   sub: string;
   username: string;
   phone: string;

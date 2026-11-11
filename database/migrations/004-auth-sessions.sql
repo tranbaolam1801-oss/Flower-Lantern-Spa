@@ -4,6 +4,10 @@
 SET XACT_ABORT ON;
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
+IF DB_NAME() <> 'FlowerLanternSpa_Test'
+  THROW 51004, 'Migration 004 is approved for Test only. Dev requires separate approval.', 1;
+BEGIN TRY
+BEGIN TRANSACTION;
 IF OBJECT_ID('dbo.PhienDangNhap','U') IS NULL
 BEGIN
   CREATE TABLE dbo.PhienDangNhap (
@@ -17,3 +21,9 @@ BEGIN
   );
   CREATE INDEX IX_PhienDangNhap_TaiKhoan ON dbo.PhienDangNhap(MaTaiKhoan,HetHanLuc) INCLUDE(ThuHoiLuc);
 END;
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+  IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+  THROW;
+END CATCH;

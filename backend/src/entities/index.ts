@@ -14,3 +14,4 @@ export * from './khach-su-dung-dich-vu.entity';
 export * from './thanh-toan.entity';
 export * from './danh-gia.entity';
 export * from './phan-hoi.entity';
+export * from './phien-dang-nhap.entity';

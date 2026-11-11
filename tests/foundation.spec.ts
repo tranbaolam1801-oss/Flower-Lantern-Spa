@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { checkResponsive } from './responsive';
 test('UC_1 required fields and password visibility',async({page})=>{
   await page.goto('/dang-nhap');
   await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
@@ -23,6 +24,7 @@ test('Figma login assets load at design geometry',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
   await page.screenshot({path:'test-results/login-390.png',fullPage:true});
+  await checkResponsive(page,'login');
 });
 test('React reaches real NestJS liveness',async({page})=>{
   await page.goto('/system');

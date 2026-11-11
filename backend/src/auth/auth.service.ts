@@ -10,6 +10,8 @@ import { DatabaseService } from '../database.service';
 import { PasswordService } from './password.service';
 import { JwtTokenService } from './jwt-token.service';
 import { AuthUser, LoginDto } from './auth.dto';
+import { JwtPayload } from './auth.dto';
+import { randomUUID } from 'node:crypto';
 
 interface LockoutRow {
   SoLanSai: number;
@@ -174,7 +176,19 @@ export class AuthService {
       entityId: authUser.entityId,
     };
 
-    const token = await this.jwtService.signAsync(payload, { expiresIn: '7d' });
+    const jti = this.sessionsEnabled() ? randomUUID() : undefined;
+    const token = await this.jwtService.signAsync({...payload,...(jti?{jti}:{})}, { expiresIn: '7d' });
+    if(jti) {
+      const rows=await this.database.query<{created:number}[]>(`SET XACT_ABORT ON;
+        BEGIN TRY BEGIN TRANSACTION;
+        IF EXISTS(SELECT 1 FROM dbo.TaiKhoan WITH(UPDLOCK,HOLDLOCK) WHERE MaTaiKhoan=@1 AND TrangThai=N'Hoạt động')
+        BEGIN
+          INSERT dbo.PhienDangNhap(MaPhien,MaTaiKhoan,HetHanLuc) VALUES(@0,@1,DATEADD(day,7,SYSUTCDATETIME()));
+          SELECT 1 AS created;
+        END ELSE SELECT 0 AS created;
+        COMMIT; END TRY BEGIN CATCH IF @@TRANCOUNT>0 ROLLBACK; THROW; END CATCH`,[jti,authUser.id]);
+      if(rows[0]?.created!==1)throw new UnauthorizedException('Tài khoản đã bị khóa.');
+    }
 
     return { user: authUser, token };
   }
@@ -189,6 +203,7 @@ export class AuthService {
 
     const user = users[0];
     if (!user || user.status !== 'Hoạt động') {
+      if(this.sessionsEnabled())await this.database.query('UPDATE dbo.PhienDangNhap SET ThuHoiLuc=SYSUTCDATETIME() WHERE MaTaiKhoan=@0 AND ThuHoiLuc IS NULL',[userId]);
       throw new UnauthorizedException('Phiên đăng nhập đã hết hạn hoặc tài khoản đã bị khóa.');
     }
 
@@ -230,6 +245,24 @@ export class AuthService {
       permissions: permissionRows.map((p) => p.code),
       entityId,
     };
+  }
+
+  sessionsEnabled() { return process.env.AUTH_SESSION_STORE === 'sql'; }
+
+  async validateSession(payload:JwtPayload) {
+    if(!this.sessionsEnabled())return;
+    if(!payload.jti||!isSessionId(payload.jti))throw new UnauthorizedException('Vui lòng đăng nhập lại.');
+    const rows=await this.database.query<{valid:number}[]>(`SELECT 1 AS valid FROM dbo.PhienDangNhap
+      WHERE MaPhien=@0 AND MaTaiKhoan=@1 AND ThuHoiLuc IS NULL AND HetHanLuc>SYSUTCDATETIME()`,[payload.jti,payload.sub]);
+    if(rows.length!==1)throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn.');
+  }
+
+  async revokeToken(token?:string) {
+    if(!this.sessionsEnabled()||!token)return;
+    let payload:JwtPayload;
+    try { payload=await this.jwtService.verifyAsync<JwtPayload>(token); } catch { return; }
+    if(!payload.jti||!isSessionId(payload.jti))return;
+    await this.database.query('UPDATE dbo.PhienDangNhap SET ThuHoiLuc=COALESCE(ThuHoiLuc,SYSUTCDATETIME()) WHERE MaPhien=@0 AND MaTaiKhoan=@1',[payload.jti,payload.sub]);
   }
 
   private locked() {
@@ -274,3 +307,5 @@ export class AuthService {
     return count >= 5;
   }
 }
+
+function isSessionId(value:string) {return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);}

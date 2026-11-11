@@ -1,8 +1,8 @@
 ﻿import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AccountMenu } from '../components/account-menu';
 import { Button } from '../components/ui/button';
 import { getMyBookings } from '../lib/booking-api';
+import { CustomerHeader } from '../components/customer-header';
 const filters=['Tất cả','Chờ xác nhận','Đã xác nhận','Hoàn thành','Đã hủy'];
 const day=(value:string)=>value.slice(0,10).split('-').reverse().join('/');
 export function CustomerDashboard() {
@@ -11,10 +11,7 @@ export function CustomerDashboard() {
   const items=query.data?.items??[];
   const visible=items.filter(b=>filter==='Tất cả'||b.status===filter);
   return <div className="customer-shell">
-    <header className="customer-header"><img className="customer-logo" src="/assets/customer-imgRectangle.png" alt="Hoa Đăng Spa – Flower Lantern Spa"/>
-      <nav aria-label="Điều hướng khách hàng">{['Trang chủ','Giới thiệu','Dịch vụ','Đặt lịch','Liên hệ'].map(label=><button key={label} disabled title="Chức năng chưa sẵn sàng">{label}</button>)}</nav>
-      <div className="customer-header-actions"><img src="/assets/customer-imgGroup.svg" alt="Tìm kiếm"/><AccountMenu customer/><Button disabled><img src="/assets/customer-imgGroup2.svg" alt=""/>Đặt lịch ngay</Button></div>
-    </header>
+    <CustomerHeader/>
     <section className="customer-hero"><img className="hero-left" src="/assets/customer-imgRectangle1.png" alt=""/><img className="hero-right" src="/assets/customer-imgRectangle2.png" alt=""/><div><p>TÀI KHOẢN</p><h1>Lịch hẹn của tôi</h1><span>Theo dõi dịch vụ, thời gian và trạng thái<br/>các lịch hẹn bạn đã đặt tại Hoa Đăng Spa.</span></div></section>
     <main className="customer-bookings"><div className="booking-filters" role="group" aria-label="Lọc trạng thái lịch hẹn">{filters.map(label=>{const count=label==='Tất cả'?items.length:items.filter(b=>b.status===label).length;return <button key={label} aria-pressed={filter===label} onClick={()=>setFilter(label)}>{label}{count>0&&<span>{count}</span>}</button>;})}</div>
       <div className="booking-list-heading"><h2>Danh sách lịch hẹn</h2>{query.isSuccess&&<p>{visible.length} lịch hẹn | Sắp xếp: Mới đặt nhất</p>}</div>

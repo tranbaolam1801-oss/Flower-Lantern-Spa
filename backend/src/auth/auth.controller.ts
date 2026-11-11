@@ -58,7 +58,9 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Thông tin tài khoản và quyền truy cập.' })
   @ApiResponse({ status: 401, description: 'Chưa đăng nhập hoặc phiên hết hạn.' })
   async getMe(@Req() request: RequestWithUser) {
-    const user = await this.authService.getMe(request.user!.sub);
+    // AuthGuard has already loaded current profile and permissions from SQL.
+    const {sub, ...profile} = request.user!;
+    const user = {...profile,id:sub};
     return {
       success: true,
       user,
@@ -69,7 +71,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất khỏi hệ thống' })
   @ApiResponse({ status: 200, description: 'Xóa cookie phiên đăng nhập.' })
-  async logout(@Res({ passthrough: true }) response: Response) {
+  async logout(@Res({ passthrough: true }) response: Response, @Req() request: Request) {
+    if(process.env.AUTH_SESSION_STORE==='sql')await this.authService.revokeToken(request.cookies?.access_token ?? request.headers.authorization?.replace(/^Bearer /,''));
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

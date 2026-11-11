@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DatabaseService } from '../database.service';
+import { DatabaseModule } from '../database.module';
 import { PasswordService } from './password.service';
 import { JwtTokenService } from './jwt-token.service';
 import { AuthService } from './auth.service';
@@ -8,9 +8,9 @@ import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
 
 @Module({
+  imports: [DatabaseModule],
   controllers: [AuthController],
   providers: [
-    DatabaseService,
     PasswordService,
     JwtTokenService,
     AuthService,

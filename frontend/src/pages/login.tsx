@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { loginApi, getDefaultRoute, type ApiError } from '../lib/auth-api';
 import { useAuth } from '../contexts/auth-context';
+import { BrandLogo } from '../components/brand-logo';
 
 const schema = z.object({
   phone: z.string().trim().min(1, 'Không được để trống!'),
@@ -62,11 +63,7 @@ export function Login() {
     <main className="login-page">
       <img className="login-decoration" src="/assets/login-lotus.png" alt="" />
       <section className="login-column" aria-label="Đăng nhập Flower Lantern Spa">
-        <img
-          className="brand-logo"
-          src="/assets/login-logo.png"
-          alt="Hoa Đăng Spa – Flower Lantern Spa"
-        />
+        <div className="login-brand-slot"><BrandLogo/></div>
         <form className="login-card" noValidate onSubmit={handleSubmit(submit)}>
           <header>
             <h1>Đăng nhập</h1>

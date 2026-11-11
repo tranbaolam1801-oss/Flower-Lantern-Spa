@@ -45,3 +45,10 @@ Read before making changes
 - Never claim a test passed without executing it; never claim pixel-perfect UI from an inaccessible Figma design.
 - Before destructive SQL, production credential changes, paid operations, or financial transactions, obtain explicit user approval.
 - Communicate progress and explanations in Vietnamese; preserve exact technical identifiers and source-defined UI wording.
+
+## Mandatory Handover Protocol
+
+- Read HANDOVER.md at session start after AGENTS.md; verify repository/database evidence before trusting recorded claims.
+- Update HANDOVER.md throughout implementation, after tests/migrations/approval decisions and before risky operations. Append significant checkpoints to audit/handover-history.md.
+- Preserve unfinished changes and record the exact next task before ending work. Never modify the approved database without the required approval.
+- User override confirmed 2026-11-11: 08:00–22:00; default 15 active beds G1–G15; direct status Chưa đến, online Chờ xác nhận. Existing 20 rows and history must be preserved. Earlier 20-bed requirements are historical; no destructive bed migration authorized.

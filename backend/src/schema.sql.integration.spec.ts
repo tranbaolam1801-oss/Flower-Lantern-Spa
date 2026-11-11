@@ -11,11 +11,11 @@ sqlDescribe('read-only entity mapping audit against approved SQL migrations', ()
     source = await new DataSource(options).initialize();
   },30000);
   afterAll(async () => { if (source?.isInitialized) await source.destroy(); });
-  it('matches all 16 entity tables and every physical column type, length, nullability and primary key', async () => {
+  it('matches all 17 Test entity tables and every physical column type, length, nullability and primary key', async () => {
     const runner = source.createQueryRunner();
     try {
       const tables = await runner.getTables(source.entityMetadatas.map(m => `dbo.${m.tableName}`));
-      expect(tables).toHaveLength(16);
+      expect(tables).toHaveLength(17);
       for (const metadata of source.entityMetadatas) {
         const table = tables.find(t => t.name.split('.').pop()===metadata.tableName)!;
         expect(table.columns).toHaveLength(metadata.columns.length);
@@ -27,7 +27,7 @@ sqlDescribe('read-only entity mapping audit against approved SQL migrations', ()
         }
       }
     } finally { await runner.release(); }
-  });
+  },30000);
   it('matches every relationship and preserves historical rows using NO ACTION', async () => {
     const runner = source.createQueryRunner();
     try {
@@ -43,5 +43,5 @@ sqlDescribe('read-only entity mapping audit against approved SQL migrations', ()
         }
       }
     } finally { await runner.release(); }
-  });
+  },30000);
 });

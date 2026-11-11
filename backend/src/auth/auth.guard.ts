@@ -37,6 +37,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn.');
     }
     // Permissions and role always come from SQL, never from stale token claims.
+    if(process.env.AUTH_SESSION_STORE==='sql')await this.authService.validateSession(payload);
     // SQL outages remain 503 rather than incorrectly reporting an expired session.
     const user = await this.authService.getMe(payload.sub);
     request.user = { ...user, sub: user.id };
