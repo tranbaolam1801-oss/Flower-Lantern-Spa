@@ -1,6 +1,6 @@
 # Triển khai Vercel (một project) + Neon PostgreSQL — demo học thuật 30 ngày
 
-Trạng thái: **mã nguồn đã sẵn sàng và kiểm thử cục bộ; CHƯA tạo tài nguyên đám mây nào, chưa migration/seed nào chạy trên Neon, chưa publish.**
+Trạng thái: **ĐÃ TRIỂN KHAI demo (2026-11-12): https://flower-lantern-spa.vercel.app — Neon `flower-lantern-spa` (Singapore) + Vercel Hobby một project + Blob private. Kết quả live: HANDOVER.md mục 0k.** Các bước ở mục 5 đã thực hiện theo duyệt của người dùng.
 Bản SQL Server + Azure cũ được giữ nguyên để quay lại: git tag `sqlserver-baseline` (commit `d64bd92`), tài liệu Azure ở `docs-deploy/azure-archive/`, migration T-SQL ở `database/migrations/`.
 
 ## 1. Kiến trúc (một project, một domain)

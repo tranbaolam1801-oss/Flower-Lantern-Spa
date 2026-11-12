@@ -1,5 +1,16 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## Triển khai live Vercel + Neon (2026-11-12) — kết quả chạy thật trên https://flower-lantern-spa.vercel.app
+| Bộ kiểm thử | Kết quả |
+|---|---|
+| `node scripts/e2e-live.mjs` (API + bảo mật + RBAC + race + ảnh) | **47/47 PASS** |
+| `node scripts/e2e-live-webhook.mjs` (SePay giả lập, key hợp lệ/sai, replay, payload lỗi) | **13/13 PASS** (một kỳ vọng sai của script về payload lỗi đã được sửa theo thiết kế: ghi INVALID_PAYLOAD + trả 200) |
+| `node scripts/e2e-live-browser.cjs` (Chromium headless: UI login, cookie, reload, deep link, mobile) | **11/11 PASS** |
+| Race đa kết nối thật trên Neon (`booking-concurrency.pg.spec.ts`, nhánh tạm) | **PASS** direct + pooled (đã sửa lỗi fixture của chính test, không phải lỗi ứng dụng) |
+| Health live/ready | 200 / 200 `database:postgres` |
+- **NOT VERIFIED:** Firefox, Safari; đăng ký khách hàng công khai (không có endpoint); HMAC webhook; SePay thật/thanh toán thật; đo hiệu năng và cold start định lượng.
+- Dữ liệu kiểm thử đã xóa khỏi Neon; chỉ còn dữ liệu demo (5/8/13 danh mục/dịch vụ/gói, 4 tài khoản demo).
+
 ## Chuyển PostgreSQL + Vercel (2026-11-12) — kết quả chạy thật
 | Lệnh | Kết quả |
 |---|---|

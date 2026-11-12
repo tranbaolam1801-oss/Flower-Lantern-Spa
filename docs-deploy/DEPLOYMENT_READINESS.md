@@ -1,3 +1,11 @@
+# DEPLOYMENT READINESS — cập nhật 2026-11-12
+
+**TRẠNG THÁI: ĐÃ TRIỂN KHAI DEMO (Vercel Hobby + Neon Free) — https://flower-lantern-spa.vercel.app**
+Kiểm chứng live: 47/47 API, 13/13 webhook giả lập, 11/11 trình duyệt Chromium, race đa kết nối thật PASS. Chi tiết: HANDOVER.md mục 0k, TEST_REPORT.md, `docs-deploy/VERCEL_NEON_DEPLOYMENT.md`.
+Chưa kiểm chứng: Firefox/Safari, SePay thật, thanh toán thật, hiệu năng định lượng. Hobby = phi thương mại. Nội dung bên dưới là bản đánh giá Azure/SQL Server cũ (lịch sử, giữ để rollback).
+
+---
+
 # Deployment Readiness (chưa triển khai — chờ phê duyệt)
 
 Trạng thái: **IMPLEMENTATION COMPLETE (mocked) — VERIFICATION BLOCKED**. Không có SQL thật, E2E hay thanh toán thật nào đã chạy.
