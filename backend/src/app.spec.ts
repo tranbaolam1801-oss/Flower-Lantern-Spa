@@ -22,11 +22,11 @@ describe('API contract (test-only database double)',()=>{
     await request(app.getHttpServer()).get('/api/health/live').expect(200).expect({status:'ok',service:'flower-lantern-spa'});
     expect(database.query).not.toHaveBeenCalled();
   });
-  it('readiness fails closed on SQL outage',async()=>{
+  it('readiness fails closed on database outage',async()=>{
     database.query.mockRejectedValue(new ServiceUnavailableException('Không thể kết nối dữ liệu. Vui lòng thử lại!'));
     await request(app.getHttpServer()).get('/api/health/ready').expect(503);
   });
-  it('readiness probes SQL',async()=>{
+  it('readiness probes the database',async()=>{
     database.query.mockResolvedValue([{ok:1}]);
     await request(app.getHttpServer()).get('/api/health/ready').expect(200);
     expect(database.query).toHaveBeenCalledWith('SELECT 1 AS ok');
@@ -40,7 +40,8 @@ describe('API contract (test-only database double)',()=>{
     await request(app.getHttpServer()).get('/api/services').query({q:"%' OR 1=1--",page:2,limit:10}).expect(200).expect({items:[],page:2,limit:10});
     const [sql,params] = database.query.mock.calls[0] as [string,unknown[]];
     expect(sql).not.toContain("%' OR");
-    expect(sql).toContain('d.TrangThai=@0');
+    expect(sql).toContain('d.TrangThai=$1');
+    expect(sql).toContain('ILIKE $3');
     expect(params).toEqual(['Hoạt động',"%' OR 1=1--","%~%' OR 1=1--%",'',10,10]);
   });
   it('returns SRS not-found message for unavailable service',async()=>{
@@ -78,9 +79,9 @@ describe('API contract (test-only database double)',()=>{
 describe('configuration invariants',()=>{
   it('never silently falls back to fake data',()=>expect(databaseOptions({})).toBeUndefined());
   it('disables schema synchronization and migration auto-run',()=>{
-    const options = databaseOptions({DB_HOST:'localhost',DB_NAME:'test',DB_USER:'test',DB_PASSWORD:'test-only'});
-    expect(options).toMatchObject({type:'mssql',synchronize:false,migrationsRun:false});
+    const options = databaseOptions({DATABASE_URL:'postgres://u:p@localhost:5432/test'});
+    expect(options).toMatchObject({type:'postgres',synchronize:false,migrationsRun:false});
   });
-  it('rejects an invalid port',()=>expect(()=>databaseOptions({DB_HOST:'localhost',DB_NAME:'test',DB_USER:'test',DB_PASSWORD:'test-only',DB_PORT:'oops'})).toThrow());
+  it('rejects a non-postgres connection string',()=>expect(()=>databaseOptions({DATABASE_URL:'mssql://localhost/test'})).toThrow());
   it('escapes wildcard characters',()=>expect(literalLike('a%_[~')).toBe('%a~%~_~[~~%'));
 });

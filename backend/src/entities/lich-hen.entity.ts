@@ -4,43 +4,46 @@ import { KhachSuDungDichVu } from './khach-su-dung-dich-vu.entity';
 import { ThanhToan } from './thanh-toan.entity';
 import { DanhGia } from './danh-gia.entity';
 
-@Entity({ name: 'LichHen' })
+@Entity({ schema: 'dbo', name: 'lichhen' })
 export class LichHen {
-  @PrimaryColumn({ name: 'MaLichHen', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'malichhen', type: 'char', length: 10 })
   maLichHen!: string;
 
-  @Column({ name: 'MaKhachHang', type: 'char', length: 10, nullable: true })
+  @Column({ name: 'makhachhang', type: 'char', length: 10, nullable: true })
   maKhachHang?: string;
 
-  @Column({ name: 'HoTenNguoiDat', type: 'nvarchar', length: 50 })
+  @Column({ name: 'hotennguoidat', type: 'varchar', length: 50 })
   hoTenNguoiDat!: string;
 
-  @Column({ name: 'SoDienThoaiNguoiDat', type: 'char', length: 10 })
+  @Column({ name: 'sodienthoainguoidat', type: 'char', length: 10 })
   soDienThoaiNguoiDat!: string;
 
-  @Column({ name: 'EmailNguoiDat', type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'emailnguoidat', type: 'varchar', length: 100, nullable: true })
   emailNguoiDat?: string;
 
-  @Column({ name: 'GhiChu', type: 'nvarchar', length: 500, nullable: true })
+  @Column({ name: 'ghichu', type: 'varchar', length: 500, nullable: true })
   ghiChu?: string;
 
-  @Column({ name: 'NgayHen', type: 'date' })
+  @Column({ name: 'ngayhen', type: 'date' })
   ngayHen!: string;
 
-  @Column({ name: 'GioHen', type: 'time' })
+  @Column({ name: 'giohen', type: 'time' })
   gioHen!: string;
 
-  @Column({ name: 'ThoiGianDat', type: 'datetime', default: () => 'GETDATE()' })
+  @Column({ name: 'thoigiandat', type: 'timestamp', precision: 3, default: () => 'dbo.vn_now()' })
   thoiGianDat!: Date;
 
-  @Column({ name: 'TrangThaiLichHen', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthailichhen', type: 'varchar', length: 30 })
   trangThaiLichHen!: string;
 
-  @Column({ name: 'TrangThaiThanhToan', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthaithanhtoan', type: 'varchar', length: 30 })
   trangThaiThanhToan!: string;
 
+  @Column({ name: 'nguondatlich', type: 'varchar', length: 50, nullable: true })
+  nguonDatLich?: string;
+
   @ManyToOne(() => KhachHang, (kh) => kh.lichHens, { nullable: true })
-  @JoinColumn({ name: 'MaKhachHang' })
+  @JoinColumn({ name: 'makhachhang' })
   khachHang?: KhachHang;
 
   @OneToMany(() => KhachSuDungDichVu, (ksd) => ksd.lichHen)

@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, Req, Res, UnsupportedMediaTypeException, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, Req, Res, ServiceUnavailableException, UnsupportedMediaTypeException, UseGuards } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
@@ -22,7 +22,13 @@ export class UploadsController {
     if (!Buffer.isBuffer(body) || body.length === 0 || body.length > MAX_IMAGE_BYTES) throw new BadRequestException(IMAGE_ERROR);
     const extension = detectImageExtension(body);
     if (!extension || CONTENT_TYPE_BY_EXTENSION[extension] !== declared) throw new BadRequestException(IMAGE_ERROR);
-    const fileName = await this.storage.save(body, extension);
+    let fileName: string;
+    try {
+      fileName = await this.storage.save(body, extension);
+    } catch {
+      // Storage errors (missing Blob store, network) never leak details to the client.
+      throw new ServiceUnavailableException('Chưa thể lưu hình ảnh. Vui lòng thử lại sau!');
+    }
     return { path: `/api/uploads/services/${fileName}` };
   }
 
@@ -34,7 +40,7 @@ export class UploadsController {
     if (!bytes) throw new NotFoundException();
     res.setHeader('Content-Type', CONTENT_TYPE_BY_EXTENSION[file.split('.')[1] as ImageExtension]);
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, immutable');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(bytes);
   }

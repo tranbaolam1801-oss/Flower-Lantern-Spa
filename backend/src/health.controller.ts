@@ -9,6 +9,6 @@ export class HealthController {
   @Get('live') live() { return { status: 'ok', service: 'flower-lantern-spa' }; }
   @Get('ready') async ready() {
     await this.database.query('SELECT 1 AS ok');
-    return { status: 'ok', database: 'sqlserver' };
+    return { status: 'ok', database: 'postgres' };
   }
 }

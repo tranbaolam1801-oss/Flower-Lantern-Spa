@@ -33,31 +33,34 @@ class FakeDb {
   committed = 0; rolledBack = 0;
   runner = { isTransactionActive: true, connect: async () => undefined, startTransaction: async () => undefined, release: async () => undefined,
     commitTransaction: async () => { this.committed++; }, rollbackTransaction: async () => { this.rolledBack++; }, query: (s: string, p: unknown[] = []) => this.run(s, p) };
-  getDataSource = async () => ({ createQueryRunner: () => this.runner });
-  query = async (s: string, p: unknown[] = []) => (s.includes('COL_LENGTH') ? [{ ready: this.ready }] : this.run(s, p));
+  transaction = async <T>(work: (r: typeof this.runner) => Promise<T>): Promise<T> => {
+    try { const out = await work(this.runner); await this.runner.commitTransaction(); return out; } catch (e) { await this.runner.rollbackTransaction(); throw e; }
+  };
+  query = async (s: string, p: unknown[] = []) => (s.includes('information_schema.columns') ? [{ ready: this.ready }] : this.run(s, p));
   async run(s: string, p: unknown[]): Promise<Record<string, unknown>[]> {
     const byRef = (r: unknown) => this.payments.find((x) => x.reference === r);
-    if (s.includes('AS eventId')) return this.events.filter((e) => e.outcome !== 'CONFIRMED').reverse().slice(p[0] as number, (p[0] as number) + (p[1] as number)).map((e, i) => ({ eventId: i + 1, provider: e.provider, providerTxId: e.tx, paymentId: e.paymentId, amount: 1, outcome: e.outcome }));
-    if (s.includes('AS paymentId')) { const x = s.includes('MaThamChieu=@0') ? byRef(p[0]) : this.payments.find((q) => q.paymentId === p[0]); return x ? [{ ...x, bookingStatus: this.booking.status }] : []; }
-    if (s.includes('FROM dbo.LichHen WITH(UPDLOCK,HOLDLOCK) WHERE MaLichHen=@0') && s.includes('AS customerId')) return [{ ...this.booking }];
-    if (s.includes('SELECT MaLichHen FROM dbo.LichHen WITH')) return [{}];
+    if (s.includes('pg_advisory_xact_lock')) return [{}];
+    if (s.includes('AS "eventId"')) return this.events.filter((e) => e.outcome !== 'CONFIRMED').reverse().slice(p[0] as number, (p[0] as number) + (p[1] as number)).map((e, i) => ({ eventId: i + 1, provider: e.provider, providerTxId: e.tx, paymentId: e.paymentId, amount: 1, outcome: e.outcome }));
+    if (s.includes('AS "paymentId"') && s.startsWith('SELECT')) { const x = s.includes('MaThamChieu=$1') ? byRef(p[0]) : this.payments.find((q) => q.paymentId === p[0]); return x ? [{ ...x, bookingStatus: this.booking.status }] : []; }
+    if (s.includes('FROM dbo.LichHen WHERE MaLichHen=$1 FOR UPDATE') && s.includes('AS "customerId"')) return [{ ...this.booking }];
+    if (s.startsWith('SELECT MaLichHen FROM dbo.LichHen')) return [{}];
     if (s.includes('FROM dbo.KhachHang')) return this.accounts[p[1] as string] === p[0] ? [{ ok: 1 }] : [];
     if (s.includes('SUM(g.Gia)')) return [{ v: this.total }];
     if (s.includes('SUM(SoTienThanhToan-')) return [{ v: this.payments.filter((x) => x.status === 'Thành công').reduce((a, x) => a + x.amount - x.refunded, 0) }];
-    if (s.includes('TOP(1) RTRIM(MaThanhToan)')) { const x = this.payments.find((q) => q.status === 'Chờ thanh toán' && !q.expired); return x ? [{ id: x.paymentId, amount: x.amount }] : []; }
-    if (s.startsWith('UPDATE dbo.ThanhToan SET TrangThaiGiaoDich=@1 WHERE MaLichHen')) { this.payments.filter((x) => x.status === p[2]).forEach((x) => (x.status = p[1] as string)); return []; }
+    if (s.includes('ORDER BY NgayGhiNhan DESC LIMIT 1')) { const x = this.payments.find((q) => q.status === 'Chờ thanh toán' && !q.expired); return x ? [{ id: x.paymentId, amount: x.amount }] : []; }
+    if (s.startsWith('UPDATE dbo.ThanhToan SET TrangThaiGiaoDich=$2 WHERE MaLichHen')) { this.payments.filter((x) => x.status === p[2]).forEach((x) => (x.status = p[1] as string)); return []; }
     if (s.includes('SELECT 1 AS found FROM dbo.ThanhToan')) return [];
-    if (s.startsWith('INSERT dbo.ThanhToan(')) { this.payments.push({ paymentId: p[0] as string, bookingId: p[1] as string, amount: p[2] as number, status: p[3] as string, reference: p[4] as string, expiresAt: '2026-11-12T10:15:00', expired: 0, account: p[6] as string, customerId: 'KH1', refunded: 0, bookingStatus: '' }); return []; }
-    if (s.includes('SELECT RTRIM(MaLichHen) AS bookingId FROM dbo.ThanhToan')) { const x = s.includes('MaThamChieu') ? byRef(p[0]) : this.payments.find((q) => q.paymentId === p[0]); return x ? [{ bookingId: x.bookingId }] : []; }
-    if (s.includes('SELECT MaThanhToan FROM dbo.ThanhToan WITH')) return [];
+    if (s.startsWith('INSERT INTO dbo.ThanhToan(')) { this.payments.push({ paymentId: p[0] as string, bookingId: p[1] as string, amount: p[2] as number, status: p[3] as string, reference: p[4] as string, expiresAt: '2026-11-12T10:15:00', expired: 0, account: p[6] as string, customerId: 'KH1', refunded: 0, bookingStatus: '' }); return []; }
+    if (s.includes('AS "bookingId" FROM dbo.ThanhToan')) { const x = s.includes('MaThamChieu') ? byRef(p[0]) : this.payments.find((q) => q.paymentId === p[0]); return x ? [{ bookingId: x.bookingId }] : []; }
+    if (s.startsWith('SELECT MaThanhToan FROM dbo.ThanhToan')) return [];
     if (s.startsWith('SELECT COUNT(*) AS v FROM dbo.SePayWebhookEvent')) return [{ v: this.events.filter((e) => e.outcome !== 'CONFIRMED').length }];
-    if (s.startsWith('INSERT dbo.ThanhToanHoanTien')) { this.refunds.push({ paymentId: p[0] as string, amount: p[1] as number, reason: p[2] as string, actor: p[3] as string }); return []; }
+    if (s.startsWith('INSERT INTO dbo.ThanhToanHoanTien')) { this.refunds.push({ paymentId: p[0] as string, amount: p[1] as number, reason: p[2] as string, actor: p[3] as string }); return []; }
     if (s.includes('FROM dbo.SePayWebhookEvent')) return this.events.some((e) => e.provider === p[0] && e.tx === p[1]) ? [{ found: 1 }] : [];
-    if (s.startsWith('INSERT dbo.SePayWebhookEvent') && s.includes("'INVALID_PAYLOAD'")) { this.events.push({ provider: p[0] as string, tx: p[1] as string, paymentId: null, outcome: 'INVALID_PAYLOAD', raw: p[2] as string }); return []; }
-    if (s.startsWith('INSERT dbo.SePayWebhookEvent')) { this.events.push({ provider: p[0] as string, tx: p[1] as string, paymentId: p[2] as string | null, outcome: p[7] as string }); return []; }
-    if (s.startsWith('UPDATE dbo.ThanhToan SET TrangThaiGiaoDich=@1,NgayGhiNhan')) { const x = this.payments.find((q) => q.paymentId === p[0] && q.status === p[4]); if (!x) return []; x.status = p[1] as string; x.provider = p[2] as string; return [{ MaThanhToan: x.paymentId }]; }
+    if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent') && s.includes("'INVALID_PAYLOAD'")) { this.events.push({ provider: p[0] as string, tx: p[1] as string, paymentId: null, outcome: 'INVALID_PAYLOAD', raw: p[2] as string }); return []; }
+    if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) { this.events.push({ provider: p[0] as string, tx: p[1] as string, paymentId: p[2] as string | null, outcome: p[7] as string }); return []; }
+    if (s.startsWith('UPDATE dbo.ThanhToan SET TrangThaiGiaoDich=$2,NgayGhiNhan')) { const x = this.payments.find((q) => q.paymentId === p[0] && q.status === p[4]); if (!x) return []; x.status = p[1] as string; x.provider = p[2] as string; return [{ paymentId: x.paymentId }]; }
     if (s.startsWith('UPDATE dbo.LichHen SET TrangThaiThanhToan')) { this.booking.pay = p[1] as string; return []; }
-    if (s.startsWith('SELECT TrangThaiGiaoDich AS status,CAST(SoTienThanhToan')) { const x = this.payments.find((q) => q.paymentId === p[0]); return x ? [{ status: x.status, amount: x.amount, refunded: x.refunded }] : []; }
+    if (s.startsWith('SELECT TrangThaiGiaoDich AS "status"')) { const x = this.payments.find((q) => q.paymentId === p[0]); return x ? [{ status: x.status, amount: x.amount, refunded: x.refunded }] : []; }
     if (s.startsWith('UPDATE dbo.ThanhToan SET KhoanHoanTien')) { const x = this.payments.find((q) => q.paymentId === p[0])!; x.refunded = p[1] as number; x.status = p[2] as string; return []; }
     throw new Error('unhandled SQL in fake: ' + s.slice(0, 80));
   }
@@ -309,7 +312,7 @@ describe('webhook processing', () => {
   it('unique-violation race on the event row is treated as a replay', async () => {
     const { svc, db, dto } = await pending();
     const original = db.run.bind(db);
-    db.run = async (s, p) => { if (s.startsWith('INSERT dbo.SePayWebhookEvent')) throw Object.assign(new Error('dup'), { driverError: { number: 2627 } }); return original(s, p); };
+    db.run = async (s, p) => { if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) throw Object.assign(new Error('dup'), { driverError: { code: '23505' } }); return original(s, p); };
     expect(await hook(svc, dto.reference)).toEqual({ success: true });
     expect(db.payments[0].status).toBe('Chờ thanh toán');
     expect(db.rolledBack).toBe(1);
@@ -467,7 +470,7 @@ describe('refund', () => {
   it('a failing audit insert rolls the refund back', async () => {
     const { svc, db, dto } = await paid();
     const original = db.run.bind(db);
-    db.run = async (q, a) => { if (q.startsWith('INSERT dbo.ThanhToanHoanTien')) throw new Error('boom'); return original(q, a); };
+    db.run = async (q, a) => { if (q.startsWith('INSERT INTO dbo.ThanhToanHoanTien')) throw new Error('boom'); return original(q, a); };
     await expect(svc.refund(dto.paymentId, { amount: 1, reason: 'x' }, 'TK')).rejects.toThrow(ServiceUnavailableException);
     expect(db.rolledBack).toBe(1);
   });

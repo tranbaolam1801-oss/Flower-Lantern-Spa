@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { resolveApiUrl } from '../lib/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { Button } from '../components/ui/button';
@@ -286,7 +287,7 @@ export function AdminServicesPage() {
                         <td>{svc.id}</td>
                         <td>
                           {svc.image ? (
-                            <img src={svc.image} alt={svc.name} className="svc-table-thumb" />
+                            <img src={resolveApiUrl(svc.image)} alt={svc.name} className="svc-table-thumb" />
                           ) : (
                             <span className="svc-table-noimg">Chưa có ảnh</span>
                           )}
@@ -457,7 +458,7 @@ export function AdminServicesPage() {
               <label className="spa-field">
                 <span>Hình ảnh</span>
                 <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImagePick} disabled={uploading} />
-                {imageUrl ? <img src={imageUrl} alt="Xem trước hình ảnh" className="svc-image-preview" /> : null}
+                {imageUrl ? <img src={resolveApiUrl(imageUrl)} alt="Xem trước hình ảnh" className="svc-image-preview" /> : null}
               </label>
               <label className="spa-field">
                 <span>Tên gói <em>*</em></span>

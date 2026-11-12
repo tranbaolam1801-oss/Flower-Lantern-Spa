@@ -7,8 +7,11 @@ import { PERMISSIONS_KEY, ROLES_KEY } from '../auth/roles.decorator';
 const make = (rows: unknown[][] = []) => {
   const query = jest.fn();
   rows.forEach(r => query.mockResolvedValueOnce(r));
-  return { query, controller: new CustomerWriteController({ query } as never) };
+  // transaction() runs the callback on the same mocked runner (commit/rollback is covered by the pg specs).
+  const transaction = jest.fn(async (work: (r: { query: jest.Mock }) => Promise<unknown>) => work({ query }));
+  return { query, controller: new CustomerWriteController({ query, transaction } as never) };
 };
+const sqlOf = (query: jest.Mock) => query.mock.calls.map(c => String(c[0]));
 
 describe('customer validation', () => {
   it('normalizes Vietnamese phones to CHAR(10) form', () => {
@@ -44,12 +47,14 @@ describe('CustomerWriteController', () => {
     expect((CustomerWriteController.prototype as unknown as Record<string, unknown>).remove).toBeUndefined();
   });
   it('creates a customer with normalized phone and parameterized values', async () => {
-    const { controller, query } = make([[{ result: 'ok', id: 'KH00000009' }]]);
+    // advisory lock, duplicate check, next id, insert
+    const { controller, query } = make([[], [], [{ id: 'KH00000009' }], []]);
     await expect(controller.create({ name: 'An', phone: '+84912345678', gender: 'Nữ' })).resolves.toMatchObject({ id: 'KH00000009' });
-    expect(query.mock.calls[0][1].slice(0, 4)).toEqual(['0912345678', 'An', null, 'Nữ']);
+    const insert = query.mock.calls.find(c => String(c[0]).includes('INSERT INTO dbo.KhachHang'))!;
+    expect(insert[1].slice(0, 5)).toEqual(['KH00000009', 'An', '0912345678', null, 'Nữ']);
   });
   it('rejects a duplicate phone with 409 and the approved message', async () => {
-    const { controller } = make([[{ result: 'duplicate', id: null }]]);
+    const { controller } = make([[], [{ one: 1 }]]);
     const error = await controller.create({ name: 'An', phone: '0912345678' }).catch(e => e);
     expect(error).toBeInstanceOf(ConflictException);
     expect(error.getResponse()).toMatchObject({ message: 'Khách hàng đã tồn tại!', code: 'DUPLICATE_PHONE', fields: { phone: 'Khách hàng đã tồn tại!' } });
@@ -60,18 +65,22 @@ describe('CustomerWriteController', () => {
     expect(query).not.toHaveBeenCalled();
   });
   it('update: 404 for missing, 409 for duplicate, success otherwise', async () => {
-    await expect(make([[{ result: 'missing' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' })).rejects.toBeInstanceOf(NotFoundException);
-    await expect(make([[{ result: 'duplicate' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' })).rejects.toBeInstanceOf(ConflictException);
-    await expect(make([[{ result: 'ok' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' })).resolves.toMatchObject({ id: 'KH1' });
+    const body = { name: 'An', phone: '0912345678' };
+    await expect(make([[]]).controller.update('KH1', body)).rejects.toBeInstanceOf(NotFoundException);
+    // row lock, advisory lock, duplicate check -> duplicate
+    await expect(make([[{ account: null }], [], [{ one: 1 }]]).controller.update('KH1', body)).rejects.toBeInstanceOf(ConflictException);
+    await expect(make([[{ account: null }], [], [], []]).controller.update('KH1', body)).resolves.toMatchObject({ id: 'KH1' });
   });
-  it('update syncs the linked TaiKhoan phone in the same transaction batch and rejects account-phone duplicates', async () => {
-    const { controller, query } = make([[{ result: 'ok' }]]);
+  it('update syncs the linked TaiKhoan phone in the same transaction and rejects account-phone duplicates', async () => {
+    // row lock, advisory lock, customer dup check (none), account dup check (none), 2 updates
+    const { controller, query } = make([[{ account: 'TK00000001' }], [], [], [], [], []]);
     await controller.update('KH1', { name: 'An', phone: '0912345678' });
-    const sql = String(query.mock.calls[0][0]);
-    expect(sql).toContain('BEGIN TRANSACTION');
-    expect(sql).toContain('UPDATE dbo.TaiKhoan SET SoDienThoai=@0 WHERE MaTaiKhoan=@account');
-    expect(sql.indexOf('UPDATE dbo.KhachHang')).toBeLessThan(sql.indexOf('UPDATE dbo.TaiKhoan'));
-    const error = await make([[{ result: 'accountDuplicate' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' }).catch(e => e);
+    const sqls = sqlOf(query);
+    const sync = sqls.findIndex(q => q.includes('UPDATE dbo.TaiKhoan SET SoDienThoai=$1 WHERE MaTaiKhoan=$2'));
+    expect(sync).toBeGreaterThan(-1);
+    expect(sqls.findIndex(q => q.includes('UPDATE dbo.KhachHang'))).toBeLessThan(sync);
+    expect(query.mock.calls[sync][1]).toEqual(['0912345678', 'TK00000001']);
+    const error = await make([[{ account: 'TK00000001' }], [], [], [{ one: 1 }]]).controller.update('KH1', { name: 'An', phone: '0912345678' }).catch(e => e);
     expect(error).toBeInstanceOf(ConflictException);
     expect(error.getResponse()).toMatchObject({ code: 'DUPLICATE_ACCOUNT_PHONE', fields: { phone: expect.stringContaining('tài khoản') } });
   });

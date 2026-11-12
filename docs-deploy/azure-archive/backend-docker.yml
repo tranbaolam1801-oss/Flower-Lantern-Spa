@@ -1,0 +1,127 @@
+name: Backend Docker build & smoke test
+
+# Builds backend/Dockerfile and runs a smoke test on GitHub's hosted runner (which has Docker
+# pre-installed), so this can be verified without Docker Desktop on a local machine.
+# This workflow ONLY builds and smoke-tests the image locally on the runner. It does not push to
+# any registry and does not deploy anything — no ACR/Azure credentials are used or required.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'frontend/package.json'
+      - '.github/workflows/backend-docker.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'frontend/package.json'
+  workflow_dispatch: {}
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image (context = repo root, matches local docker build command)
+        run: docker build -f backend/Dockerfile -t spa-backend:ci .
+
+      - name: Report image size (sanity check for the free App Service 1 GB storage quota)
+        run: |
+          docker image inspect spa-backend:ci --format='Image size: {{.Size}} bytes'
+
+      - name: Run the container with no database configured (must start, never crash)
+        run: |
+          # No DB_HOST/DB_NAME/DB_USER/DB_PASSWORD on purpose: the backend must start and answer
+          # /api/health/live even with no database configured (databaseOptions() returns undefined;
+          # DatabaseService only throws, as a 503, if a query is actually attempted).
+          docker run -d --name spa-backend-ci -p 3000:3000 \
+            -e NODE_ENV=production \
+            -e HOST=0.0.0.0 \
+            -e PORT=3000 \
+            -e JWT_SECRET=ci-smoke-test-secret-not-a-real-secret-32bytes \
+            -e FRONTEND_ORIGIN=http://localhost:5173 \
+            spa-backend:ci
+
+      - name: Wait for the container to accept connections
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health/live > /dev/null; then echo "up after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "Container never became ready"; docker logs spa-backend-ci; exit 1
+
+      - name: GET /api/health/live must be 200 (no database needed)
+        run: |
+          status=$(curl -s -o /tmp/live.json -w '%{http_code}' http://localhost:3000/api/health/live)
+          cat /tmp/live.json; echo
+          test "$status" = "200"
+
+      - name: GET /api/health/ready must fail as 503, not crash, when no database is configured
+        run: |
+          status=$(curl -s -o /tmp/ready.json -w '%{http_code}' http://localhost:3000/api/health/ready)
+          cat /tmp/ready.json; echo
+          test "$status" = "503"
+
+      - name: Swagger docs must be served (confirms the app booted fully, not just the health route)
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/docs)
+          test "$status" = "200"
+
+      - name: Container must still be running (no crash loop)
+        run: docker inspect -f '{{.State.Running}}' spa-backend-ci | grep -x true
+
+      - name: Dump logs (always, for debugging)
+        if: always()
+        run: docker logs spa-backend-ci || true
+
+      - name: Clean up
+        if: always()
+        run: docker rm -f spa-backend-ci || true
+
+  # Publishes the image ONLY after the smoke test above passed, ONLY from main (push or manual run),
+  # and ONLY when both Docker Hub secrets are configured. Secrets are set in the GitHub repo
+  # (Settings -> Secrets and variables -> Actions): DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (a Docker Hub
+  # access token with Read & Write scope, never the account password). Create the Docker Hub
+  # repository as PRIVATE first, otherwise Docker Hub auto-creates it as public on first push.
+  push-image:
+    needs: build-and-smoke-test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      HAS_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' }}
+    steps:
+      - name: Skip when Docker Hub secrets are not configured
+        id: gate
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ "$HAS_TOKEN" != "true" ]; then
+            echo "Docker Hub secrets not configured; skipping push."; echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.enabled == 'true'
+
+      - uses: docker/login-action@v3
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push (tags - commit SHA and latest)
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          IMAGE="$DOCKERHUB_USERNAME/flower-lantern-spa-backend"
+          docker build -f backend/Dockerfile -t "$IMAGE:${GITHUB_SHA::12}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${GITHUB_SHA::12}"
+          docker push "$IMAGE:latest"
+          echo "Pushed $IMAGE:${GITHUB_SHA::12} and :latest"

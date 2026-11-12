@@ -12,7 +12,7 @@ describe('BookingReadController.calendar (mock)', () => {
     const controller = new BookingReadController(database as never);
     await controller.calendar({ date: '2026-11-12' } as never);
     const itemsSql = sql.find((text) => text.includes('KhachSuDungDichVu')) ?? '';
-    expect(itemsSql).toContain('RTRIM(g.MaGoi) AS packageId');
-    expect(itemsSql).toContain('RTRIM(c.SoDienThoai) AS customerPhone');
+    expect(itemsSql).toContain('RTRIM(g.MaGoi) AS "packageId"');
+    expect(itemsSql).toContain('RTRIM(c.SoDienThoai) AS "customerPhone"');
   });
 });

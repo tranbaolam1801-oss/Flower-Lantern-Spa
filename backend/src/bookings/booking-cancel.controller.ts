@@ -2,6 +2,7 @@ import { ConflictException, Controller, Inject, NotFoundException, Param, Post, 
 import { ApiTags } from '@nestjs/swagger';
 import { Matches } from 'class-validator';
 import { DatabaseService } from '../database.service';
+import { cancelUnderLocks } from './booking-transaction.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles, Permissions } from '../auth/roles.decorator';
@@ -15,26 +16,10 @@ export class BookingCancelController {
   async cancel(@Param() params:BookingId) {
     // A status-only cancellation frees occupancy without deleting historical details.
     // Row lock serializes competing transitions; payment/refund records are untouched.
-    const rows=await this.database.query<{result:string}[]>(`SET XACT_ABORT ON;
-      BEGIN TRY
-        BEGIN TRANSACTION;
-        DECLARE @status nvarchar(30);
-        SELECT @status=TrangThaiLichHen FROM dbo.LichHen WITH(UPDLOCK,HOLDLOCK) WHERE MaLichHen=@0;
-        IF @status IS NULL SELECT 'missing' AS result;
-        ELSE IF @status=N'Hoàn thành' SELECT 'completed' AS result;
-        ELSE IF @status=N'Đã hủy' SELECT 'cancelled' AS result;
-        ELSE BEGIN
-          UPDATE dbo.LichHen SET TrangThaiLichHen=N'Đã hủy' WHERE MaLichHen=@0;
-          SELECT 'ok' AS result;
-        END;
-        COMMIT;
-      END TRY BEGIN CATCH
-        IF @@TRANCOUNT>0 ROLLBACK;
-        THROW;
-      END CATCH`,[params.id]);
-    if(rows[0]?.result==='missing')throw new NotFoundException('Không tìm thấy lịch hẹn.');
-    if(rows[0]?.result==='completed')throw new ConflictException('Không thể hủy lịch hẹn đã hoàn thành!');
-    if(rows[0]?.result==='cancelled')throw new ConflictException('Lịch hẹn này đã được hủy!');
+    const result=await this.database.transaction(runner=>cancelUnderLocks(runner,params.id,{blockArrived:false}));
+    if(result==='missing')throw new NotFoundException('Không tìm thấy lịch hẹn.');
+    if(result==='completed')throw new ConflictException('Không thể hủy lịch hẹn đã hoàn thành!');
+    if(result==='cancelled')throw new ConflictException('Lịch hẹn này đã được hủy!');
     return {message:'Hủy lịch hẹn thành công!'};
   }
 }

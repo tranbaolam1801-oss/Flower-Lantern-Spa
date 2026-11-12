@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../lib/api-client';
+
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
@@ -16,7 +18,7 @@ async function search(
   page: number,
   signal: AbortSignal,
 ): Promise<{ items: CustomerSummary[]; page: number; hasNext: boolean }> {
-  const response = await fetch(`/api/customers?${new URLSearchParams({ q, page: String(page) })}`, {
+  const response = await fetch(`${API_BASE_URL}/api/customers?${new URLSearchParams({ q, page: String(page) })}`, {
     credentials: 'include',
     signal,
   });

@@ -1,0 +1,17 @@
+.omc
+**/.omc
+.git
+audit
+references
+docs-deploy
+database
+tests
+scripts
+.github
+node_modules
+**/node_modules
+**/dist
+backend/uploads
+*.md
+!README.md
+.env*

@@ -50,15 +50,15 @@ describe('ReportsService', () => {
     expect(db.query).not.toHaveBeenCalled();
   });
   it('revenue excludes MOCK payments only when NhaCungCap exists', async () => {
-    const withCol = { query: jest.fn().mockResolvedValueOnce([{ len: 20 }]).mockResolvedValueOnce([]) };
+    const withCol = { query: jest.fn().mockResolvedValueOnce([{ present: true }]).mockResolvedValueOnce([]) };
     await new ReportsService(withCol as never).revenue('2026-11-01', '2026-11-30', 'day');
-    expect(String(withCol.query.mock.calls[1][0])).toContain("NhaCungCap,'')<>'MOCK'");
-    const without = { query: jest.fn().mockResolvedValueOnce([{ len: null }]).mockResolvedValueOnce([]) };
+    expect(String(withCol.query.mock.calls[1][0])).toContain("COALESCE(NhaCungCap,'')<>'MOCK'");
+    const without = { query: jest.fn().mockResolvedValueOnce([{ present: false }]).mockResolvedValueOnce([]) };
     await new ReportsService(without as never).revenue('2026-11-01', '2026-11-30', 'day');
     expect(String(without.query.mock.calls[1][0])).not.toContain('MOCK');
   });
   it('revenue aggregates SQL day rows', async () => {
-    const db = { query: jest.fn().mockResolvedValueOnce([{ len: null }]).mockResolvedValue([{ day: '2026-11-02', amount: '120.50' }]) };
+    const db = { query: jest.fn().mockResolvedValueOnce([{ present: false }]).mockResolvedValue([{ day: '2026-11-02', amount: '120.50' }]) };
     expect(await new ReportsService(db as never).revenue('2026-11-01', '2026-11-30', 'month')).toEqual({ totalRevenue: 120.5, series: [{ label: '11/2026', amount: 120.5 }] });
   });
 });

@@ -11,6 +11,7 @@ describe('Auth Module (Unit & Logic)', () => {
   let authService: AuthService;
   const mockDatabase = {
     query: jest.fn(),
+    transaction: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -38,6 +39,7 @@ describe('Auth Module (Unit & Logic)', () => {
 
   beforeEach(() => {
     mockDatabase.query.mockReset();
+    mockDatabase.transaction.mockReset();
   });
 
   describe('PasswordService (Argon2id)', () => {
@@ -58,7 +60,7 @@ describe('Auth Module (Unit & Logic)', () => {
     it('blocks login immediately when account is temporarily locked within 15 minutes', async () => {
       const futureUnlock = new Date(Date.now() + 10 * 60 * 1000);
       mockDatabase.query.mockResolvedValueOnce([
-        { SoLanSai: 5, ThoiDiemKhoaDen: futureUnlock, LanCuoiSai: new Date() },
+        { SoLanSai: 5, ThoiDiemKhoaDen: futureUnlock, LanCuoiSai: new Date(), locked: true },
       ]);
 
       await expect(
@@ -73,8 +75,8 @@ describe('Auth Module (Unit & Logic)', () => {
       mockDatabase.query.mockResolvedValueOnce([]);
       // 2. Query user -> not found
       mockDatabase.query.mockResolvedValueOnce([]);
-      // 3. Record failed attempt -> attempt 1
-      mockDatabase.query.mockResolvedValueOnce([{ NewCount: 1 }]);
+      // 3. Record failed attempt (transaction) -> attempt 1
+      mockDatabase.transaction.mockResolvedValueOnce(1);
 
       await expect(
         authService.login({ phone: '0999999999', password: 'password' }),
@@ -117,8 +119,8 @@ describe('Auth Module (Unit & Logic)', () => {
           status: 'Hoạt động',
         },
       ]);
-      // 3. Record failed attempt -> reaches 5
-      mockDatabase.query.mockResolvedValueOnce([{ NewCount: 5 }]);
+      // 3. Record failed attempt (transaction) -> reaches 5
+      mockDatabase.transaction.mockResolvedValueOnce(5);
 
       await expect(
         authService.login({ phone: '0900000002', password: 'WrongPassword' }),
@@ -141,8 +143,8 @@ describe('Auth Module (Unit & Logic)', () => {
           status: 'Hoạt động',
         },
       ]);
-      // 3. Reset failed attempts
-      mockDatabase.query.mockResolvedValueOnce([]);
+      // 3. Reset failed attempts (transaction) -> not locked
+      mockDatabase.transaction.mockResolvedValueOnce(false);
       // 4. Permissions query
       mockDatabase.query.mockResolvedValueOnce([
         { code: 'Q01', name: 'Quản lý lịch hẹn' },
@@ -155,6 +157,7 @@ describe('Auth Module (Unit & Logic)', () => {
 
       const result = await authService.login({ phone: '0900000001', password: 'Spa@123456' });
 
+      expect(mockDatabase.transaction).toHaveBeenCalledTimes(1);
       expect(result.token).toBe('test-jwt-token');
       expect(result.user).toEqual({
         id: 'TK00000001',

@@ -19,6 +19,18 @@ import { AuthGuard } from './auth.guard';
 /** Always Secure in production; staging/other HTTPS environments opt in with COOKIE_SECURE=true. */
 export const cookieSecure = (env: NodeJS.ProcessEnv = process.env) => env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true';
 
+// Default 'lax': frontend and backend are the same registrable domain (recommended; no cross-site risk).
+// COOKIE_SAMESITE=none: only for a deployment where the frontend is served from a different domain than the
+// backend (e.g. Azure Static Web Apps + a separate App Service). Browsers reject SameSite=None without Secure,
+// so this silently stays 'lax' unless cookieSecure() is also true (HTTPS). CSRF is still enforced independently
+// by the x-spa-request header + Origin allow-list check in setup.ts, which does not rely on SameSite.
+export const cookieSameSite = (env: NodeJS.ProcessEnv = process.env): 'lax' | 'none' =>
+  env.COOKIE_SAMESITE === 'none' && cookieSecure(env) ? 'none' : 'lax';
+
+// CHIPS (Partitioned): only meaningful alongside SameSite=None, and only improves Firefox/Chrome
+// partitioned-storage compatibility — no downside, so it is tied to the same condition, not a separate flag.
+export const cookiePartitioned = (env: NodeJS.ProcessEnv = process.env): boolean => cookieSameSite(env) === 'none';
+
 interface RequestWithUser extends Request {
   user?: JwtPayload;
 }
@@ -44,7 +56,8 @@ export class AuthController {
     response.cookie('access_token', token, {
       httpOnly: true,
       secure: cookieSecure(),
-      sameSite: 'lax',
+      sameSite: cookieSameSite(),
+      partitioned: cookiePartitioned(),
       path: '/',
       maxAge: 7 * 24 * 3600 * 1000, // 7 ngày
     });
@@ -79,7 +92,8 @@ export class AuthController {
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: cookieSecure(),
-      sameSite: 'lax',
+      sameSite: cookieSameSite(),
+      partitioned: cookiePartitioned(),
       path: '/',
     });
 

@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand"
+    "test": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ../node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.8",
@@ -15,24 +15,27 @@
     "@nestjs/jwt": "^12.0.4",
     "@nestjs/platform-express": "^11.1.8",
     "@nestjs/swagger": "^11.2.1",
+    "@vercel/blob": "^2.9.0",
     "argon2": "^0.45.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "helmet": "^8.1.0",
-    "msnodesqlv8": "^6.2.2",
-    "mssql": "^12.1.0",
+    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19",
     "@nestjs/testing": "^11.1.8",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.0",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^6.0.3",
     "jest": "^30.2.0",
     "supertest": "^7.1.4",

@@ -1,24 +1,24 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { TaiKhoanQuyen } from './tai-khoan-quyen.entity';
 
-@Entity({ name: 'TaiKhoan' })
+@Entity({ schema: 'dbo', name: 'taikhoan' })
 export class TaiKhoan {
-  @PrimaryColumn({ name: 'MaTaiKhoan', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'mataikhoan', type: 'char', length: 10 })
   maTaiKhoan!: string;
 
-  @Column({ name: 'TenDangNhap', type: 'varchar', length: 50, unique: true })
+  @Column({ name: 'tendangnhap', type: 'varchar', length: 50, unique: true })
   tenDangNhap!: string;
 
-  @Column({ name: 'SoDienThoai', type: 'varchar', length: 15, unique: true })
+  @Column({ name: 'sodienthoai', type: 'varchar', length: 15, unique: true })
   soDienThoai!: string;
 
-  @Column({ name: 'MatKhauBam', type: 'varchar', length: 255 })
+  @Column({ name: 'matkhaubam', type: 'varchar', length: 255 })
   matKhauBam!: string;
 
-  @Column({ name: 'VaiTro', type: 'nvarchar', length: 30 })
+  @Column({ name: 'vaitro', type: 'varchar', length: 30 })
   vaiTro!: string;
 
-  @Column({ name: 'TrangThai', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthai', type: 'varchar', length: 30 })
   trangThai!: string;
 
   @OneToMany(() => TaiKhoanQuyen, (tq) => tq.taiKhoan)

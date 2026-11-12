@@ -38,7 +38,7 @@ describe('DTO validation', () => {
 
 function setup(responses: ((sql: string, p: unknown[]) => unknown)[]) {
   const database = { query: jest.fn(async (sql: string, p: unknown[]) => { const r = responses.shift(); return r ? r(sql, p) : []; }) };
-  const transactions = { reserve: jest.fn(async (...args: [unknown, (r: unknown) => unknown, string?]) => args[1]({ query: jest.fn(async (sql: string) => (sql.includes('UPDLOCK') ? [{ status: 'Chờ xác nhận', pay: 'Chưa thanh toán' }] : [])) })) };
+  const transactions = { reserve: jest.fn(async (...args: [unknown, (r: unknown) => unknown, string?]) => args[1]({ query: jest.fn(async (sql: string) => (sql.includes('FOR UPDATE') ? [{ status: 'Chờ xác nhận', pay: 'Chưa thanh toán' }] : [])) })) };
   const service = new BookingWriteService(database as never, transactions as never);
   service.now = () => NOW;
   return { service, database, transactions };
@@ -67,7 +67,7 @@ describe('BookingWriteService', () => {
   it('status update is guarded by the payment status that was read (lost-update protection)', async () => {
     const { service, database } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'Chưa thanh toán', date: 'd' }], () => []]);
     await expect(service.updateAdmin('L1', { status: 'Đã xác nhận' })).rejects.toThrow('vừa được cập nhật');
-    expect(String(database.query.mock.calls[1][0])).toContain('AND TrangThaiThanhToan=@6');
+    expect(String(database.query.mock.calls[1][0])).toContain('AND TrangThaiThanhToan=$7::text');
   });
   it('manual payment status change is rejected when payment transactions exist', async () => {
     const { service, database } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'Chưa thanh toán', date: 'd' }], () => [{ found: 1 }]]);
@@ -109,11 +109,9 @@ describe('BookingWriteService', () => {
     const { service } = setup([() => [{ id: 'KH1' }], () => [{ id: 'P1', duration: 60 }], () => busy]);
     await expect(service.createCustomer('TK1', { fullName: 'A', phone: '0900000001', date: '2026-11-13', time: '09:00', guests: [{ customerName: 'B', packageId: 'P1' }] })).rejects.toBeInstanceOf(ConflictException);
   });
-  it('customer cannot reschedule or cancel a booking they do not own', async () => {
+  it('customer cannot reschedule a booking they do not own', async () => {
     const a = setup([() => []]);
     await expect(a.service.rescheduleMine('TK1', 'L9', '2026-11-13', '09:00')).rejects.toBeInstanceOf(NotFoundException);
-    const b = setup([() => [{ result: 'missing' }]]);
-    await expect(b.service.cancelMine('TK1', 'L9')).rejects.toBeInstanceOf(NotFoundException);
   });
   it('customer reschedule blocks non-editable status', async () => {
     const { service } = setup([() => [{ id: 'L1', status: 'Đã đến', pay: 'p', date: 'd' }]]);
@@ -129,13 +127,23 @@ describe('BookingWriteService', () => {
     expect(transactions.reserve.mock.calls[0][0]).toMatchObject([{ bedId: 'G4', startsAt: '2026-11-14T15:00:00', endsAt: '2026-11-14T16:00:00' }]);
     expect(transactions.reserve.mock.calls[0][2]).toBe('L1');
   });
-  it('cancel maps results to Vietnamese messages', async () => {
-    for (const [result, text] of [['completed', 'đã hoàn thành'], ['cancelled', 'đã được hủy'], ['arrived', 'không thể hủy']]) {
-      const { service } = setup([() => [{ result }]]);
-      await expect(service.cancelMine('TK1', 'L1')).rejects.toThrow(text);
+  function cancelSetup(status?: string) {
+    const calls: [string, unknown[]][] = [];
+    const runner = { query: jest.fn(async (sql: string, p: unknown[]) => { calls.push([sql, p]); return sql.includes('FROM dbo.LichHen') ? (status ? [{ status }] : []) : []; }) };
+    const database = { transaction: jest.fn(async (work: (r: unknown) => unknown) => work(runner)) };
+    return { service: new BookingWriteService(database as never, {} as never), calls };
+  }
+  it('cancel maps results to Vietnamese messages and locks beds before the booking row', async () => {
+    await expect(cancelSetup().service.cancelMine('TK1', 'L9')).rejects.toBeInstanceOf(NotFoundException);
+    for (const [status, text] of [['Hoàn thành', 'đã hoàn thành'], ['Đã hủy', 'đã được hủy'], ['Đã đến', 'không thể hủy']]) {
+      await expect(cancelSetup(status).service.cancelMine('TK1', 'L1')).rejects.toThrow(text);
     }
-    const ok = setup([() => [{ result: 'ok' }]]);
+    const ok = cancelSetup('Chờ xác nhận');
     await expect(ok.service.cancelMine('TK1', 'L1')).resolves.toEqual({ message: 'Hủy lịch hẹn thành công!' });
+    expect(ok.calls[0][0]).toContain('FROM dbo.KhachSuDungDichVu');
+    expect(ok.calls[1][0]).toContain('FOR UPDATE OF l');
+    expect(ok.calls[1][1]).toEqual(['L1', 'TK1']);
+    expect(ok.calls[2][0]).toContain('UPDATE dbo.LichHen');
   });
 });
 
@@ -182,7 +190,7 @@ describe('authorization metadata', () => {
     const { service, database } = setup([() => []]);
     const out = await service.search({ q: 'lan', date: '2026-11-12', status: 'Chưa đến', name: 'Mai%', phone: '0912 345', email: 'a@b', code: 'LH1', service: 'Da', source: 'Zalo', dateFrom: '2026-11-01', dateTo: '2026-11-30' });
     const [sql, params] = database.query.mock.calls[0];
-    expect(String(sql)).toContain('TOP(200)');
+    expect(String(sql)).toContain('LIMIT 200');
     expect(String(sql)).not.toContain('Mai');
     expect(params).toEqual(['2026-11-12', 'Chưa đến', '%lan%', '%Mai~%%', '%0912345%', '%a@b%', '%LH1%', '%Da%', '2026-11-01', '2026-11-30']);
     expect(out.warnings).toHaveLength(1);

@@ -14,3 +14,9 @@ audit/extracted/
 *.bak
 
 backend/uploads/
+
+# Vercel
+.vercel
+
+.vercel
+.neon

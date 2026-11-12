@@ -1,3 +1,5 @@
+> **Cập nhật 2026-11-12:** backend đã chuyển sang PostgreSQL (Neon) và được triển khai cùng frontend trên một project Vercel — https://flower-lantern-spa.vercel.app. Kiểm chứng live: 47/47 API, 13/13 webhook giả lập, 11/11 trình duyệt. Chưa kiểm chứng: Firefox/Safari, SePay thật. Bản SQL Server giữ ở tag `sqlserver-baseline`. Xem HANDOVER.md mục 0k.
+
 # Trạng thái hiện tại — 2026-11-12 (đọc trước; phần bên dưới là lịch sử, nhiều chỗ đã lỗi thời)
 
 **Dự án CHƯA hoàn thành.** Báo cáo kiểm toán đầy đủ, phân biệt "đã viết / đã kiểm thử mock / đã xác minh": [COMPLETION_REPORT.md](COMPLETION_REPORT.md). Điểm chính:
