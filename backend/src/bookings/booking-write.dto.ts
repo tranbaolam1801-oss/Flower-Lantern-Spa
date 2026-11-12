@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import { phoneTransform } from '../common/phone';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, ValidateIf, ArrayMinSize, IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { ACTIVE_BED, BOOKING_STATUSES, LOCAL_DATETIME, MESSAGES, PAYMENT_STATUSES, PHONE } from './booking-rules';
 
 const phone = { message: 'Số điện thoại không hợp lệ!' };
@@ -43,10 +43,18 @@ export class CreateAdminBookingDto {
 }
 
 export class UpdateAdminBookingDto {
+  @IsOptional() @IsString({ message: 'Vui lòng nhập họ tên người đặt!' }) @MinLength(1, { message: 'Vui lòng nhập họ tên người đặt!' }) @MaxLength(50, { message: 'Họ tên không được quá 50 ký tự!' })
+  bookerName?: string;
+  @IsOptional() @Transform(phoneTransform) @Matches(PHONE, phone)
+  bookerPhone?: string;
+  /** Empty string clears the e-mail; undefined keeps it. */
+  @ValidateIf((_o, v) => v !== undefined && v !== null && v !== '') @IsEmail({}, { message: 'Email không hợp lệ!' }) @MaxLength(100)
+  bookerEmail?: string;
   @IsOptional() @IsIn(BOOKING_STATUSES as unknown as string[], { message: MESSAGES.transition })
   status?: string;
   @IsOptional() @IsIn(PAYMENT_STATUSES as unknown as string[])
   paymentStatus?: string;
+  /** Empty string clears the notes; undefined keeps them. */
   @IsOptional() @IsString() @MaxLength(500, { message: 'Ghi chú không được quá 500 ký tự!' })
   notes?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, dateRule)
@@ -62,6 +70,23 @@ export class SearchBookingsQuery {
   date?: string;
   @IsOptional() @IsIn(BOOKING_STATUSES as unknown as string[])
   status?: string;
+  /** Figma UC_2.4 dialog fields: Tên khách/người đặt, Số điện thoại, Email, Mã lịch hẹn, Dịch vụ/gói, Nguồn, Từ ngày, Đến ngày. */
+  @IsOptional() @IsString() @MaxLength(100)
+  name?: string;
+  @IsOptional() @IsString() @MaxLength(20)
+  phone?: string;
+  @IsOptional() @IsString() @MaxLength(100)
+  email?: string;
+  @IsOptional() @IsString() @MaxLength(10)
+  code?: string;
+  @IsOptional() @IsString() @MaxLength(100)
+  service?: string;
+  @IsOptional() @IsString() @MaxLength(30)
+  source?: string;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, dateRule)
+  dateFrom?: string;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, dateRule)
+  dateTo?: string;
 }
 
 export class CustomerGuestDto {

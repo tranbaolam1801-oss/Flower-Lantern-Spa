@@ -26,8 +26,9 @@ export class BookingReadController {
     const date = query.date ?? new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
     const beds = await this.database.query<{id:string}[]>('SELECT RTRIM(MaGiuong) AS id FROM dbo.Giuong ORDER BY TRY_CONVERT(int,SUBSTRING(MaGiuong,2,9)),MaGiuong');
     const items = await this.database.query(`SELECT RTRIM(c.MaChiTiet) AS id,RTRIM(l.MaLichHen) AS bookingId,
-      RTRIM(c.MaGiuong) AS bedId,c.TenKhach AS customerName,d.TenDichVu AS serviceName,g.TenGoi AS packageName,
+      RTRIM(c.MaGiuong) AS bedId,c.TenKhach AS customerName,RTRIM(c.SoDienThoai) AS customerPhone,d.TenDichVu AS serviceName,g.TenGoi AS packageName,RTRIM(g.MaGoi) AS packageId,
       l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS paymentStatus,
+      l.HoTenNguoiDat AS bookerName,RTRIM(l.SoDienThoaiNguoiDat) AS bookerPhone,l.EmailNguoiDat AS bookerEmail,l.GhiChu AS notes,
       CONVERT(varchar(19),c.ThoiDiemBatDau,126) AS startsAt,CONVERT(varchar(19),c.ThoiDiemKetThuc,126) AS endsAt,
       DATEDIFF(minute,CONVERT(datetime,@0),c.ThoiDiemBatDau) AS startMinute,
       DATEDIFF(minute,CONVERT(datetime,@0),c.ThoiDiemKetThuc) AS endMinute

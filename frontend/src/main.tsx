@@ -1,22 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './pages/login';
-import { SystemStatus } from './pages/system-status';
 import { HomePage } from './pages/home';
-import { ServicesCatalogPage } from './pages/services-catalog';
-import { ServiceDetailPage } from './pages/service-detail';
-import { CustomerBookingPage } from './pages/customer-booking';
 import { AuthProvider, useAuth } from './contexts/auth-context';
-import { AdminDashboard } from './pages/admin-dashboard';
-import { AdminOverviewPage } from './pages/admin-overview';
-import { CustomerDashboard } from './pages/customer-dashboard';
-import { CustomerSearch } from './pages/customer-search';
-import { AdminReviewsPage } from './pages/admin-reviews';
-import { AdminEmployeesPage } from './pages/admin-employees';
-import { AdminServicesPage } from './pages/admin-services';
-import { AdminReportsPage } from './pages/admin-reports';
 import { getDefaultRoute } from './lib/auth-api';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/600.css';
@@ -24,6 +12,19 @@ import '@fontsource/inter/700.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/noto-serif/400.css';
 import './styles.css';
+
+const ServicesCatalogPage = lazy(() => import('./pages/services-catalog').then((m) => ({ default: m.ServicesCatalogPage })));
+const ServiceDetailPage = lazy(() => import('./pages/service-detail').then((m) => ({ default: m.ServiceDetailPage })));
+const CustomerBookingPage = lazy(() => import('./pages/customer-booking').then((m) => ({ default: m.CustomerBookingPage })));
+const SystemStatus = lazy(() => import('./pages/system-status').then((m) => ({ default: m.SystemStatus })));
+const AdminDashboard = lazy(() => import('./pages/admin-dashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminOverviewPage = lazy(() => import('./pages/admin-overview').then((m) => ({ default: m.AdminOverviewPage })));
+const CustomerDashboard = lazy(() => import('./pages/customer-dashboard').then((m) => ({ default: m.CustomerDashboard })));
+const CustomerSearch = lazy(() => import('./pages/customer-search').then((m) => ({ default: m.CustomerSearch })));
+const AdminReviewsPage = lazy(() => import('./pages/admin-reviews').then((m) => ({ default: m.AdminReviewsPage })));
+const AdminEmployeesPage = lazy(() => import('./pages/admin-employees').then((m) => ({ default: m.AdminEmployeesPage })));
+const AdminServicesPage = lazy(() => import('./pages/admin-services').then((m) => ({ default: m.AdminServicesPage })));
+const AdminReportsPage = lazy(() => import('./pages/admin-reports').then((m) => ({ default: m.AdminReportsPage })));
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -44,6 +45,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <Suspense fallback={<p role="status">Đang tải…</p>}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/dich-vu" element={<ServicesCatalogPage />} />
@@ -61,6 +63,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/system" element={<SystemStatus />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

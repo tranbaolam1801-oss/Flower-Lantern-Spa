@@ -9,6 +9,10 @@ export interface CalendarItem {
   serviceName: string;
   packageName: string;
   packageId?: string;
+  bookerName?: string;
+  bookerPhone?: string;
+  bookerEmail?: string | null;
+  notes?: string | null;
   status: string;
   paymentStatus: string;
   startsAt: string;
@@ -66,8 +70,13 @@ export interface CreateAdminBookingPayload {
 }
 
 export interface UpdateAdminBookingPayload {
+  bookerName?: string;
+  bookerPhone?: string;
+  /** '' clears the e-mail. */
+  bookerEmail?: string;
   status?: string;
   paymentStatus?: string;
+  /** '' clears the notes; undefined keeps them. */
   notes?: string;
   date?: string;
   guests?: BookingGuestInput[];
@@ -124,7 +133,7 @@ export const cancelAdminBooking = (id: string) =>
 
 // Missing / handoff contracts documented in frontend/API_HANDOFF_TO_CODEX.md
 export const createAdminBooking = (payload: CreateAdminBookingPayload) =>
-  apiFetch<{ id: string; message: string }>('bookings', {
+  apiFetch<{ id: string; message: string; warnings?: string[] }>('bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -135,12 +144,23 @@ export const updateAdminBooking = (id: string, payload: UpdateAdminBookingPayloa
     body: JSON.stringify(payload),
   });
 
-export const searchAdminBookings = (params: { q?: string; date?: string; status?: string }) => {
+export interface SearchBookingsParams {
+  q?: string;
+  status?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  code?: string;
+  service?: string;
+  source?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export const searchAdminBookings = (params: SearchBookingsParams) => {
   const qs = new URLSearchParams();
-  if (params.q) qs.set('q', params.q);
-  if (params.date) qs.set('date', params.date);
-  if (params.status) qs.set('status', params.status);
-  return apiFetch<{ items: CalendarItem[] }>(`bookings/search?${qs.toString()}`);
+  for (const [key, value] of Object.entries(params)) if (value) qs.set(key, value);
+  return apiFetch<{ items: CalendarItem[]; warnings?: string[] }>(`bookings/search?${qs.toString()}`);
 };
 
 export const createMyBooking = (payload: CreateCustomerBookingPayload) =>

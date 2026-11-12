@@ -13,7 +13,7 @@
 ## 2. Network and HTTPS requirements
 
 - The frontend calls `/api/...` on its own origin and the auth cookie is `HttpOnly`, `SameSite=Lax`, `Secure` in production. Serve the frontend and the API **under the same public HTTPS origin**: static files at `/`, reverse proxy `/api` to the backend. Then `FRONTEND_ORIGIN=https://<YOUR_BACKEND_DOMAIN>` (the same origin).
-- The backend binds **`127.0.0.1` only** (hard-coded in `backend/src/main.ts`). A reverse proxy in the same host or network namespace can reach it; a separate container or another machine cannot. If your host runs the proxy elsewhere, a code change (configurable bind address) is required and needs separate approval. This guide does not make it.
+- The backend binds `127.0.0.1` by default; set `HOST` to change it. A reverse proxy in the same host/network namespace works with the default. A proxy in another container or host needs `HOST=0.0.0.0`, which exposes the plain-HTTP backend on every interface of that container: restrict it with a private network/firewall so only the proxy can reach `PORT`, and keep TLS at the proxy. Also set `TRUST_PROXY` (see STAGING_CONFIGURATION.md) so rate limiting sees client IPs.
 - TLS terminates at the proxy with a valid certificate. SePay Live requires a valid HTTPS certificate on the webhook URL (Test Mode skips certificate verification).
 - **Final webhook endpoint:** `https://<YOUR_BACKEND_DOMAIN>/api/payments/sepay/webhook` (POST). It must be reachable from the public internet: not behind login, and not blocked by an IP allow-list or WAF rule that drops SePay's requests.
 - Forward the `Authorization`, `X-SePay-Signature` and `X-SePay-Timestamp` headers unchanged.

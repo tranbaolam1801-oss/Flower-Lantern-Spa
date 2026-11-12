@@ -7,7 +7,7 @@ The backend loads a local `.env` through `dotenv` only as a development convenie
 | Variable | Purpose | Required | Example placeholder | Secret |
 |---|---|---|---|---|
 | `NODE_ENV` | Must be `production`: enables the `Secure` cookie flag, disables Windows auth, disables `DB_TRUST_CERTIFICATE`. The payment mock is enabled only for `test` or `development`; an unset or any other value keeps it off | Yes | `production` | No |
-| `PORT` | Backend listen port (default `3000`). The process binds `127.0.0.1` only (see DEPLOYMENT_GUIDE.md) | Optional | `3000` | No |
+| `PORT` | Backend listen port (default `3000`). The process binds `HOST` (default `127.0.0.1`; see DEPLOYMENT_GUIDE.md and STAGING_CONFIGURATION.md) | Optional | `3000` | No |
 | `FRONTEND_ORIGIN` | Exact browser origin allowed by CORS and the CSRF origin check (default `http://127.0.0.1:5173`, which is wrong for production) | Yes | `https://<YOUR_FRONTEND_DOMAIN>` | No |
 | `DB_HOST` | SQL Server host. Without `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` the database layer is not configured | Yes | `<YOUR_SQL_SERVER_HOST>` | No |
 | `DB_PORT` | SQL Server TCP port (default `1433`) | Optional | `1433` | No |

@@ -1,5 +1,26 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## Đợt sẵn sàng triển khai (2026-11-12)
+lint PASS; backend tsc PASS; jest 282 pass/27 skip (BLOCKED)/0 fail; frontend build PASS (entry 630,275→481,282 byte nhờ lazy route); `npm audit --omit=dev`: frontend 0, backend 3 moderate. SQL integration, Playwright E2E, kiểm tra hình so Figma: NOT VERIFIED.
+
+## Phiên khắc phục BLOCKED — kết quả thực tế (2026-11-12)
+
+Không chạy SQL ghi/migration/seed; `RUN_SQL_INTEGRATION` không đặt; tất cả test dùng DatabaseService/HTTP giả lập. Chạy độc lập sau khi ba agent báo cáo (không dựa vào số liệu tự báo của agent):
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm run lint` (gốc) | PASS: 0 lỗi |
+| `npx tsc --noEmit` (backend) | PASS |
+| `npm run build` (backend) | PASS |
+| `jest --runInBand` (backend, SQL integration tắt) | 15 suite passed + 6 skipped; **281 passed**, 27 skipped (BLOCKED), 0 failed. Tăng từ 250: +31 (uploads/HTTP double, rate limit, cookie flags, booking search/booker/notes, customer phone sync, employees) |
+| `npm run build --workspace @spa/frontend` | PASS (chỉ cảnh báo kích thước bundle) |
+| Kiểm tra chỉ-đọc database | Test: 17 bảng, DichVu 0, TaiKhoan 0, chưa có `LichHen.NguonDatLich`, chưa có login `spa_test_runner`. Dev: 16 bảng, 5 tài khoản. Không đổi so với trước phiên |
+| Quét bí mật trong file mới/sửa | Không phát hiện giá trị bí mật; `backend/uploads/` đã được `.gitignore` |
+
+- **BLOCKED (chưa đổi):** 27 SQL integration test (Smart App Control chặn `msnodesqlv8.node`; chờ người dùng chạy script SQL login rồi cho phép `scripts/run-sql-integration.ps1`).
+- **NOT VERIFIED:** mọi hành vi mới trên SQL Server thật (câu SQL COALESCE/CASE của PATCH booking, tìm kiếm 8 bộ lọc, đồng bộ `TaiKhoan.SoDienThoai`), upload thật ra đĩa/proxy, cookie `Secure` sau proxy HTTPS, giao diện so Figma bằng hình cho các màn mới sửa, E2E.
+- Script/đề xuất chưa thực thi và chưa parse-check bằng server: `database/seeds/PROPOSED-010-sample-catalog.sql`, `PROPOSED-011-test-accounts.mjs` (chỉ `node --check` + dry-run mặc định, không kết nối DB), `database/migrations/staging/*`, `scripts/run-sql-integration.ps1`.
+
 ## Phase 2 Backend — kết quả thực tế (2026-11-12)
 
 Không chạy SQL ghi/migration/seed; `RUN_SQL_INTEGRATION` không được đặt. Mọi test dưới đây dùng `DatabaseService` mock.

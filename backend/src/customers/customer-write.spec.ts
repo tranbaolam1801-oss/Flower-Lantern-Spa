@@ -64,6 +64,17 @@ describe('CustomerWriteController', () => {
     await expect(make([[{ result: 'duplicate' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' })).rejects.toBeInstanceOf(ConflictException);
     await expect(make([[{ result: 'ok' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' })).resolves.toMatchObject({ id: 'KH1' });
   });
+  it('update syncs the linked TaiKhoan phone in the same transaction batch and rejects account-phone duplicates', async () => {
+    const { controller, query } = make([[{ result: 'ok' }]]);
+    await controller.update('KH1', { name: 'An', phone: '0912345678' });
+    const sql = String(query.mock.calls[0][0]);
+    expect(sql).toContain('BEGIN TRANSACTION');
+    expect(sql).toContain('UPDATE dbo.TaiKhoan SET SoDienThoai=@0 WHERE MaTaiKhoan=@account');
+    expect(sql.indexOf('UPDATE dbo.KhachHang')).toBeLessThan(sql.indexOf('UPDATE dbo.TaiKhoan'));
+    const error = await make([[{ result: 'accountDuplicate' }]]).controller.update('KH1', { name: 'An', phone: '0912345678' }).catch(e => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect(error.getResponse()).toMatchObject({ code: 'DUPLICATE_ACCOUNT_PHONE', fields: { phone: expect.stringContaining('tài khoản') } });
+  });
   it('rejects malformed ids without querying', async () => {
     const { controller, query } = make();
     await expect(controller.detail("x'; DROP")).rejects.toBeInstanceOf(NotFoundException);

@@ -124,7 +124,14 @@ export function CustomerSearch() {
       await cache.invalidateQueries({ queryKey: ['customers'] });
       if (detailId) await cache.invalidateQueries({ queryKey: ['customer-detail', detailId] });
     },
-    onError: (err: { message?: string }) => {
+    onError: (err: { message?: string; fields?: Record<string, string> }) => {
+      // Server field errors (409 DUPLICATE_PHONE, 400 validation) are shown under the matching input.
+      const keys: Record<string, string> = { name: 'formName', phone: 'formPhone' };
+      const hit = Object.entries(err?.fields ?? {}).find(([field]) => keys[field]);
+      if (hit) {
+        setFormError('');
+        return setFormFieldError({ field: keys[hit[0]], message: hit[1] });
+      }
       setFormError(err?.message ?? 'Có lỗi khi lưu dữ liệu. Vui lòng thử lại!');
     },
   });

@@ -12,3 +12,5 @@ audit/extracted/
 *.log
 *.tsbuildinfo
 *.bak
+
+backend/uploads/

@@ -33,7 +33,9 @@ export function ManagementSidebar({
         {menu
           .filter(
             ([, permission]) =>
-              !permission || user?.role === 'Chủ Spa' || user?.permissions.includes(permission),
+              !permission ||
+              user?.role === 'Chủ Spa' ||
+              (user?.permissions.includes(permission) && (permission !== 'Q05' || user?.role === 'Quản lý')),
           )
           .map(([label, permission, icon, route]) => {
             const key = permission || 'OVERVIEW';

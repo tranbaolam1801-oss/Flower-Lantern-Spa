@@ -241,81 +241,9 @@
       "type": "file"
     },
     {
-      "path": "frontend/FIGMA_VISUAL_AUDIT.md",
-      "accessCount": 51.90417924687056,
-      "lastAccessed": 1794457018918,
-      "type": "file"
-    },
-    {
       "path": "frontend/src/pages/admin-dashboard.tsx",
-      "accessCount": 45.29188861453546,
-      "lastAccessed": 1794457733182,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/styles.css",
-      "accessCount": 33.554318940005885,
-      "lastAccessed": 1794456654840,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/components/booking-cancel.tsx",
-      "accessCount": 1.7584200534114398,
-      "lastAccessed": 1794454461888,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/lib/booking-api.ts",
-      "accessCount": 4.294619566786819,
-      "lastAccessed": 1794454371634,
-      "type": "directory"
-    },
-    {
-      "path": "frontend/src/pages/customer-search.tsx",
-      "accessCount": 22.303160901915913,
-      "lastAccessed": 1794454739910,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/lib/management-api.ts",
-      "accessCount": 6.148714987388752,
-      "lastAccessed": 1794452142587,
-      "type": "directory"
-    },
-    {
-      "path": "frontend/src/pages/admin-reviews.tsx",
-      "accessCount": 8.615388618361575,
-      "lastAccessed": 1794456735352,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/pages/customer-dashboard.tsx",
-      "accessCount": 17.932197739658335,
-      "lastAccessed": 1794456648742,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/components/customer-header.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1794424187824,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/components/account-menu.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1794424201770,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/pages/service-detail.tsx",
-      "accessCount": 1.9997509472958348,
-      "lastAccessed": 1794424791517,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/pages/admin-employees.tsx",
-      "accessCount": 39.37741039850409,
-      "lastAccessed": 1794456854660,
+      "accessCount": 53.01557148981669,
+      "lastAccessed": 1794479508495,
       "type": "file"
     },
     {
@@ -325,21 +253,9 @@
       "type": "file"
     },
     {
-      "path": "frontend/src/pages/admin-reports.tsx",
-      "accessCount": 9.865458210358742,
-      "lastAccessed": 1794455511746,
-      "type": "file"
-    },
-    {
       "path": "backend/src",
       "accessCount": 5.810814476222046,
       "lastAccessed": 1794461304853,
-      "type": "directory"
-    },
-    {
-      "path": "frontend/src/lib",
-      "accessCount": 1,
-      "lastAccessed": 1794457462588,
       "type": "directory"
     },
     {
@@ -349,39 +265,9 @@
       "type": "directory"
     },
     {
-      "path": "backend/src/bookings/booking-rules.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457800763,
-      "type": "file"
-    },
-    {
       "path": "backend/src/bookings/booking-write.dto.ts",
-      "accessCount": 2.996348823756319,
-      "lastAccessed": 1794458253897,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/admin-services/admin-services.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457827897,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/admin-services/admin-services.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457831142,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/admin-services/admin-services.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457834252,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/admin-services/admin-services.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457836223,
+      "accessCount": 3.5291010350956498,
+      "lastAccessed": 1794479385688,
       "type": "file"
     },
     {
@@ -392,8 +278,8 @@
     },
     {
       "path": "backend/src/customers/customer-write.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457843994,
+      "accessCount": 1.8449419428874814,
+      "lastAccessed": 1794478845750,
       "type": "file"
     },
     {
@@ -403,33 +289,15 @@
       "type": "file"
     },
     {
-      "path": "backend/src/reports/reports.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457858151,
-      "type": "file"
-    },
-    {
       "path": "backend/src/employees/employees.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457859034,
+      "accessCount": 1.845042705676218,
+      "lastAccessed": 1794478845926,
       "type": "file"
     },
     {
       "path": "backend/src/app.module.ts",
       "accessCount": 5.928061915093922,
       "lastAccessed": 1794459832143,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/admin-services/admin-services.spec.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794457997800,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/reports/reports.spec.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794458001138,
       "type": "file"
     },
     {
@@ -530,8 +398,140 @@
     },
     {
       "path": "backend/src/bookings/booking-write.service.ts",
-      "accessCount": 1.9999938387107092,
-      "lastAccessed": 1794461314525,
+      "accessCount": 3.7299958332481764,
+      "lastAccessed": 1794479389206,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/common/rate-limit.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478613791,
+      "type": "file"
+    },
+    {
+      "path": "frontend/public/assets/uc7-card-6.png",
+      "accessCount": 1,
+      "lastAccessed": 1794478614603,
+      "type": "file"
+    },
+    {
+      "path": "frontend/public/assets/uc7-card-1.png",
+      "accessCount": 1,
+      "lastAccessed": 1794478614851,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/uploads/image-storage.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478617439,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/uploads/uploads.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478622270,
+      "type": "file"
+    },
+    {
+      "path": "frontend/public/assets/uc7-card-4.png",
+      "accessCount": 1,
+      "lastAccessed": 1794478624417,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/uploads/uploads.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478625783,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/lib/booking-api.ts",
+      "accessCount": 1.9944686129305915,
+      "lastAccessed": 1794479338521,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/lib/api-client.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478647423,
+      "type": "file"
+    },
+    {
+      "path": "database/seeds/PROPOSED-010-sample-catalog.sql",
+      "accessCount": 1,
+      "lastAccessed": 1794478664869,
+      "type": "file"
+    },
+    {
+      "path": "database/seeds/PROPOSED-011-test-accounts.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794478711229,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/common/rate-limit.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478724049,
+      "type": "file"
+    },
+    {
+      "path": "database/migrations/PROPOSED-008-booking-source-prepaid.md",
+      "accessCount": 1,
+      "lastAccessed": 1794478819489,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/customers/customer-write.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794478846064,
+      "type": "file"
+    },
+    {
+      "path": "scripts/run-sql-integration.ps1",
+      "accessCount": 1,
+      "lastAccessed": 1794478899131,
+      "type": "file"
+    },
+    {
+      "path": "database/migrations/STAGING_MIGRATION_ORDER.md",
+      "accessCount": 1.9999007902088624,
+      "lastAccessed": 1794478916064,
+      "type": "file"
+    },
+    {
+      "path": "database/seeds/PROPOSED-011-test-accounts.md",
+      "accessCount": 1,
+      "lastAccessed": 1794478920548,
+      "type": "file"
+    },
+    {
+      "path": "database/PROPOSALS_INDEX.md",
+      "accessCount": 1,
+      "lastAccessed": 1794478935876,
+      "type": "file"
+    },
+    {
+      "path": "frontend/FIGMA_VISUAL_AUDIT.md",
+      "accessCount": 1,
+      "lastAccessed": 1794479301194,
+      "type": "directory"
+    },
+    {
+      "path": "backend/src/bookings/booking-read.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794479436264,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/bookings/booking-read.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794479446354,
+      "type": "file"
+    },
+    {
+      "path": "docs-deploy/DEPLOYMENT_READINESS.md",
+      "accessCount": 1,
+      "lastAccessed": 1794480039889,
       "type": "file"
     }
   ],

@@ -13,9 +13,10 @@ import { ReportsModule } from './reports/reports.module';
 import { EmployeesModule } from './employees/employees.module';
 import { BookingWriteModule } from './bookings/booking-write.module';
 import { PaymentsModule } from './payments/payments.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
-  imports: [DatabaseModule,AuthModule,AdminServicesModule,ReportsModule,EmployeesModule,BookingWriteModule,PaymentsModule],
+  imports: [DatabaseModule,AuthModule,AdminServicesModule,ReportsModule,EmployeesModule,BookingWriteModule,PaymentsModule,UploadsModule],
   controllers: [HealthController, CatalogController, BookingReadController, CustomerReadController, CustomerWriteController, ReviewsController, BookingCancelController],
 })
 export class AppModule {}

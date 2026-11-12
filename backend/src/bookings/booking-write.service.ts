@@ -9,7 +9,7 @@ import { CreateAdminBookingDto, CreateCustomerBookingDto, SearchBookingsQuery, U
 interface Planned extends BedInterval { packageId: string; customerName: string; customerPhone?: string }
 interface ExistingDetail { id: string; bedId: string | null; packageId: string; startsAt: string; duration: number }
 interface BookingRow { id: string; status: string; pay: string; date: string }
-interface Patch { status: string; pay: string; notes?: string; readPay?: string }
+interface Patch { status: string; pay: string; notes?: string | null; readPay?: string; name?: string; phone?: string; email?: string | null }
 interface AutoGuest { startsAt: string; endsAt: string; preferred?: string | null }
 
 const stale = 'Lịch hẹn vừa được cập nhật. Vui lòng tải lại và thử lại!';
@@ -24,11 +24,13 @@ export class BookingWriteService {
   ) {}
 
   async search(query: SearchBookingsQuery) {
-    const like = query.q?.trim() ? `%${query.q.trim().replace(/[~%_[]/g, (c) => '~' + c)}%` : null;
+    const like = (v?: string) => (v?.trim() ? `%${v.trim().replace(/[~%_[]/g, (c) => '~' + c)}%` : null);
+    const digits = query.phone?.replace(/[^0-9+]/g, '').replace(/^\+84/, '0');
     const items = await this.database.query(`SELECT TOP(200) RTRIM(c.MaChiTiet) AS id,RTRIM(l.MaLichHen) AS bookingId,
       RTRIM(c.MaGiuong) AS bedId,c.TenKhach AS customerName,COALESCE(c.SoDienThoai,l.SoDienThoaiNguoiDat) AS customerPhone,
       d.TenDichVu AS serviceName,g.TenGoi AS packageName,RTRIM(g.MaGoi) AS packageId,
       l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS paymentStatus,
+      l.HoTenNguoiDat AS bookerName,RTRIM(l.SoDienThoaiNguoiDat) AS bookerPhone,l.EmailNguoiDat AS bookerEmail,l.GhiChu AS notes,
       CONVERT(varchar(19),c.ThoiDiemBatDau,126) AS startsAt,CONVERT(varchar(19),c.ThoiDiemKetThuc,126) AS endsAt,
       DATEDIFF(minute,CAST(CAST(c.ThoiDiemBatDau AS date) AS datetime),c.ThoiDiemBatDau) AS startMinute,
       DATEDIFF(minute,CAST(CAST(c.ThoiDiemBatDau AS date) AS datetime),c.ThoiDiemKetThuc) AS endMinute
@@ -38,8 +40,16 @@ export class BookingWriteService {
       AND (@1 IS NULL OR l.TrangThaiLichHen=@1)
       AND (@2 IS NULL OR l.MaLichHen LIKE @2 ESCAPE '~' OR l.HoTenNguoiDat COLLATE Vietnamese_100_CI_AS LIKE @2 ESCAPE '~'
         OR c.TenKhach COLLATE Vietnamese_100_CI_AS LIKE @2 ESCAPE '~' OR l.SoDienThoaiNguoiDat LIKE @2 ESCAPE '~' OR c.SoDienThoai LIKE @2 ESCAPE '~')
-      ORDER BY c.ThoiDiemBatDau,c.MaChiTiet`, [query.date ?? null, query.status ?? null, like]);
-    return { items };
+      AND (@3 IS NULL OR l.HoTenNguoiDat COLLATE Vietnamese_100_CI_AS LIKE @3 ESCAPE '~' OR c.TenKhach COLLATE Vietnamese_100_CI_AS LIKE @3 ESCAPE '~')
+      AND (@4 IS NULL OR l.SoDienThoaiNguoiDat LIKE @4 ESCAPE '~' OR c.SoDienThoai LIKE @4 ESCAPE '~')
+      AND (@5 IS NULL OR l.EmailNguoiDat COLLATE Vietnamese_100_CI_AS LIKE @5 ESCAPE '~')
+      AND (@6 IS NULL OR l.MaLichHen LIKE @6 ESCAPE '~')
+      AND (@7 IS NULL OR d.TenDichVu COLLATE Vietnamese_100_CI_AS LIKE @7 ESCAPE '~' OR g.TenGoi COLLATE Vietnamese_100_CI_AS LIKE @7 ESCAPE '~')
+      AND (@8 IS NULL OR l.NgayHen>=CONVERT(date,@8,23)) AND (@9 IS NULL OR l.NgayHen<=CONVERT(date,@9,23))
+      ORDER BY c.ThoiDiemBatDau,c.MaChiTiet`, [query.date ?? null, query.status ?? null, like(query.q), like(query.name), like(digits), like(query.email), like(query.code), like(query.service), query.dateFrom ?? null, query.dateTo ?? null]);
+    // Booking source is not persisted (no LichHen column), so the "Nguồn" filter cannot be applied; say so instead of silently ignoring it.
+    const warnings = query.source?.trim() ? ['Nguồn đặt lịch chưa được lưu trữ nên bộ lọc "Nguồn" chưa được áp dụng.'] : [];
+    return { items, warnings };
   }
 
   async createAdmin(dto: CreateAdminBookingDto) {
@@ -57,7 +67,10 @@ export class BookingWriteService {
         notes: dto.notes ?? null, date: dto.date, status: dto.status ?? 'Chưa đến', pay: dto.paymentStatus ?? 'Chưa thanh toán',
       });
     });
-    return { id, message: 'Tạo lịch hẹn thành công!' };
+    const warnings: string[] = [];
+    if (dto.prepaidAmount) warnings.push('Số tiền thanh toán trả trước chưa được lưu (hệ thống chưa có nơi ghi nhận). Vui lòng ghi nhận qua giao dịch thanh toán.');
+    if (dto.source) warnings.push('Nguồn đặt lịch chưa được lưu (hệ thống chưa có nơi ghi nhận).');
+    return { id, message: 'Tạo lịch hẹn thành công!', warnings };
   }
 
   async updateAdmin(id: string, dto: UpdateAdminBookingDto) {
@@ -69,10 +82,17 @@ export class BookingWriteService {
       const recorded = await this.database.query<unknown[]>('SELECT TOP(1) 1 AS found FROM dbo.ThanhToan WHERE MaLichHen=@0', [id]);
       if (recorded.length) throw new ConflictException(PAYMENT_MANAGED);
     }
-    const patch: Patch = { status, pay: dto.paymentStatus ?? booking.pay, notes: dto.notes, readPay: booking.pay };
+    const patch: Patch = {
+      status, pay: dto.paymentStatus ?? booking.pay, readPay: booking.pay,
+      notes: dto.notes === undefined ? undefined : dto.notes.trim() === '' ? null : dto.notes,
+      name: dto.bookerName?.trim() || undefined, phone: dto.bookerPhone,
+      email: dto.bookerEmail === undefined ? undefined : dto.bookerEmail.trim() === '' ? null : dto.bookerEmail.trim(),
+    };
     if (!dto.date && !dto.guests) {
-      const rows = await this.database.query<unknown[]>(`UPDATE dbo.LichHen SET TrangThaiLichHen=@2,TrangThaiThanhToan=@3,GhiChu=CASE WHEN @4=1 THEN @5 ELSE GhiChu END
-        OUTPUT inserted.MaLichHen WHERE MaLichHen=@0 AND TrangThaiLichHen=@1 AND TrangThaiThanhToan=@6`, [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay]);
+      const rows = await this.database.query<unknown[]>(`UPDATE dbo.LichHen SET TrangThaiLichHen=@2,TrangThaiThanhToan=@3,GhiChu=CASE WHEN @4=1 THEN @5 ELSE GhiChu END,
+        HoTenNguoiDat=COALESCE(@7,HoTenNguoiDat),SoDienThoaiNguoiDat=COALESCE(@8,SoDienThoaiNguoiDat),EmailNguoiDat=CASE WHEN @9=1 THEN @10 ELSE EmailNguoiDat END
+        OUTPUT inserted.MaLichHen WHERE MaLichHen=@0 AND TrangThaiLichHen=@1 AND TrangThaiThanhToan=@6`,
+        [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null]);
       if (!rows.length) throw new ConflictException(stale);
       return { id, message: 'Cập nhật lịch hẹn thành công!' };
     }
@@ -248,7 +268,9 @@ export class BookingWriteService {
 
   private async updateBooking(runner: QueryRunner, id: string, patch: Patch, date: string, firstStart: string) {
     await runner.query(`UPDATE dbo.LichHen SET NgayHen=CONVERT(date,@1,23),GioHen=CONVERT(time(0),SUBSTRING(@2,12,8),108),TrangThaiLichHen=@3,TrangThaiThanhToan=@4,
-      GhiChu=CASE WHEN @5=1 THEN @6 ELSE GhiChu END WHERE MaLichHen=@0`, [id, date, firstStart, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null]);
+      GhiChu=CASE WHEN @5=1 THEN @6 ELSE GhiChu END,HoTenNguoiDat=COALESCE(@7,HoTenNguoiDat),SoDienThoaiNguoiDat=COALESCE(@8,SoDienThoaiNguoiDat),
+      EmailNguoiDat=CASE WHEN @9=1 THEN @10 ELSE EmailNguoiDat END WHERE MaLichHen=@0`,
+    [id, date, firstStart, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null]);
   }
 
   private async newId(runner: QueryRunner, prefix: string, table: string, column: string) {

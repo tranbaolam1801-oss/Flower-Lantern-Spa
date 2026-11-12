@@ -4,7 +4,7 @@ import { DatabaseService } from '../database.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Permissions, Roles } from '../auth/roles.decorator';
-import { CUSTOMER_ID, CustomerValues, CustomerWriteBody, duplicatePhoneError, validateCustomer } from './customer-validation';
+import { CUSTOMER_ID, CustomerValues, CustomerWriteBody, duplicateAccountPhoneError, duplicatePhoneError, validateCustomer } from './customer-validation';
 
 const NOT_FOUND = 'Không tìm thấy khách hàng.';
 
@@ -71,9 +71,16 @@ export class CustomerWriteController {
         ELSE IF EXISTS(SELECT 1 FROM dbo.KhachHang WITH(UPDLOCK,HOLDLOCK) WHERE SoDienThoai=CAST(@0 AS char(10)) AND MaKhachHang<>@7)
           SELECT 'duplicate' AS result;
         ELSE BEGIN
-          UPDATE dbo.KhachHang SET HoTen=@1,SoDienThoai=CAST(@0 AS char(10)),KenhLienHe=@2,GioiTinh=@3,
-            NgaySinh=TRY_CONVERT(date,@4),DiaChi=@5,GhiChu=@6 WHERE MaKhachHang=@7;
-          SELECT 'ok' AS result;
+          -- The linked login identity (TaiKhoan.SoDienThoai) follows the customer phone in the same transaction.
+          DECLARE @account char(10)=(SELECT MaTaiKhoan FROM dbo.KhachHang WHERE MaKhachHang=@7);
+          IF @account IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.TaiKhoan WITH(UPDLOCK,HOLDLOCK) WHERE SoDienThoai=@0 AND MaTaiKhoan<>@account)
+            SELECT 'accountDuplicate' AS result;
+          ELSE BEGIN
+            UPDATE dbo.KhachHang SET HoTen=@1,SoDienThoai=CAST(@0 AS char(10)),KenhLienHe=@2,GioiTinh=@3,
+              NgaySinh=TRY_CONVERT(date,@4),DiaChi=@5,GhiChu=@6 WHERE MaKhachHang=@7;
+            IF @account IS NOT NULL UPDATE dbo.TaiKhoan SET SoDienThoai=@0 WHERE MaTaiKhoan=@account;
+            SELECT 'ok' AS result;
+          END;
         END;
         COMMIT;
       END TRY BEGIN CATCH
@@ -82,6 +89,7 @@ export class CustomerWriteController {
       END CATCH`, [...this.params(v), id]);
     if (rows[0]?.result === 'missing') throw new NotFoundException(NOT_FOUND);
     if (rows[0]?.result === 'duplicate') throw duplicatePhoneError();
+    if (rows[0]?.result === 'accountDuplicate') throw duplicateAccountPhoneError();
     return { id, message: 'Cập nhật khách hàng thành công!' };
   }
 

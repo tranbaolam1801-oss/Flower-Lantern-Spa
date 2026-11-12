@@ -30,13 +30,14 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     window.dispatchEvent(new Event('spa-session-expired'));
   }
 
-  const body = await response.json().catch(() => null) as { message?: string | string[]; code?: string; fields?: Record<string, string> } | null;
+  const body = await response.json().catch(() => null) as { message?: string | string[]; code?: string; fields?: Record<string, string>; field?: string } | null;
   if (!response.ok) {
     const rawMsg = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
     const err: HttpApiError = {
       status: response.status,
       code: body?.code,
-      fields: body?.fields,
+      // Some endpoints (employees 409) answer {message, field}; expose it in the same shape as {fields}.
+      fields: body?.fields ?? (body?.field && rawMsg ? { [body.field]: String(rawMsg) } : undefined),
       message: rawMsg || defaultErrorMessage(response.status),
     };
     throw err;

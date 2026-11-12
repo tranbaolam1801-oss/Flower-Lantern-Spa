@@ -736,3 +736,5 @@
  .uc7-catalog-page .catalog-empty-reset,.uc7-catalog-page .catalog-error-retry{top:auto;bottom:12px}
  .uc7-catalog-page .catalog-error-state{border-color:#d7e6d1;border-radius:16px;background:white}
 }
+
+.svc-image-preview{width:96px;height:72px;border-radius:8px;object-fit:cover;display:block;margin-top:6px}

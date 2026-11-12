@@ -8,6 +8,7 @@ import {
   listAdminServices,
   stopAdminService,
   updateAdminService,
+  uploadServiceImage,
   type AdminServiceItem,
 } from '../lib/management-api';
 import { formatVnd } from '../lib/api-client';
@@ -69,6 +70,7 @@ export function AdminServicesPage() {
   const [shortDesc, setShortDesc] = useState('');
   const [details, setDetails] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [pkgName, setPkgName] = useState('Gói tiêu chuẩn 60 phút');
   const [pkgDuration, setPkgDuration] = useState('60');
   const [pkgPrice, setPkgPrice] = useState('350000');
@@ -167,10 +169,27 @@ export function AdminServicesPage() {
     formDialog.current?.showModal();
   };
 
+  const handleImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setFormError('');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) return setFormError('Hình ảnh không hợp lệ!');
+    setUploading(true);
+    try {
+      setImageUrl((await uploadServiceImage(file)).path);
+    } catch (err) {
+      setFormError((err as { message?: string }).message || 'Hình ảnh không hợp lệ!');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     if (!serviceName.trim()) return setFormError('Vui lòng nhập tên dịch vụ!');
+    if (uploading) return setFormError('Đang tải hình ảnh, vui lòng đợi.');
     if (!imageUrl.trim()) return setFormError('Hình ảnh không hợp lệ!');
     if (!pkgName.trim()) return setFormError('Vui lòng nhập tên gói dịch vụ!');
     const dur = Number(pkgDuration);
@@ -437,7 +456,8 @@ export function AdminServicesPage() {
             <div className="booking-form-grid-2">
               <label className="spa-field">
                 <span>Hình ảnh</span>
-                <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Đường dẫn hình ảnh (/assets/...)" />
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImagePick} disabled={uploading} />
+                {imageUrl ? <img src={imageUrl} alt="Xem trước hình ảnh" className="svc-image-preview" /> : null}
               </label>
               <label className="spa-field">
                 <span>Tên gói <em>*</em></span>

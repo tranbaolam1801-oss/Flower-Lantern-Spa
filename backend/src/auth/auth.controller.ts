@@ -16,6 +16,9 @@ import { AuthService } from './auth.service';
 import { LoginDto, JwtPayload } from './auth.dto';
 import { AuthGuard } from './auth.guard';
 
+/** Always Secure in production; staging/other HTTPS environments opt in with COOKIE_SECURE=true. */
+export const cookieSecure = (env: NodeJS.ProcessEnv = process.env) => env.NODE_ENV === 'production' || env.COOKIE_SECURE === 'true';
+
 interface RequestWithUser extends Request {
   user?: JwtPayload;
 }
@@ -40,7 +43,7 @@ export class AuthController {
     // Thiết lập cookie HttpOnly an toàn
     response.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: cookieSecure(),
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 3600 * 1000, // 7 ngày
@@ -75,7 +78,7 @@ export class AuthController {
     if(process.env.AUTH_SESSION_STORE==='sql')await this.authService.revokeToken(request.cookies?.access_token ?? request.headers.authorization?.replace(/^Bearer /,''));
     response.clearCookie('access_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: cookieSecure(),
       sameSite: 'lax',
       path: '/',
     });

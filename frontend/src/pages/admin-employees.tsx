@@ -82,7 +82,8 @@ export function AdminEmployeesPage() {
     return () => clearTimeout(t);
   }, [text]);
 
-  const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q05');
+  // Backend: role Quản lý + Q05 (Chủ Spa always). A plain 'Nhân viên' with Q05 would get 403, so it must not see the page.
+  const allowed = user?.role === 'Chủ Spa' || (user?.role === 'Quản lý' && !!user.permissions.includes('Q05'));
   const isOwner = user?.role === 'Chủ Spa';
 
   const query = useQuery({
@@ -128,7 +129,14 @@ export function AdminEmployeesPage() {
       setNotice(res.message || (editing ? 'Cập nhật thông tin nhân viên thành công!' : 'Thêm nhân viên mới thành công!'));
       await cache.invalidateQueries({ queryKey: ['admin-employees'] });
     },
-    onError: (err: { message?: string }) => {
+    onError: (err: { message?: string; fields?: Record<string, string> }) => {
+      // Server field errors (409 {field}, 400 {fields}) are shown under the matching input.
+      const known = ['username', 'fullName', 'password', 'confirmPassword', 'phone', 'email'];
+      const mapped = Object.fromEntries(Object.entries(err?.fields ?? {}).filter(([field]) => known.includes(field)));
+      if (Object.keys(mapped).length) {
+        setFieldErrors(mapped);
+        return setFormError('');
+      }
       setFieldErrors({});
       setFormError(
         err?.message ??
@@ -481,7 +489,7 @@ export function AdminEmployeesPage() {
               <div className="emp-identity-card">
                 <div className="emp-identity-top">
                   <strong>{detailQuery.data.fullName}</strong>
-                  <span className={`pill-status ${detailQuery.data.workStatus === 'Đang hoạt động' ? 'pill-ok' : 'pill-warn'}`}>
+                  <span className={`pill-status ${detailQuery.data.workStatus === 'Đang làm việc' ? 'pill-ok' : 'pill-warn'}`}>
                     {detailQuery.data.workStatus}
                   </span>
                 </div>
@@ -500,7 +508,7 @@ export function AdminEmployeesPage() {
                 <div className="emp-detail-grid-full">
                   <dt>Trạng thái làm việc</dt>
                   <dd>
-                    <span className={`pill-status ${detailQuery.data.workStatus === 'Đang hoạt động' ? 'pill-ok' : 'pill-warn'}`}>
+                    <span className={`pill-status ${detailQuery.data.workStatus === 'Đang làm việc' ? 'pill-ok' : 'pill-warn'}`}>
                       {detailQuery.data.workStatus}
                     </span>
                   </dd>
@@ -526,7 +534,7 @@ export function AdminEmployeesPage() {
               <div className="emp-identity-card">
                 <div className="emp-identity-top">
                   <strong>{editing.fullName}</strong>
-                  <span className={`pill-status ${editing.workStatus === 'Đang hoạt động' ? 'pill-ok' : 'pill-warn'}`}>
+                  <span className={`pill-status ${editing.workStatus === 'Đang làm việc' ? 'pill-ok' : 'pill-warn'}`}>
                     {editing.workStatus}
                   </span>
                 </div>

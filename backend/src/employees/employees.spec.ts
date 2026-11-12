@@ -162,4 +162,14 @@ describe('EmployeesService status / delete', () => {
     expect(calls.some((c) => /DELETE\s/i.test(c.sql))).toBe(false);
     expect(calls.some((c) => c.sql.includes("TrangThai = N'Vô hiệu hóa'"))).toBe(true);
   });
+  it('update syncs TaiKhoan.SoDienThoai in the same transaction and rejects a phone used by another account', async () => {
+    const { service, calls } = build(base('Nhân viên'));
+    await service.update(owner, 'NV00000009', { fullName: 'A', phone: '0911111111', email: 'a@b.vn' });
+    const sync = calls.find((c) => c.sql.includes('UPDATE dbo.TaiKhoan SET SoDienThoai'));
+    expect(sync?.params).toEqual(['TK00000009', '0911111111']);
+    const dup = build((sql) => (sql.includes('SoDienThoai = @0 AND MaTaiKhoan') ? [{ x: 1 }] : base('Nhân viên')(sql)));
+    await expect(dup.service.update(owner, 'NV00000009', { fullName: 'A', phone: '0911111111', email: 'a@b.vn' }))
+      .rejects.toThrow(new ConflictException({ message: 'Số điện thoại đã tồn tại!', field: 'phone' }));
+    expect(dup.calls.some((c) => c.sql.includes('UPDATE dbo.TaiKhoan SET SoDienThoai'))).toBe(false);
+  });
 });

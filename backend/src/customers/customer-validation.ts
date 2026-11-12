@@ -60,3 +60,8 @@ export function validateCustomer(body: CustomerWriteBody, today = new Date()): C
 export const duplicatePhoneError = () => new ConflictException({
   message: DUPLICATE_CUSTOMER_MESSAGE, code: 'DUPLICATE_PHONE', fields: { phone: DUPLICATE_CUSTOMER_MESSAGE },
 });
+
+export const ACCOUNT_PHONE_MESSAGE = 'Số điện thoại đã được dùng cho một tài khoản đăng nhập khác!';
+export const duplicateAccountPhoneError = () => new ConflictException({
+  message: ACCOUNT_PHONE_MESSAGE, code: 'DUPLICATE_ACCOUNT_PHONE', fields: { phone: ACCOUNT_PHONE_MESSAGE },
+});

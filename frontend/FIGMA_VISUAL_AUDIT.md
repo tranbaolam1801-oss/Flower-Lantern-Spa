@@ -592,3 +592,23 @@ Quy ước trạng thái: **Completed** = đã gọi `get_design_context`/`get_s
 Còn Pending rất nhiều (ước tính vẫn ~185+ dòng trải khắp UC_1, UC_2.3-2.5 exception, UC_3.2-3.4 (sub-frame), UC_4, UC_5, UC_8 (phần còn lại), UC_9, UC_10) — phạm vi quá lớn để một lượt executor xử lý hết; xem HANDOVER.md mục NEXT ACTION để biết thứ tự ưu tiên tiếp theo.
 
 **Tổng hợp nhanh (phiên f, 2026-11-12):** Completed ≈ 45 dòng (thêm UC_3.1 cancel/E5b/E6a, toàn bộ UC_3.2/3.3/3.4 main+interaction, gần hết UC_4 danh sách/chi tiết/modal phản hồi/thành công/lỗi); Blocked = 2 (UC_3.1 E5c "Khách hàng đã tồn tại!" cần Backend check trùng SĐT — mới phát hiện phiên này; thiếu icon xóa khách hàng UC_3, không đổi); mâu thuẫn node UC_4 `1:1441` đã gỡ dứt điểm (xác nhận là danh sách đánh giá chính). Pending còn lại ≈ 110 dòng: UC_1 (giữ nguyên theo brief), vài nhánh phụ UC_3.2 (success/cancel/error dùng chung pattern nhưng chưa live-verify riêng), vài biến thể filter UC_4.3, và toàn bộ UC_5/UC_6/UC_8/UC_9/UC_10 (chưa động trong phiên này). Code đã sửa trong phiên (f): `frontend/src/pages/customer-search.tsx` (toast E6a + nút Thử lại, tiêu đề/nhãn nút/dòng phụ đề modal Sửa khách hàng, dòng chú thích DEMO), `frontend/src/pages/admin-reviews.tsx` (tách field-level vs banner lỗi phản hồi, text lỗi tải chi tiết/danh sách khớp Figma, text toast thành công), `frontend/src/styles.css` (`.spa-modal-meta-row`, `.spa-modal-demo-note`, `.review-state-error`, mở rộng `.spa-field-invalid` sang `textarea`). `npm.cmd run build --workspace @spa/frontend` PASS sau mỗi batch thay đổi.
+
+
+## 6. Cập nhật sau phiên khắc phục BLOCKED (2026-11-12) — ưu tiên hơn các dòng tương ứng ở §5
+
+**Không có dòng Blocked nào ở §5 bị đổi thành Completed.** Trạng thái mới "Code đã giải quyết — chạy thật CHƯA xác minh" (build/lint/test mock qua, chưa so Figma bằng hình và chưa chạy SQL) là trạng thái riêng, **chưa phải Completed**.
+
+| Frame / mục | Node | Trạng thái §5 cũ | Trạng thái mới | Bằng chứng / còn thiếu |
+|---|---|---|---|---|
+| UC_2.1 E3a | `1:36758` | Blocked | **Blocked** (giữ nguyên) | Frame Figma rỗng |
+| UC_2.3 E4a | `1:47039` | Blocked | **Blocked** (giữ nguyên) | Frame Figma rỗng |
+| UC_2.3 E5a (sửa mọi trường) | `1:47239` | Blocked | **Partial (runtime NOT VERIFIED)** | Đọc qua `get_metadata`+`get_screenshot`. Sửa được mọi trường chính (giường/giờ/ngày/dịch vụ/gói). Thiếu banner tổng, trường Nguồn (cần 008), '+ Thêm khách' |
+| UC_2.3 E5b (trùng giường khi sửa) | `1:47512` | Blocked | **Code-resolved — runtime NOT VERIFIED** | Khung đỏ 'Giường đã có lịch tại khung giờ này. Vui lòng chọn giường hoặc thời gian khác!' hiện dưới hàng giường/dịch vụ/gói; chưa kiểm so hình/SQL |
+| UC_2.4 hộp thoại tìm kiếm 9 trường | `1:44861` | Blocked | **Code đã giải quyết — chạy thật CHƯA xác minh**; lọc "Nguồn" còn BLOCKED (cần 008) | 9 trường đọc từ Figma qua MCP (phần chữ); chưa so hình |
+| UC_3.1 E5c "Khách hàng đã tồn tại!" | `1:31992` | Blocked | **Code đã giải quyết — chạy thật CHƯA xác minh** | Backend 409 + UI hiện dưới ô SĐT; chưa so hình với frame, chưa chạy SQL |
+| UC_8.2 trùng thông tin | `5:7679` | Pending/Blocked | **Code đã giải quyết — chạy thật CHƯA xác minh** | Như trên |
+| UC_3 icon Xóa khách hàng | — | Blocked | **Blocked** (giữ nguyên) | Chờ quyết định chính sách (giữ lịch sử) |
+| UC_9.1 tải ảnh dịch vụ | — | Blocked | **Code đã giải quyết — chạy thật CHƯA xác minh** | Endpoint + file picker + 31 test mock; chưa chạy đĩa/proxy/trình duyệt thật |
+| UC_5.2 "Thông tin tài khoản" | — | Blocked | **Blocked** (giữ nguyên) | Không có route, không có frame Figma |
+
+Tổng: số dòng Blocked/Completed ở §5 không đổi (139 Completed / 13 Pending / 8 Blocked). Sổ đăng ký đầy đủ theo nguyên nhân gốc: `COMPLETION_REPORT.md` §8.

@@ -107,3 +107,52 @@ Lỗi/chênh lệch mã còn mở (đã biết, chưa sửa):
 - Git: hơn 90 đường dẫn thay đổi chưa commit (20 file tracked sửa, còn lại mới); commit gần nhất `f0603db`, không có gì của Phase 1/2 được commit. Rủi ro mất việc; commit khi người dùng yêu cầu.
 
 Lệnh đã chạy và kết quả (2026-11-12, chạy lại độc lập sau tất cả thay đổi): `npm run lint` PASS (0 lỗi, 0 cảnh báo; trước đó có 4 lỗi trong mã mới, đã sửa); `tsc --noEmit` backend PASS; `npm run build` backend PASS; `jest --runInBand` (SQL integration tắt) 12 suite pass + 6 skip, **250 test pass + 27 skip (BLOCKED)**, 0 fail; `npm run build --workspace @spa/frontend` PASS. Frontend không có script lint riêng ngoài ESLint chung ở thư mục gốc.
+
+
+## 8. Sổ đăng ký BLOCKED (cập nhật sau phiên khắc phục 2026-11-12)
+
+Quy ước trạng thái: **BLOCKED** = vấn đề gốc chưa được giải quyết. **Code đã giải quyết — chạy thật CHƯA xác minh** = mã đã viết + test mock/lint/build qua nhưng chưa chạy với SQL Server/trình duyệt thật; **không** được coi là Completed. Các dòng trong checklist Figma §5 **không bị đổi trạng thái** (xem §6 của `frontend/FIGMA_VISUAL_AUDIT.md`).
+
+Lần chạy độc lập cuối (sau mọi thay đổi của đợt này): `npm run lint` PASS (0 lỗi); `tsc --noEmit` PASS; backend build PASS; `jest --runInBand` 15 suite pass + 6 skip, **281 test pass + 27 skip (BLOCKED), 0 fail**; frontend build PASS. Database xác minh lại chỉ-đọc: Test 17 bảng, DichVu 0, TaiKhoan 0, chưa có cột `NguonDatLich`, chưa có login `spa_test_runner`; Dev 16 bảng, 5 tài khoản — **không có thay đổi database nào**.
+
+### 8.1 Còn BLOCKED (vấn đề gốc chưa hết)
+
+| # | Mục | Loại nguyên nhân | Cần gì để mở |
+|---|---|---|---|
+| 1 | 27 SQL integration test; backend không kết nối được DB khi `DB_AUTH=windows` | Môi trường: Smart App Control chặn `msnodesqlv8.node` (không tắt SAC) | Bạn chạy `database/setup/001-test-sql-login.MANUAL.sql` trong SSMS, tạo `backend/.env.test.local`, cho phép chạy `scripts/run-sql-integration.ps1` (đã soạn, chưa chạy) |
+| 2 | Không có dữ liệu mẫu (Test: 0 dịch vụ/tài khoản; Dev: 0 dịch vụ) nên không thể E2E | Database — cần duyệt | Duyệt `database/seeds/PROPOSED-010-sample-catalog.sql` và `PROPOSED-011-test-accounts.mjs` (chỉ Test; mật khẩu bạn cấp qua biến môi trường) |
+| 3 | Migration 007 (SePay) chưa áp dụng → mọi `/api/payments/*` trả 503 | Database — cần duyệt | Duyệt 007 trên Test; staging dùng `database/migrations/staging/` |
+| 4 | Lưu/lọc "Nguồn đặt lịch", lưu tiền trả trước | Database — cần duyệt | Duyệt `database/migrations/PROPOSED-008-booking-source-prepaid.md` (là đề xuất chuẩn; gợi ý khác trong báo cáo agent chỉ để tham khảo) |
+| 5 | UC_2.1 E3a (`1:36758`), UC_2.3 E4a (`1:47039`) | Figma: frame rỗng, không có nội dung để dựng | Nhà thiết kế bổ sung frame |
+| 6 | UC_5.2 mục "Thông tin tài khoản" | Thiết kế/sản phẩm: không có route và không có frame Figma | Quyết định có làm không + thiết kế |
+| 7 | UC_3 icon "Xóa khách hàng" (Figma có, code không) | Quyết định sản phẩm: AGENTS.md yêu cầu giữ lịch sử; xóa cần chính sách (ví dụ ngừng hoạt động) và có thể cần cột trạng thái | Bạn quyết định chính sách rồi mới đề xuất schema |
+| 8 | SePay thật: tài khoản, liên kết ngân hàng, webhook, khóa | Dịch vụ ngoài | Bạn thực hiện sau triển khai theo `docs-deploy/SEPAY_DASHBOARD_SETUP.md` |
+| 9 | Triển khai Staging | Chưa chọn hosting + chưa duyệt | Bạn chọn nhà cung cấp, duyệt triển khai |
+| 10 | 006 trên Dev/Staging (`repliedAt` ở Dev vẫn rỗng) | Database — cần duyệt riêng | Duyệt theo `database/migrations/STAGING_MIGRATION_ORDER.md` |
+
+### 8.2 Code đã giải quyết — chạy thật CHƯA xác minh (trước đây Blocked/lỗi mở)
+
+| Mục | Bằng chứng | Còn thiếu |
+|---|---|---|
+| UC_9.1 tải ảnh dịch vụ | `POST /api/admin/services/image` (magic bytes, 2 MB, tên ngẫu nhiên, lưu `UPLOAD_DIR`), `GET /api/uploads/services/:file`, file picker + preview; 31 test mới (HTTP double) | Chạy với đĩa/proxy/trình duyệt thật; host có đĩa tạm cần ổ đĩa bền hoặc object storage (chưa làm) |
+| UC_3.1 E5c, UC_8.2 trùng thông tin | UI đọc `fields`/`{field}` của backend và hiện dưới đúng ô | So hiển thị với frame `1:31992`, `5:7679`; chạy với SQL |
+| UC_2.4 tìm kiếm 9 trường (`1:44861`) | Backend 8 bộ lọc tham số hóa + UI đủ 9 trường, Đặt lại, kiểm tra điều kiện | **Lọc "Nguồn" chưa áp dụng được (cần 008)**; UI hiện cảnh báo thay vì giả vờ lọc; chưa chạy SQL |
+| UC_2.3 sửa tên/SĐT/email người đặt + ghi chú | `PATCH /bookings/:id` nhận `bookerName/Phone/Email`, `notes` rỗng xóa ghi chú; khóa Hoàn thành/Đã hủy giữ nguyên | Chạy SQL; xem 8.3 cho giường/giờ/dịch vụ |
+| Đồng bộ SĐT khách → `TaiKhoan.SoDienThoai` (cùng transaction, kiểm trùng) | Test mock; nhân viên vốn đã đồng bộ | Chạy SQL |
+| Lệch frontend/backend: `workStatus` (Đang làm việc), gating trang nhân viên (vai trò + Q05), dropdown trạng thái theo bảng chuyển, hiển thị lỗi theo trường | Build + lint; logic dùng chung bảng chuyển với `booking-rules.ts` | Chạy trình duyệt |
+| `source`/`prepaidAmount` | Không lưu nhưng nay trả `warnings[]` và UI hiện, không còn ngầm hiểu là đã lưu | Cần 008 để lưu thật |
+| Staging: `HOST` (mặc định 127.0.0.1), cờ `Secure` cookie (`NODE_ENV=production` hoặc `COOKIE_SECURE=true`; sửa lỗi staging gửi cookie không Secure), `TRUST_PROXY`, rate limit không dependency (webhook 300/phút/IP, intent 20/phút/phiên, login 20/phút/IP, upload 30/phút/phiên; chỉ một tiến trình) | Test mới cho từng phần; docs `docs-deploy/STAGING_CONFIGURATION.md`, `staging.env.example` | Chạy sau proxy HTTPS thật; nhiều instance cần kho chia sẻ |
+| Chuẩn bị mở chặn SQL | `scripts/run-sql-integration.ps1`, script SQL login | Chưa chạy (cần bạn) |
+
+### 8.3 Đang xử lý
+
+- UC_2.3 E5a (`1:47239`) / E5b (`1:47512`): hiện sửa được tên/SĐT/email/ghi chú/trạng thái; giường/giờ/dịch vụ/gói còn chỉ-đọc trong modal. **Cập nhật cuối:** giường/giờ/ngày/dịch vụ/gói đã sửa được trong modal (gửi `guests[]` đầy đủ; lỗi trùng giường hiện cạnh trường giường/giờ). **E5b: Code-resolved — runtime NOT VERIFIED. E5a: Partial** (thiếu banner tổng 'Thông tin không hợp lệ. Vui lòng kiểm tra lại!', trường Nguồn đặt lịch cần migration 008, '+ Thêm khách'). Backend: `GET /api/bookings` trả thêm `packageId`, `customerPhone`. Rủi ro cần quyết định: sửa 1 khách của lịch nhiều khách mà khách khác đã qua giờ sẽ bị từ chối 'không ở quá khứ'. Chạy lại: lint 0 lỗi, tsc sạch, jest 282 pass/27 skip/0 fail, frontend build PASS. Không mục nào là Completed.
+
+### 8.4 Quyết định/duyệt cần từ bạn (tóm tắt)
+
+1. Mở chặn SQL: chạy script SQL login (mục 1 ở 8.1).
+2. Duyệt seed Test (010, 011) — giá trong 010 là **giá giả định**, cần chủ spa xác nhận; ảnh 2 dịch vụ massage chưa có ảnh khớp.
+3. Duyệt 007 (Test), và nếu muốn: 008, 005 (tùy chọn), 006/004 trên Staging.
+4. Staging: `NODE_ENV=production` (khuyến nghị) hay `staging` + `COOKIE_SECURE=true`; frontend và API cùng origin/cùng domain đăng ký (cookie `SameSite=Lax`); ổ đĩa bền cho `UPLOAD_DIR` hoặc duyệt làm object storage sau; chạy 1 instance hay nhiều (rate limit trong bộ nhớ).
+5. Chính sách: xóa khách hàng, mục "Thông tin tài khoản", 13 câu hỏi thanh toán ở `OPEN_QUESTIONS.md`.
+6. Bảo mật: `database/seeds/002-auth-baseline.sql` chứa hash mật khẩu mặc định đã commit và Dev đang có 5 tài khoản từ seed đó — **không dùng cho Staging**, nên đổi/xóa trước khi lên môi trường thật.

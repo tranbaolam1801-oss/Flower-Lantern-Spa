@@ -220,6 +220,23 @@ export const updateAdminService = (id: string, payload: AdminServiceWritePayload
     body: JSON.stringify(payload),
   });
 
+/** UC_9.1: uploads the raw image (no multipart) and returns the stored relative path. */
+export async function uploadServiceImage(file: File): Promise<{ path: string }> {
+  const response = await fetch('/api/admin/services/image', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-Spa-Request': '1', 'Content-Type': file.type },
+    body: file,
+  });
+  const body = (await response.json().catch(() => null)) as { path?: string; message?: string | string[] } | null;
+  if (response.status === 401) window.dispatchEvent(new Event('spa-session-expired'));
+  if (!response.ok || !body?.path) {
+    const message = response.status === 429 ? (Array.isArray(body?.message) ? body?.message.join(' ') : body?.message) : undefined;
+    throw { status: response.status, message: message || 'Hình ảnh không hợp lệ!' };
+  }
+  return { path: body.path };
+}
+
 export const stopAdminService = (id: string) =>
   apiFetch<{ message: string }>(`admin/services/${encodeURIComponent(id)}`, {
     method: 'DELETE',
