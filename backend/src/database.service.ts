@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationShutdown, ServiceUnavailableException } from '@nestjs/common';
-import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { DataSource, DataSourceOptions, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
 import { databaseOptions } from './config';
 
 @Injectable()
@@ -21,10 +21,31 @@ export class DatabaseService implements OnApplicationShutdown {
     if (this.connecting) return this.connecting;
     const options = databaseOptions(process.env);
     if (!options) throw new ServiceUnavailableException('Chưa cấu hình kết nối SQL Server.');
-    this.source = new DataSource(options);
-    this.connecting = this.source.initialize();
-    try { return await this.connecting; }
-    finally { this.connecting = undefined; }
+    this.connecting = this.initializeWithRetry(options);
+    try {
+      this.source = await this.connecting;
+      return this.source;
+    } finally {
+      this.connecting = undefined;
+    }
+  }
+
+  // DB_CONNECT_RETRIES/DB_CONNECT_RETRY_DELAY_MS default to 0/3000: no retry unless explicitly set.
+  // Azure SQL Database serverless (free offer) auto-pauses when idle; the first connection after a
+  // pause can fail even with a generous connectionTimeout, so Staging sets a few retries with backoff.
+  private async initializeWithRetry(options: DataSourceOptions): Promise<DataSource> {
+    const retries = Math.max(0, Number(process.env.DB_CONNECT_RETRIES ?? 0) || 0);
+    const delayMs = Math.max(0, Number(process.env.DB_CONNECT_RETRY_DELAY_MS ?? 3000) || 0);
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await new DataSource(options).initialize();
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries) await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    throw lastError;
   }
 
   async query<T>(sql: string, parameters: unknown[] = []): Promise<T> {

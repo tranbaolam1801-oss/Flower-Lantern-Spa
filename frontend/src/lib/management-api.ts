@@ -1,4 +1,5 @@
-import { apiFetch } from './api-client';
+
+import { API_BASE_URL, apiFetch } from './api-client';
 
 // ================= UC_3 Customers =================
 export interface CustomerSummary {
@@ -222,7 +223,7 @@ export const updateAdminService = (id: string, payload: AdminServiceWritePayload
 
 /** UC_9.1: uploads the raw image (no multipart) and returns the stored relative path. */
 export async function uploadServiceImage(file: File): Promise<{ path: string }> {
-  const response = await fetch('/api/admin/services/image', {
+  const response = await fetch(`${API_BASE_URL}/api/admin/services/image`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'X-Spa-Request': '1', 'Content-Type': file.type },

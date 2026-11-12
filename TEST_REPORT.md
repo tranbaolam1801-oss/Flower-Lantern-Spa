@@ -1,6 +1,10 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
 ## Đợt sẵn sàng triển khai (2026-11-12)
+(tiếp, cùng ngày) lint PASS; tsc PASS; jest 298 pass/27 skip (BLOCKED)/0 fail; backend+frontend build PASS. Sửa thêm lỗi URL ảnh dịch vụ tương đối (3 nơi render). Chưa chạy `.github/workflows/backend-docker.yml` (chưa push GitHub), chưa `docker build` cục bộ, chưa deploy Azure.
+
+lint PASS; tsc PASS; jest 295 pass/27 skip (BLOCKED)/0 fail; backend+frontend build PASS. Thêm 16 test (timeout/retry kết nối DB Azure SQL, cookie SameSite liên miền). Chưa `docker build`, chưa deploy Azure (không có Docker cục bộ).
+
 lint PASS; backend tsc PASS; jest 282 pass/27 skip (BLOCKED)/0 fail; frontend build PASS (entry 630,275→481,282 byte nhờ lazy route); `npm audit --omit=dev`: frontend 0, backend 3 moderate. SQL integration, Playwright E2E, kiểm tra hình so Figma: NOT VERIFIED.
 
 ## Phiên khắc phục BLOCKED — kết quả thực tế (2026-11-12)

@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../lib/api-client';
+
 import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
@@ -20,7 +22,7 @@ export function BookingCancel({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/bookings/${encodeURIComponent(item.bookingId)}/cancel`, {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${encodeURIComponent(item.bookingId)}/cancel`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'X-Spa-Request': '1' },

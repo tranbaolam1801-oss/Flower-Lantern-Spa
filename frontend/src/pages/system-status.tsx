@@ -1,7 +1,9 @@
+import { API_BASE_URL } from '../lib/api-client';
+
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../components/ui/button';
 async function check(path:string) {
-  const response = await fetch(`/api/health/${path}`,{credentials:'include'});
+  const response = await fetch(`${API_BASE_URL}/api/health/${path}`,{credentials:'include'});
   if (!response.ok) throw new Error(path === 'ready'?'SQL Server chưa sẵn sàng.':'Backend chưa sẵn sàng.');
   return response.json();
 }

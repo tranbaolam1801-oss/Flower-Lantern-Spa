@@ -1,0 +1,60 @@
+name: Frontend build & deploy (Azure Static Web Apps Free)
+
+# Builds the React/Vite frontend and deploys the prebuilt frontend/dist to Azure Static Web Apps.
+# The app is built here (not by the SWA/Oryx builder) because this repo is an npm workspace.
+#
+# Requires, in GitHub repo Settings -> Secrets and variables -> Actions:
+#   secret   AZURE_STATIC_WEB_APPS_API_TOKEN  (deployment token of the Static Web App)
+#   variable VITE_API_BASE_URL                (e.g. https://<app>.azurewebsites.net, no trailing slash)
+# Without the token secret, the deploy step is skipped and the job only builds.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/frontend-swa.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN != '' }}
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refuse to build a cross-origin deployment without an API base URL
+        run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            echo "::error::Repository variable VITE_API_BASE_URL is not set; the deployed site would call /api on its own domain and fail."; exit 1
+          fi
+          case "$VITE_API_BASE_URL" in https://*) ;; *) echo "::error::VITE_API_BASE_URL must start with https://"; exit 1;; esac
+
+      - name: Install (frontend workspace only)
+        run: npm ci --workspace frontend --include-workspace-root
+
+      - name: Build
+        run: npm run build --workspace @spa/frontend
+
+      - name: Verify SPA routing config is in the build output
+        run: test -f frontend/dist/staticwebapp.config.json
+
+      - name: Deploy to Azure Static Web Apps
+        if: env.HAS_TOKEN == 'true'
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: frontend/dist
+          skip_app_build: true
+          skip_api_build: true

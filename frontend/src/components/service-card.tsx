@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { resolveApiUrl } from '../lib/api-client';
 import type { PublicServiceItem } from '../lib/catalog-api';
 import { formatVnd } from '../lib/api-client';
 
@@ -16,7 +17,7 @@ export function ServiceCard({
   return (
     <article className="figma-service-card">
       <div className="figma-service-thumb">
-        <img src={service.image || '/assets/lotus-decor.png'} alt={service.name} />
+        <img src={resolveApiUrl(service.image) || '/assets/lotus-decor.png'} alt={service.name} />
       </div>
       <div className="figma-service-meta">
         <span className="figma-cat-badge">{service.categoryName || 'Spa'}</span>

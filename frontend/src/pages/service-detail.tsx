@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router';
+import { resolveApiUrl } from '../lib/api-client';
 import { useQuery } from '@tanstack/react-query';
 import { CustomerHeader } from '../components/customer-header';
 import { PublicFooter } from '../components/public-footer';
@@ -68,7 +69,7 @@ export function ServiceDetailPage() {
             <section className="service-detail-hero">
               <div className="service-detail-image">
                 <span className="service-detail-cat-pill">{service.categoryName || 'Dịch vụ'}</span>
-                <img src={service.image || '/assets/lotus-decor.png'} alt={service.name} />
+                <img src={resolveApiUrl(service.image) || '/assets/lotus-decor.png'} alt={service.name} />
               </div>
               <div className="service-detail-summary">
                 <div className="service-badges">

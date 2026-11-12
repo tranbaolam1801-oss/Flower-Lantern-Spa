@@ -1,4 +1,5 @@
-import { apiFetch } from './api-client';
+
+import { API_BASE_URL, apiFetch } from './api-client';
 
 export interface CalendarItem {
   id: string;
@@ -113,7 +114,7 @@ export interface SepayPaymentIntent {
 }
 
 async function read<T>(path: string): Promise<T> {
-  const response = await fetch(`/api/${path}`, { credentials: 'include' });
+  const response = await fetch(`${API_BASE_URL}/api/${path}`, { credentials: 'include' });
   if (!response.ok) {
     if (response.status === 401) window.dispatchEvent(new Event('spa-session-expired'));
     throw new Error(

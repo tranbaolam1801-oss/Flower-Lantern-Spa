@@ -2,6 +2,8 @@
  * auth-api.ts — Các hàm gọi API xác thực.
  * Sử dụng cookie HttpOnly được thiết lập bởi server (không lưu token trên client).
  */
+import { API_BASE_URL } from './api-client';
+
 
 export interface AuthUser {
   id: string;
@@ -36,7 +38,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 /** POST /api/auth/login — Đăng nhập, server sẽ thiết lập cookie HttpOnly */
 export async function loginApi(payload: LoginPayload): Promise<AuthUser> {
-  const res = await fetch('/api/auth/login', {
+  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Spa-Request': '1' },
     body: JSON.stringify(payload),
@@ -48,7 +50,7 @@ export async function loginApi(payload: LoginPayload): Promise<AuthUser> {
 
 /** GET /api/auth/me — Lấy thông tin người dùng hiện tại từ cookie */
 export async function getMeApi(): Promise<AuthUser> {
-  const res = await fetch('/api/auth/me', {
+  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
     method: 'GET',
     credentials: 'include',
   });
@@ -58,7 +60,7 @@ export async function getMeApi(): Promise<AuthUser> {
 
 /** POST /api/auth/logout — Đăng xuất, server sẽ xóa cookie */
 export async function logoutApi(): Promise<void> {
-  const res = await fetch('/api/auth/logout', {
+  const res = await fetch(`${API_BASE_URL}/api/auth/logout`, {
     method: 'POST',
     headers: { 'X-Spa-Request': '1' },
     credentials: 'include',
