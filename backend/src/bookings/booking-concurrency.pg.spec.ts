@@ -29,11 +29,11 @@ suite('REAL multi-connection PostgreSQL bed-lock concurrency (skipped unless PG_
     await admin.connect();
     await admin.query(readFileSync(SCHEMA_SQL_PATH, 'utf8')); // idempotent
     await admin.query(`INSERT INTO dbo.DanhMuc VALUES ($1,'Concurrency','Hoạt động')`, [key]);
-    await admin.query(`INSERT INTO dbo.DichVu(MaDichVu,MaDanhMuc,TenDichVu,TrangThai) VALUES ($1,$1,$1,'Hoạt động')`, [key]);
-    await admin.query(`INSERT INTO dbo.GoiDichVu(MaGoi,MaDichVu,TenGoi,ThoiLuong,Gia) VALUES ($1,$1,'x',60,1)`, [key]);
+    await admin.query(`INSERT INTO dbo.DichVu(MaDichVu,MaDanhMuc,TenDichVu,TrangThai) VALUES ($1::char(10),$1::char(10),$1::varchar,'Hoạt động')`, [key]);
+    await admin.query(`INSERT INTO dbo.GoiDichVu(MaGoi,MaDichVu,TenGoi,ThoiLuong,Gia) VALUES ($1::char(10),$1::char(10),'x',60,1)`, [key]);
     await admin.query(`INSERT INTO dbo.KhachHang(MaKhachHang,HoTen,SoDienThoai) VALUES ($1,'x','0900000000')`, [key]);
     await admin.query(`INSERT INTO dbo.LichHen(MaLichHen,MaKhachHang,HoTenNguoiDat,SoDienThoaiNguoiDat,NgayHen,GioHen,TrangThaiLichHen,TrangThaiThanhToan)
-      VALUES ($1,$1,'x','0900000000','2099-12-21','09:00','Chưa đến','Chưa thanh toán')`, [key]);
+      VALUES ($1::char(10),$1::char(10),'x','0900000000','2099-12-21','09:00','Chưa đến','Chưa thanh toán')`, [key]);
     process.env.DATABASE_URL = url;
     process.env.DB_POOL_MAX = '10';
     process.env.DB_SSL = noSsl ? 'disable' : 'require';
