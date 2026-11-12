@@ -1,5 +1,18 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## Chuyển PostgreSQL + Vercel (2026-11-12) — kết quả chạy thật
+| Lệnh | Kết quả |
+|---|---|
+| `npm run lint` | PASS 0 lỗi |
+| `npx tsc --noEmit` (backend) | PASS |
+| `npm run build` (backend + frontend) | PASS |
+| `npm test -w backend` (jest, `--experimental-vm-modules`) | 33 suite passed + 1 skipped; **444 passed, 1 skipped, 0 failed** |
+| `npm run e2e:local` | **24/24 PASS** — chạy đúng `api/index.js` trên PostgreSQL thật (PGlite): đăng nhập/đăng xuất + cookie HttpOnly, thu hồi phiên, đặt lịch, trùng giường 409, giường G16, ngoài giờ, quá khứ, 4 request đồng thời → 1 thành công, hủy lịch, CSRF, webhook sai khóa |
+| Seed PG (chạy trên PGlite, 2 lần) | catalog 5/8/13 không trùng khi chạy lại; 4 tài khoản demo tạo 1 lần, lần 2 bỏ qua; hash Argon2id xác minh đúng/sai |
+- **SKIPPED (không tính PASS):** `booking-concurrency.pg.spec.ts` (8 request đồng thời thật) — cần `PG_CONCURRENCY_URL` tới PostgreSQL nhiều kết nối.
+- **NOT VERIFIED:** Vercel/Neon/Blob thật, trình duyệt (Playwright/Firefox/Safari), HMAC webhook qua Vercel, hiệu năng/cold start.
+- Các test SQL Server cũ (`*.sql.integration.spec.ts`, 27 test bị chặn) đã được thay bằng spec PostgreSQL chạy thật; không còn bị chặn bởi Smart App Control (PGlite là WASM).
+
 ## Đợt sẵn sàng triển khai (2026-11-12)
 (tiếp, cùng ngày) lint PASS; tsc PASS; jest 298 pass/27 skip (BLOCKED)/0 fail; backend+frontend build PASS. Sửa thêm lỗi URL ảnh dịch vụ tương đối (3 nơi render). Chưa chạy `.github/workflows/backend-docker.yml` (chưa push GitHub), chưa `docker build` cục bộ, chưa deploy Azure.
 
