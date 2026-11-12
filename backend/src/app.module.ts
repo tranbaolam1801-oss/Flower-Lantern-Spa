@@ -14,9 +14,12 @@ import { EmployeesModule } from './employees/employees.module';
 import { BookingWriteModule } from './bookings/booking-write.module';
 import { PaymentsModule } from './payments/payments.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { OtpModule } from './otp/otp.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [DatabaseModule,AuthModule,AdminServicesModule,ReportsModule,EmployeesModule,BookingWriteModule,PaymentsModule,UploadsModule],
+  imports: [DatabaseModule,AuthModule,AdminServicesModule,ReportsModule,EmployeesModule,BookingWriteModule,PaymentsModule,UploadsModule,MessagingModule,OtpModule,NotificationsModule],
   controllers: [HealthController, CatalogController, BookingReadController, CustomerReadController, CustomerWriteController, ReviewsController, BookingCancelController],
 })
 export class AppModule {}

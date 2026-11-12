@@ -84,7 +84,7 @@ const positiveInt = (value: string | undefined, fallback: number) => {
   return value !== undefined && Number.isInteger(n) && n > 0 ? n : fallback;
 };
 
-export interface RateLimitSettings { enabled: boolean; windowMs: number; webhook: number; intent: number; login: number; upload: number }
+export interface RateLimitSettings { enabled: boolean; windowMs: number; webhook: number; intent: number; login: number; upload: number; otp: number; dispatch: number }
 
 export function readRateLimitSettings(env: NodeJS.ProcessEnv = process.env): RateLimitSettings {
   return {
@@ -94,5 +94,7 @@ export function readRateLimitSettings(env: NodeJS.ProcessEnv = process.env): Rat
     intent: positiveInt(env.RATE_LIMIT_INTENT_PER_WINDOW, 20),
     login: positiveInt(env.RATE_LIMIT_LOGIN_PER_WINDOW, 20),
     upload: positiveInt(env.RATE_LIMIT_UPLOAD_PER_WINDOW, 30),
+    otp: positiveInt(env.RATE_LIMIT_OTP_PER_WINDOW, 10),
+    dispatch: positiveInt(env.RATE_LIMIT_DISPATCH_PER_WINDOW, 30),
   };
 }

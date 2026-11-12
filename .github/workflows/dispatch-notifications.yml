@@ -1,0 +1,44 @@
+name: Dispatch notifications (free scheduler)
+
+# Free alternative to n8n: GitHub calls the protected dispatch endpoint every 5 minutes (GitHub's minimum; runs can be
+# delayed under load, and scheduled workflows in a public repo are disabled after 60 days without repository activity).
+# The endpoint is idempotent, so a delayed, duplicated or manual run never double-sends.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions): INTERNAL_API_KEY (same value as the Vercel env var).
+# Repository variable: APP_URL (e.g. https://flower-lantern-spa.vercel.app). Without both, the job exits successfully
+# without calling anything, so it is safe to keep committed.
+#
+# NOTE: scheduled workflows only run from the repository DEFAULT branch (main).
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    concurrency:
+      group: dispatch-notifications
+      cancel-in-progress: false
+    env:
+      APP_URL: ${{ vars.APP_URL }}
+      HAS_KEY: ${{ secrets.INTERNAL_API_KEY != '' }}
+    steps:
+      - name: Skip when not configured
+        id: gate
+        run: |
+          if [ -z "$APP_URL" ] || [ "$HAS_KEY" != "true" ]; then echo "APP_URL or INTERNAL_API_KEY not configured; nothing to do."; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Call the dispatch endpoint
+        if: steps.gate.outputs.go == 'true'
+        env:
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+        run: |
+          case "$APP_URL" in https://*) ;; *) echo "::error::APP_URL must start with https://"; exit 1;; esac
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 60 -X POST \
+            -H "Authorization: Bearer ${INTERNAL_API_KEY}" -H 'Content-Type: application/json' -d '{"limit":25}' \
+            "${APP_URL%/}/api/internal/notifications/dispatch")
+          echo "HTTP $status"; cat response.json; echo
+          test "$status" = "200"

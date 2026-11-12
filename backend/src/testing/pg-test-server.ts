@@ -14,6 +14,12 @@ import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 
 export const SCHEMA_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '001-schema.sql');
+export const NOTIFICATIONS_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '004-otp-notifications.sql');
+
+export interface PgTestServerOptions {
+  /** Also applies migration 004 (OTP, phone verification, consent, notification jobs). Default false so the 19-table baseline tests are unchanged. */
+  notifications?: boolean;
+}
 
 export interface PgTestServer {
   url: string;
@@ -36,6 +42,7 @@ async function freePort(): Promise<number> {
   });
 }
 
+const NOTIFICATION_TABLES = ['ThongBaoGiaoNhan', 'ThongBaoCongViec', 'DongYNhanTin', 'XacMinhDienThoai', 'XacThucOtp'];
 const BUSINESS_TABLES = [
   'ThanhToanHoanTien', 'SePayWebhookEvent', 'PhanHoi', 'DanhGia', 'ThanhToan', 'KhachSuDungDichVu', 'LichHen',
   'GoiDichVu', 'DichVu', 'DanhMuc', 'PhienDangNhap', 'KhoaDangNhap', 'LichSuPhanQuyen', 'TaiKhoanQuyen',
@@ -43,9 +50,10 @@ const BUSINESS_TABLES = [
 ];
 
 /** Starts an in-memory PostgreSQL with the production schema applied and points DATABASE_URL at it. */
-export async function startPgTestServer(): Promise<PgTestServer> {
+export async function startPgTestServer(options: PgTestServerOptions = {}): Promise<PgTestServer> {
   const db = await PGlite.create();
   await db.exec(readFileSync(SCHEMA_SQL_PATH, 'utf8'));
+  if (options.notifications) await db.exec(readFileSync(NOTIFICATIONS_SQL_PATH, 'utf8'));
   const port = await freePort();
   const server = new PGLiteSocketServer({ db, port, host: '127.0.0.1' });
   await server.start();
@@ -58,7 +66,8 @@ export async function startPgTestServer(): Promise<PgTestServer> {
     db,
     exec: async (sql: string) => { await db.exec(sql); },
     reset: async () => {
-      await db.exec(BUSINESS_TABLES.map((t) => `DELETE FROM dbo.${t};`).join('\n'));
+      const extra = options.notifications ? NOTIFICATION_TABLES : [];
+      await db.exec([...extra, ...BUSINESS_TABLES].map((t) => `DELETE FROM dbo.${t};`).join('\n'));
     },
     stop: async () => {
       await server.stop();

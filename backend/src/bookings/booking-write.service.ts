@@ -5,6 +5,7 @@ import { DatabaseService } from '../database.service';
 import { returnedRows } from '../common/pg-result';
 import { BedInterval, BookingTransactionService, cancelUnderLocks } from './booking-transaction.service';
 import { ACTIVE_BEDS, ACTIVE_BED, CUSTOMER_EDITABLE_STATUSES, LOCKED_STATUSES, MESSAGES, addMinutes, canTransition, checkSlot, vietnamNow } from './booking-rules';
+import { captureBookingBefore, syncBookingNotifications } from '../notifications/booking-notification-enqueue';
 import { CreateAdminBookingDto, CreateCustomerBookingDto, SearchBookingsQuery, UpdateAdminBookingDto } from './booking-write.dto';
 
 interface Planned extends BedInterval { packageId: string; customerName: string; customerPhone?: string }
@@ -65,10 +66,12 @@ export class BookingWriteService {
     });
     const id = await this.transactions.reserve(planned, async (runner) => {
       const customer = returnedRows<{ id: string }>(await runner.query('SELECT RTRIM(MaKhachHang) AS id FROM dbo.KhachHang WHERE SoDienThoai=$1 LIMIT 1', [dto.bookerPhone]));
-      return this.insertBooking(runner, planned, {
+      const bookingId = await this.insertBooking(runner, planned, {
         customerId: customer[0]?.id ?? null, name: dto.bookerName.trim(), phone: dto.bookerPhone, email: dto.bookerEmail ?? null,
         notes: dto.notes ?? null, date: dto.date, status: dto.status ?? 'Chưa đến', pay: dto.paymentStatus ?? 'Chưa thanh toán',
       });
+      await syncBookingNotifications(runner, bookingId, null); // notification jobs commit atomically with the booking
+      return bookingId;
     });
     const warnings: string[] = [];
     if (dto.prepaidAmount) warnings.push('Số tiền thanh toán trả trước chưa được lưu (hệ thống chưa có nơi ghi nhận). Vui lòng ghi nhận qua giao dịch thanh toán.');
@@ -93,12 +96,20 @@ export class BookingWriteService {
     };
     if (!dto.date && !dto.guests) {
       // Single optimistic statement: the row lock taken by UPDATE plus the status/payment guards replace UPDLOCK.
-      const rows = returnedRows(await this.database.query<unknown>(`UPDATE dbo.LichHen SET TrangThaiLichHen=$3::text,TrangThaiThanhToan=$4::text,
+      const sql = `UPDATE dbo.LichHen SET TrangThaiLichHen=$3::text,TrangThaiThanhToan=$4::text,
         GhiChu=CASE WHEN $5::int=1 THEN $6::text ELSE GhiChu END,
         HoTenNguoiDat=COALESCE($8::text,HoTenNguoiDat),SoDienThoaiNguoiDat=COALESCE($9::text,SoDienThoaiNguoiDat),
         EmailNguoiDat=CASE WHEN $10::int=1 THEN $11::text ELSE EmailNguoiDat END
-        WHERE MaLichHen=$1 AND TrangThaiLichHen=$2::text AND TrangThaiThanhToan=$7::text RETURNING MaLichHen`,
-        [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null]));
+        WHERE MaLichHen=$1 AND TrangThaiLichHen=$2::text AND TrangThaiThanhToan=$7::text RETURNING MaLichHen`;
+      const params = [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null];
+      // Status/recipient changes enqueue or cancel notification jobs in the same transaction; other edits keep the single statement.
+      const rows = patch.status !== booking.status || patch.name !== undefined || patch.phone !== undefined
+        ? await this.database.transaction(async (runner) => {
+          const changed = returnedRows(await runner.query(sql, params));
+          if (changed.length) await syncBookingNotifications(runner, id, { status: booking.status, startsAt: null });
+          return changed;
+        })
+        : returnedRows(await this.database.query<unknown>(sql, params));
       if (!rows.length) throw new ConflictException(stale);
       return { id, message: 'Cập nhật lịch hẹn thành công!' };
     }
@@ -114,9 +125,11 @@ export class BookingWriteService {
       });
       await this.transactions.reserve(planned, async (runner) => {
         await this.lockStatus(runner, id, booking.status, booking.pay);
+        const before = await captureBookingBefore(runner, id);
         await runner.query('DELETE FROM dbo.KhachSuDungDichVu WHERE MaLichHen=$1', [id]);
         for (const p of planned) await this.insertDetail(runner, id, p);
         await this.updateBooking(runner, id, patch, date, planned.map((p) => p.startsAt).sort()[0]);
+        await syncBookingNotifications(runner, id, before);
       }, id);
       return { id, message: 'Cập nhật lịch hẹn thành công!' };
     }
@@ -177,10 +190,12 @@ export class BookingWriteService {
       const slots = guests.map((x, i) => ({ bedId: beds[i], startsAt: x.startsAt, endsAt: x.endsAt }));
       return [slots, async (runner) => {
         await this.lockStatus(runner, id, current, patch.readPay);
+        const before = await captureBookingBefore(runner, id);
         for (let i = 0; i < guests.length; i++) {
           await runner.query('UPDATE dbo.KhachSuDungDichVu SET MaGiuong=$2,ThoiDiemBatDau=$3::timestamp,ThoiDiemKetThuc=$4::timestamp WHERE MaChiTiet=$1', [guests[i].d.id, slots[i].bedId, slots[i].startsAt, slots[i].endsAt]);
         }
         await this.updateBooking(runner, id, patch, newFirst.slice(0, 10), newFirst);
+        await syncBookingNotifications(runner, id, before);
       }];
     });
   }

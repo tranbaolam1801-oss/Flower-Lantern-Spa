@@ -1,5 +1,18 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## OTP + thông báo (2026-11-13) — kết quả chạy thật (mock provider, PostgreSQL thật qua PGlite)
+| Bộ kiểm thử | Kết quả |
+|---|---|
+| `npm run lint` / `tsc` / `npm run build` | PASS |
+| jest backend (gồm 36 test OTP, 37 notifications, 8 messaging/Zalo adapter, spec PG thật) | **525 pass, 1 skip, 0 fail** |
+| `node scripts/e2e-local-otp.mjs` (đăng ký, reset, enumeration, cooldown, job xác nhận/nhắc/hủy/retry, dispatch auth) | **40/40** |
+| `node scripts/e2e-local-otp-browser.mjs` (Chromium thật + frontend build + backend thật) | **14/14** |
+| `node scripts/otp-screens-browser.cjs` (API mock, desktop + mobile 390×844) | **29/29** |
+| `node --test n8n/workflow.test.mjs` (cấu trúc workflow + phát lại request HTTP) | 5/5 |
+| `node scripts/e2e-local.mjs` (hồi quy đặt lịch/đăng nhập) | 24/24 |
+- **NOT VERIFIED:** gửi tin thật; Zalo ZNS thật (adapter chỉ test với server HTTP cục bộ); n8n chạy thật; Preview/Production; khóa đồng thời đa kết nối thật cho OTP/dispatch (PGlite tuần tự); Firefox/Safari.
+- Lỗi thật phát hiện nhờ test và đã sửa: adapter Zalo ném lỗi đồng bộ thay vì reject promise; `reset()` của harness không xóa bảng mới.
+
 ## Triển khai live Vercel + Neon (2026-11-12) — kết quả chạy thật trên https://flower-lantern-spa.vercel.app
 | Bộ kiểm thử | Kết quả |
 |---|---|

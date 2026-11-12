@@ -156,11 +156,7 @@ export function Login() {
                 <button
                   type="button"
                   className="text-link"
-                  onClick={() =>
-                    setError('root', {
-                      message: 'Chức năng khôi phục mật khẩu chưa được triển khai.',
-                    })
-                  }
+                  onClick={() => navigate('/quen-mat-khau')}
                 >
                   <Icon name="key" />
                   Quên mật khẩu?
@@ -181,11 +177,7 @@ export function Login() {
                 <button
                   type="button"
                   className="text-link"
-                  onClick={() =>
-                    setError('root', {
-                      message: 'Chức năng đăng ký chưa được triển khai.',
-                    })
-                  }
+                  onClick={() => navigate('/dang-ky')}
                 >
                   Đăng ký ngay
                 </button>

@@ -26,7 +26,10 @@ const AdminEmployeesPage = lazy(() => import('./pages/admin-employees').then((m)
 const AdminServicesPage = lazy(() => import('./pages/admin-services').then((m) => ({ default: m.AdminServicesPage })));
 const AdminReportsPage = lazy(() => import('./pages/admin-reports').then((m) => ({ default: m.AdminReportsPage })));
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const RegisterPage = lazy(() => import('./pages/register').then((m) => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/forgot-password').then((m) => ({ default: m.ForgotPasswordPage })));
+
+const queryClient =new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function Protected({ customer = false, children }: { customer?: boolean; children?: React.ReactNode }) {
   const { user, loading, error, refresh } = useAuth();
@@ -52,6 +55,8 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/dich-vu/:id" element={<ServiceDetailPage />} />
             <Route path="/dat-lich" element={<CustomerBookingPage />} />
             <Route path="/dang-nhap" element={<Login />} />
+            <Route path="/dang-ky" element={<RegisterPage />} />
+            <Route path="/quen-mat-khau" element={<ForgotPasswordPage />} />
             <Route path="/admin/tong-quan" element={<Protected><AdminOverviewPage /></Protected>} />
             <Route path="/admin/lich-hen" element={<Protected />} />
             <Route path="/admin/khach-hang" element={<Protected><CustomerSearch /></Protected>} />
