@@ -1,3 +1,16 @@
+# Trạng thái hiện tại — 2026-11-12 (đọc trước; phần bên dưới là lịch sử, nhiều chỗ đã lỗi thời)
+
+**Dự án CHƯA hoàn thành.** Báo cáo kiểm toán đầy đủ, phân biệt "đã viết / đã kiểm thử mock / đã xác minh": [COMPLETION_REPORT.md](COMPLETION_REPORT.md). Điểm chính:
+
+- Frontend UC_2–UC_10: 139 Completed / 13 Pending / 8 Blocked trong checklist Figma (`frontend/FIGMA_VISUAL_AUDIT.md` §5); đối chiếu Figma, chưa chạy với dữ liệu thật.
+- Backend Phase 2 đã viết cho đặt lịch (ghi), khách hàng (ghi), đánh giá, nhân viên/RBAC, dịch vụ quản trị, báo cáo, SePay Test Mode; build + 229 unit test mock PASS. **Chưa xác minh trên SQL Server.**
+- 27 SQL integration test BLOCKED: Smart App Control chặn `msnodesqlv8.node` (không đổi chính sách). Script SQL login `database/setup/001-test-sql-login.MANUAL.sql` chờ người dùng chạy.
+- Migration: 006 đã áp dụng CHỈ trên Test; 005 và 007 PROPOSED chưa áp dụng.
+- End-to-end: NOT VERIFIED (backend không kết nối được DB trong môi trường này, không có dữ liệu dịch vụ/gói, 007 chưa áp dụng, SePay chưa cấu hình).
+- Tiếp theo và việc cần người dùng: mục "NEXT ACTION — RESUME HERE" trong HANDOVER.md.
+
+---
+
 # Trạng thái mới nhất — 2026-11-10, tiếp tục phần độc lập
 
 **Migration 004 chưa áp dụng theo quyết định người dùng. M3 chưa hoàn tất.** Không tạo PhienDangNhap; logout hiện xóa cookie nhưng chưa thu hồi token đã sao chép ở server.

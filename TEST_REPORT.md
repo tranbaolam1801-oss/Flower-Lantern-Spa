@@ -1,5 +1,41 @@
 # Báo cáo kiểm thử (TEST_REPORT)
 
+## Phase 2 Backend — kết quả thực tế (2026-11-12)
+
+Không chạy SQL ghi/migration/seed; `RUN_SQL_INTEGRATION` không được đặt. Mọi test dưới đây dùng `DatabaseService` mock.
+
+| Lệnh (thư mục) | Kết quả |
+|---|---|
+| `npx tsc --noEmit` (backend) | PASS (không lỗi) |
+| `npm.cmd run build` (backend, `tsc -p tsconfig.build.json`) | PASS |
+| `npx jest --runInBand` (backend, SQL integration không bật) | PASS: 11 suite passed, 6 suite skipped (SQL integration); 153 test passed, 27 skipped, 0 failed |
+| `npx jest --runInBand` (toàn bộ, sau tích hợp SePay + `PaymentsModule` + miễn CSRF webhook; SQL integration không bật) | PASS: 12 suite passed, 6 skipped; 229 test passed, 27 skipped (BLOCKED, xem dưới), 0 failed. Gồm `payments` 69 test và 3 test HTTP mới trong `app.spec.ts` (403 giữ nguyên cho mọi POST không có header; chỉ đúng `POST /api/payments/sepay/webhook` được miễn CSRF và vẫn bị từ chối khi thiếu xác thực; đường gần giống/phương thức khác vẫn 403) |
+| **Lần chạy độc lập cuối (sau rà soát bảo mật + sửa)**: `npm run lint`, `npx tsc --noEmit`, `jest --runInBand`, `npm run build` (backend), `npm run build --workspace @spa/frontend` | lint PASS (0 lỗi); tsc PASS; jest 12 suite passed + 6 skipped, **250 passed**, 27 skipped (BLOCKED), 0 failed; cả hai build PASS. Test DB sau đó: vẫn 17 bảng, chưa có `SePayWebhookEvent`/`ThanhToanHoanTien` (007 chưa áp dụng) |
+| `npx jest --runInBand src/reviews` sau khi nối `PhanHoi.NgayPhanHoi` (cột có/vắng/NULL) | PASS: 14 test; `tsc --noEmit` PASS |
+| `npm.cmd run build --workspace @spa/frontend` | PASS (chỉ còn cảnh báo kích thước bundle có sẵn) |
+
+Test theo module (do từng agent chạy, báo cáo trước khi tích hợp; tổng hợp ở lần chạy đầy đủ ở trên): bookings-write 20, customers+reviews 20, employees 18, admin-services+reports 41, `common/phone` helper mới.
+
+- **PASS:** validation, quy tắc giờ/quá khứ/giường/khóa `Hoàn thành`, bảng chuyển trạng thái, quyền, SĐT chuẩn hóa `+84`→`0`, PATCH dịch vụ upsert-only, báo cáo — ở mức logic với DB mock.
+- **Migration 006 (người dùng duyệt, chỉ Test):** đã áp dụng trên `FlowerLanternSpa_Test` bằng `sqlcmd` (exit 0). Preflight: 17 bảng, 20 giường, `PhanHoi` 0 dòng, chưa có cột. Sau áp dụng: `NgayPhanHoi datetime2 NULL DEFAULT sysutcdatetime()`, vẫn 17 bảng/20 giường/0 dòng; `FlowerLanternSpa_Dev` kiểm tra read-only: chưa có cột (không bị đụng). 005 vẫn PROPOSED, chưa áp dụng.
+- **Phân loại đúng:** 153 unit test (mock) PASS; **27 SQL integration test BLOCKED** (6 suite) vì driver native không load được — KHÔNG phải lỗi assertion của backend. Jest báo chúng là "failed" chỉ vì lỗi load trước khi assertion nào chạy.
+- **BLOCKED — SQL integration (người dùng duyệt chạy trên Test):** `RUN_SQL_INTEGRATION=1 DB_AUTH=windows DB_HOST=localhost DB_NAME=FlowerLanternSpa_Test npx jest --runInBand`. Nguyên nhân duy nhất quan sát được: "An Application Control policy has blocked this file. `C:\Spa\node_modules\msnodesqlv8\prebuilds\win32-x64\msnodesqlv8.node`" (ném ở `src/config.ts:13`). Xác minh thêm: `node -e "require('msnodesqlv8')"` cũng bị chặn → chặn theo file ở mọi tiến trình (kể cả dev server khi `DB_AUTH=windows`), không riêng jest. Không đổi/bỏ qua chính sách bảo mật máy. Các lần chạy trước đây (62/62) xảy ra khi driver còn được phép.
+- **Điều tra kết nối (chỉ đọc):** xác thực hiện tại = Windows Integrated (`DB_AUTH=windows`, ODBC Driver 17 `Trusted_Connection=Yes` qua addon native `msnodesqlv8`). SQL Server 2022 (16.0.1000.6) ở Mixed Mode (`IsIntegratedSecurityOnly=0`), TCP 1433 đang nghe. `backend/src/config.ts` đã có nhánh SQL-login dùng driver JS thuần `tedious` (mssql 12.7.14 + tedious 20.3.8 đã cài, không cần đổi dependency); tất cả 5 spec integration và `DatabaseService` đều đi qua `databaseOptions(process.env)` nên không cần sửa code. `tedious` không làm được Windows SSPI theo tài khoản hiện tại (chỉ SQL login hoặc NTLM kèm mật khẩu), nên cần một SQL login → đổi cách xác thực, chờ người dùng duyệt (xem HANDOVER.md).
+- **Chuẩn bị mở chặn (chưa thực thi):** Smart App Control BẬT (người dùng xác nhận, không tắt). Script `database/setup/001-test-sql-login.MANUAL.sql` tạo SQL login quyền tối thiểu cho `FlowerLanternSpa_Test` để dùng `tedious`; chờ người dùng tự chạy trong SSMS rồi cho phép chạy lại 27 test. Phát hiện trước khi chạy lại: audit schema sẽ lệch ở `PhanHoi` sau migration 006 → đã bổ sung cột nullable `NgayPhanHoi` vào entity (chưa chạy lại test; `tsc` sẽ kiểm tra ở lần chạy kế tiếp).
+- **NOT VERIFIED:** hành vi thật trên SQL Server (khóa UPDLOCK qua HTTP, ràng buộc unique, truy vấn báo cáo, transaction), E2E React↔NestJS↔SQL, Playwright, kiểm thử tải/concurrency qua API.
+- **BLOCKED:** SQL integration chờ duyệt ghi vào `FlowerLanternSpa_Test`; migration 005/006 chờ duyệt; SePay chưa bắt đầu (cần đề xuất migration thanh toán).
+- Đối chiếu route frontend↔backend: tất cả khớp, trừ `payments/sepay/intent` và `payments/:id/status` (chưa có).
+
+## Cập nhật Frontend UI & Evidence Guard (2026-11-11)
+
+- **Frontend `typecheck` / `lint` / `build`:** Thực thi sau lần chỉnh sửa cả Customer UI và Admin/Management UI (`npm.cmd run typecheck -w frontend`, `npm.cmd run lint`, `npm.cmd run build -w frontend`) — ghi nhận kết quả thực tế ở lần chạy cuối (`task-797` và kiểm tra sau chỉnh Admin UI).
+- **Visual Verification:** **PENDING** — Chưa xác nhận hoàn tất trực quan vì chưa chụp được ảnh trình duyệt mới để đối chiếu với Figma gốc.
+- **Playwright UI / E2E (`BLOCKED` trong sandbox hiện tại):**
+  - Đã thiết lập cơ chế lưu bằng chứng chống ghi đè tại `scripts/run-playwright-evidence.mjs` và `playwright.ui.config.ts` (lưu theo run folder riêng trong `audit/test-evidence/figma-customer-ui/` với streaming output, hard timeout `taskkill /T /F` và `SUMMARY.md`).
+  - Lần chạy `task-720` (`playwright.config.ts`) và `task-765` (`playwright.ui.config.ts`, smoke test `Customer login`) đều lên được Vite (`127.0.0.1:5184` ready sau 1.27s) nhưng bị treo ở bước thực thi Chromium trong sandbox và đã bị dừng lại để tránh kẹt vòng lặp (đã kiểm tra 0 tiến trình `node`/`chrome` còn chạy).
+  - Bằng chứng screenshot cũ trong `test-results/` đã bị xóa ở lần chạy đầu của Playwright trước khi bị hủy (đã ghi chi tiết trong `HANDOVER.md`). Mọi bằng chứng chụp mới sau này sẽ lưu tách biệt tại `audit/test-evidence/`, không coi là ảnh cũ khôi phục.
+- **SQL Integration Tests:** Không chạy theo chỉ thị hiện tại (giữ nguyên Backend/DB).
+
 ## Phiên khôi phục 2026-11-10 (kết quả mới; phần bên dưới là lịch sử)
 
 ### Trước sửa

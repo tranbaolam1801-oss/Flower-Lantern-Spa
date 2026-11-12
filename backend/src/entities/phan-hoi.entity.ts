@@ -16,6 +16,9 @@ export class PhanHoi {
   @Column({ name: 'NoiDungPhanHoi', type: 'nvarchar', length: 1000 })
   noiDungPhanHoi!: string;
 
+  @Column({ name: 'NgayPhanHoi', type: 'datetime2', precision: 0, nullable: true })
+  ngayPhanHoi?: Date | null;
+
   @ManyToOne(() => DanhGia, (dg) => dg.phanHois)
   @JoinColumn({ name: 'MaDanhGia' })
   danhGia?: DanhGia;

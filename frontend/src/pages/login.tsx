@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
-import { loginApi, getDefaultRoute, type ApiError } from '../lib/auth-api';
+import { loginApi, getDefaultRoute, type ApiError, type AuthUser } from '../lib/auth-api';
 import { useAuth } from '../contexts/auth-context';
 import { BrandLogo } from '../components/brand-logo';
 
@@ -32,7 +32,7 @@ export function Login() {
     defaultValues: { phone: '', password: '' },
   });
 
-  const mutation = useMutation({
+  const mutation = useMutation<AuthUser, ApiError, LoginInput>({
     mutationFn: loginApi,
     onSuccess: (user) => {
       setUser(user);
@@ -55,6 +55,14 @@ export function Login() {
     },
   });
 
+  const showInvalidCredentials =
+    mutation.isError &&
+    (mutation.error.code === 'INVALID_CREDENTIALS' || mutation.error.status === 401) &&
+    mutation.error.code !== 'ACCOUNT_TEMPORARILY_LOCKED' &&
+    mutation.error.code !== 'ACCOUNT_INACTIVE';
+
+  const isTemporarilyLocked = mutation.isError && mutation.error.code === 'ACCOUNT_TEMPORARILY_LOCKED';
+
   const submit = (data: LoginInput) => {
     mutation.mutate({ phone: data.phone.trim(), password: data.password });
   };
@@ -74,35 +82,37 @@ export function Login() {
               <label htmlFor="phone">
                 Số điện thoại <span>*</span>
               </label>
-              <div className={`input-wrap ${errors.phone ? 'invalid' : ''}`}>
+              <div className={`input-wrap ${errors.phone || showInvalidCredentials ? 'invalid' : ''}`}>
                 <Icon name="phone" />
                 <input
                   id="phone"
                   type="tel"
                   autoComplete="username"
                   placeholder="Nhập số điện thoại"
-                  aria-invalid={!!errors.phone}
+                  aria-invalid={!!errors.phone || showInvalidCredentials}
                   aria-describedby="phone-error"
                   disabled={mutation.isPending}
                   {...register('phone')}
                 />
               </div>
-              <p id="phone-error" className="field-error" aria-live="polite">
-                {errors.phone?.message ?? '\u00a0'}
-              </p>
+              {(errors.phone || !mutation.isError) && (
+                <p id="phone-error" className="field-error" aria-live="polite">
+                  {errors.phone?.message ?? '\u00a0'}
+                </p>
+              )}
             </div>
             <div className="field">
               <label htmlFor="password">
                 Mật khẩu <span>*</span>
               </label>
-              <div className={`input-wrap ${errors.password ? 'invalid' : ''}`}>
+              <div className={`input-wrap ${errors.password || showInvalidCredentials ? 'invalid' : ''}`}>
                 <Icon name="lock" />
                 <input
                   id="password"
                   type={visible ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder="Nhập mật khẩu"
-                  aria-invalid={!!errors.password}
+                  aria-invalid={!!errors.password || showInvalidCredentials}
                   aria-describedby="password-error"
                   disabled={mutation.isPending}
                   {...register('password')}
@@ -117,58 +127,71 @@ export function Login() {
                   <Icon name="eye-off" />
                 </button>
               </div>
-              <p id="password-error" className="field-error" aria-live="polite">
-                {errors.password?.message ?? '\u00a0'}
-              </p>
+              {(errors.password || !mutation.isError) && (
+                <p id="password-error" className="field-error" aria-live="polite">
+                  {errors.password?.message ?? '\u00a0'}
+                </p>
+              )}
             </div>
           </div>
+          {errors.root && (
+            <p role="alert" className="notice">
+              {mutation.error?.code === 'INVALID_CREDENTIALS'
+                ? 'Số điện thoại hoặc mật khẩu không đúng'
+                : errors.root.message}
+            </p>
+          )}
+          {isTemporarilyLocked && (
+            <p role="alert" className="login-lockout-badge">
+              Lần đăng nhập sai liên tiếp thứ 5 · Tạm khóa 15 phút
+            </p>
+          )}
           <div className="login-actions">
-            <div className="remember-row">
-              <label>
-                <input type="checkbox" />
-                Ghi nhớ đăng nhập
-              </label>
-              <button
-                type="button"
-                className="text-link"
-                onClick={() =>
-                  setError('root', {
-                    message: 'Chức năng khôi phục mật khẩu chưa được triển khai.',
-                  })
-                }
-              >
-                <Icon name="key" />
-                Quên mật khẩu?
-              </button>
-            </div>
+            {!showInvalidCredentials && (
+              <div className="remember-row">
+                <label>
+                  <input type="checkbox" />
+                  Ghi nhớ đăng nhập
+                </label>
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={() =>
+                    setError('root', {
+                      message: 'Chức năng khôi phục mật khẩu chưa được triển khai.',
+                    })
+                  }
+                >
+                  <Icon name="key" />
+                  Quên mật khẩu?
+                </button>
+              </div>
+            )}
             <Button
               type="submit"
               className="w-full gap-[10px]"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || isTemporarilyLocked}
             >
               <Icon name="log-in" />
               {mutation.isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
-            <p className="register-row">
-              Chưa có tài khoản?{' '}
-              <button
-                type="button"
-                className="text-link"
-                onClick={() =>
-                  setError('root', {
-                    message: 'Chức năng đăng ký chưa được triển khai.',
-                  })
-                }
-              >
-                Đăng ký ngay
-              </button>
-            </p>
+            {!showInvalidCredentials && (
+              <p className="register-row">
+                Chưa có tài khoản?{' '}
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={() =>
+                    setError('root', {
+                      message: 'Chức năng đăng ký chưa được triển khai.',
+                    })
+                  }
+                >
+                  Đăng ký ngay
+                </button>
+              </p>
+            )}
           </div>
-          {errors.root && (
-            <p role="alert" className="notice">
-              {errors.root.message}
-            </p>
-          )}
         </form>
       </section>
     </main>

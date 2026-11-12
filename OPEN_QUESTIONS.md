@@ -77,3 +77,22 @@ Continue building all remaining fullstack milestones after incorporating these r
 Người dùng trả lời: “Chưa áp dụng, tiếp tục phần độc lập”. `database/migrations/004-auth-sessions.sql` và `database/AUTH_SESSION_PROPOSAL.md` chỉ là đề xuất. Không tạo `PhienDangNhap` trên Dev/Test; không bật code phụ thuộc bảng này. Logout hiện xóa cookie; token đã sao chép chưa bị thu hồi tại server. Đây vẫn là phần chưa nghiệm thu bảo mật M3.
 
 Các sửa UI đã được duyệt, không phải câu hỏi mở: UC1/UC5 dùng nguyên logo tiếng Anh Figma group `3:3233`; UC3.4 phải dùng `ManagementSidebar`; responsive 9 viewport là yêu cầu xuyên suốt M6. Đã lấy thêm context/screenshot UC2 `1:49090`, UC5 `1:11630`, UC6 `3:3222`; không còn chỉ có context login. UC3.4 chưa triển khai màn hình nên chưa nghiệm thu việc áp dụng sidebar tại đó.
+
+## SePay Test Mode — câu hỏi chính sách cần người dùng quyết định (2026-11-12)
+
+Nguồn: báo cáo agent `be-sepay`, `database/PAYMENT_SEPAY_PROPOSAL.md`. Mã hiện giữ hành vi an toàn (giữ lại để đối soát thủ công) cho tới khi có quyết định.
+
+1. Thanh toán thiếu tiền: chấp nhận thành "Thanh toán một phần" hay giữ chờ đối soát thủ công (hiện: giữ chờ).
+2. Thanh toán thừa tiền: xác nhận và đánh dấu phần dư cần hoàn, hay giữ chờ (hiện: giữ chờ).
+3. Chuyển khoản trễ sau khi hết hạn: tự xác nhận nếu lịch còn mở, hay thủ công (hiện: thủ công).
+4. Giá trị `ThanhToan.TrangThaiGiaoDich`: SRS chỉ có Thành công/Thất bại/Đã hoàn tiền; mã dùng thêm `Chờ thanh toán` và `Hết hạn` — có chấp nhận không (báo cáo chỉ đếm `Thành công`).
+5. Lịch `Hoàn thành` có được thanh toán không (hiện: được, vì đủ điều kiện đánh giá cần Hoàn thành + Đã thanh toán; trong khi PATCH lịch bị khóa).
+6. `Đã thanh toán`/tiền cọc nhân viên nhập tay không có dòng `ThanhToan`; hoàn tiền SePay tính lại từ các dòng và có thể ghi đè trạng thái đó.
+7. Kiểm tra tài khoản nhận chỉ so `accountNumber` với `SEPAY_ACCOUNT_NUMBER` (chưa xử lý tài khoản ảo/sub-account).
+8. Tiền tố mã thanh toán `SEPAY_PAYMENT_PREFIX` (mặc định `FLS`) phải khớp tiền tố cấu hình trong dashboard SePay.
+9. Quyền hoàn tiền: hiện chỉ Quản lý/Chủ Spa.
+10. Xác thực webhook: mặc định API Key (`Authorization: Apikey ...`); HMAC-SHA256 có hỗ trợ (cần `rawBody`, đã bật trong `main.ts`). Chọn chế độ nào khi cấu hình SePay Test Mode.
+
+11. Chuyển khoản trễ vì độ trễ webhook (phát hiện từ rà soát bảo mật độc lập): hạn thanh toán hiện so với thời điểm webhook ĐẾN, không phải `transactionDate` của ngân hàng; một khoản chuyển lúc 14:59 trong cửa sổ 15 phút có thể bị `EXPIRED` nếu webhook đến lúc 15:02. Ngoài ra khi số tiền phải trả đổi, mọi mã đang chờ bị đánh `Hết hạn` nên khoản đã chuyển cho QR cũ cũng thành `EXPIRED`. Chọn: (a) thêm thời gian ân hạn (ví dụ +10 phút), (b) so với `transactionDate`, (c) giữ nguyên và đối soát thủ công qua `GET /api/payments/unreconciled`. Hiện: (c).
+12. Giới hạn tốc độ (rate limit) cho webhook/intent cần thêm dependency (`@nestjs/throttler`) — có duyệt thêm không; chính sách lưu giữ `DuLieuTho` (payload thô chứa memo/thông tin ngân hàng của người chuyển).
+13. `main.ts` gắn cứng bind `127.0.0.1`; reverse proxy ở container/máy khác sẽ không tới được backend — có cho phép đổi thành cấu hình (ví dụ `HOST`) khi chọn hosting không.

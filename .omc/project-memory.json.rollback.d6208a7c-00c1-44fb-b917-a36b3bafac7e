@@ -1,0 +1,281 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1794417132313,
+  "projectRoot": "C:\\Spa",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=22.12.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@playwright/test",
+        "version": "1.56.1",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 22.12.0"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "concurrently -k -n api,web \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+      "build": "npm run build --workspaces",
+      "typecheck": "npm run typecheck --workspaces",
+      "lint": "eslint backend/src frontend/src tests",
+      "test": "npm run test -w backend",
+      "test:e2e": "playwright test"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": "*.spec.ts",
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "backend",
+      "frontend"
+    ],
+    "mainDirectories": [
+      "docs",
+      "scripts",
+      "tests"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "audit": {
+      "path": "audit",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1794417131930,
+      "keyFiles": [
+        "FIGMA_FRAME_INVENTORY.md",
+        "handover-history.md",
+        "RECOVERY_2026-11-10.md"
+      ]
+    },
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1794417131974,
+      "keyFiles": [
+        "jest.config.cjs",
+        "package.json",
+        "tsconfig.build.json",
+        "tsconfig.json"
+      ]
+    },
+    "database": {
+      "path": "database",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1794417131977,
+      "keyFiles": [
+        "AUTH_SESSION_PROPOSAL.md",
+        "FlowerLanternSpa_Dev_pre_003.bak",
+        "initialize-local.sql",
+        "initialize-test.sql",
+        "README.md"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 12,
+      "lastAccessed": 1794417132008,
+      "keyFiles": [
+        "50K141.04.3007.docx",
+        "50K141.04.3007.fig",
+        "BIÊN BẢN TỔNG KẾT PHỎNG VẤN BỔ SUNG.docx",
+        "BIÊN BẢN TỔNG KẾT PHỎNG VẤN.docx",
+        "BO_QUY_CHUAN_TRUOC_FIGMA.docx"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1794417132079,
+      "keyFiles": [
+        "API_HANDOFF_TO_CODEX.md",
+        "components.json",
+        "FIGMA_VISUAL_AUDIT.md",
+        "index.html",
+        "package.json"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1794417132092,
+      "keyFiles": [
+        "audit-sources.ps1",
+        "run-playwright-evidence.mjs"
+      ]
+    },
+    "test-results": {
+      "path": "test-results",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1794417132107,
+      "keyFiles": [
+        "booking-1440.png",
+        "customer-login-1440.png",
+        "my-bookings-1440.png",
+        "service-detail-1440.png",
+        "services-1440.png"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 5,
+      "lastAccessed": 1794417132112,
+      "keyFiles": [
+        "auth.spec.ts",
+        "foundation.spec.ts",
+        "responsive.ts",
+        "sessions.spec.ts",
+        "ui-coverage.spec.ts"
+      ]
+    },
+    "backend\\dist": {
+      "path": "backend\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 16,
+      "lastAccessed": 1794417132123,
+      "keyFiles": [
+        "app.module.js",
+        "app.module.js.map",
+        "catalog.controller.js"
+      ]
+    },
+    "backend\\src": {
+      "path": "backend\\src",
+      "purpose": "Source code",
+      "fileCount": 11,
+      "lastAccessed": 1794417132136,
+      "keyFiles": [
+        "app.module.ts",
+        "app.spec.ts",
+        "catalog.controller.ts"
+      ]
+    },
+    "database\\migrations": {
+      "path": "database\\migrations",
+      "purpose": "Database migrations",
+      "fileCount": 4,
+      "lastAccessed": 1794417132147,
+      "keyFiles": [
+        "001-srs-baseline.sql",
+        "002-business-indexes.sql",
+        "003-auth-lockout.sql"
+      ]
+    },
+    "database\\seeds": {
+      "path": "database\\seeds",
+      "purpose": "Database seeds",
+      "fileCount": 2,
+      "lastAccessed": 1794417132157,
+      "keyFiles": [
+        "001-beds.sql",
+        "002-auth-baseline.sql"
+      ]
+    },
+    "frontend\\dist": {
+      "path": "frontend\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1794417132161,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "frontend\\node_modules": {
+      "path": "frontend\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1794417132162,
+      "keyFiles": []
+    },
+    "frontend\\public": {
+      "path": "frontend\\public",
+      "purpose": "Public files",
+      "fileCount": 0,
+      "lastAccessed": 1794417132173,
+      "keyFiles": []
+    },
+    "frontend\\src": {
+      "path": "frontend\\src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1794417132177,
+      "keyFiles": [
+        "main.tsx",
+        "styles.css"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "HANDOVER.md",
+      "accessCount": 1.9995282176864702,
+      "lastAccessed": 1794418464851,
+      "type": "file"
+    },
+    {
+      "path": "PROJECT_STATUS.md",
+      "accessCount": 1.9994724247678208,
+      "lastAccessed": 1794418472054,
+      "type": "file"
+    },
+    {
+      "path": "frontend/FIGMA_VISUAL_AUDIT.md",
+      "accessCount": 1,
+      "lastAccessed": 1794418472690,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_1 · Ngoại lệ 3a · Bỏ trống thông tin.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492037,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_1 · Ngoại lệ 5a.3 · Tạm khóa 15 phút.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492775,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_2.2_01_Lich_theo_giuong.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492946,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-dashboard.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1794418503667,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

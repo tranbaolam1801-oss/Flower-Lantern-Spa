@@ -1,0 +1,37 @@
+{"t":0,"agent":"a8fb7cf","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a8fb7cf","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":623594}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"af37bb4","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"af37bb4","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":386699}
+{"t":0,"agent":"a7033a1","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"a7033a1","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":519039}
+{"t":0,"agent":"ae5ff9f","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"ae5ff9f","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":347928}
+{"t":0,"agent":"a765ce6","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"a765ce6","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":654651}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"a98e22c","agent_type":"executor","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a1f1db1","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"a1f1db1","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":28714629}
+{"t":0,"agent":"a62e04e","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a62e04e","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":2101833}
+{"t":0,"agent":"acc8177","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"acc8177","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":1486129}
+{"t":0,"agent":"a35a441","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"figma:figma-design-to-code"}
+{"t":0,"agent":"a35a441","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":1291903}
+{"t":0,"agent":"a63fd66","agent_type":"executor","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a247004","agent_type":"executor","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a7e2697","agent_type":"executor","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"ae2bc22","agent_type":"executor","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a7e2697","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a7e2697","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":97346,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a5a5222","agent_type":"security-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a5a5222","agent_type":"security-reviewer","event":"agent_stop","success":true,"duration_ms":246866}
+{"t":0,"agent":"ac9e80c","agent_type":"executor","event":"agent_start","parent_mode":"none"}

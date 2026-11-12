@@ -1,0 +1,437 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1794417132313,
+  "projectRoot": "C:\\Spa",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=22.12.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@playwright/test",
+        "version": "1.56.1",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 22.12.0"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "concurrently -k -n api,web \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+      "build": "npm run build --workspaces",
+      "typecheck": "npm run typecheck --workspaces",
+      "lint": "eslint backend/src frontend/src tests",
+      "test": "npm run test -w backend",
+      "test:e2e": "playwright test"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": "*.spec.ts",
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "backend",
+      "frontend"
+    ],
+    "mainDirectories": [
+      "docs",
+      "scripts",
+      "tests"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "audit": {
+      "path": "audit",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1794417131930,
+      "keyFiles": [
+        "FIGMA_FRAME_INVENTORY.md",
+        "handover-history.md",
+        "RECOVERY_2026-11-10.md"
+      ]
+    },
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1794417131974,
+      "keyFiles": [
+        "jest.config.cjs",
+        "package.json",
+        "tsconfig.build.json",
+        "tsconfig.json"
+      ]
+    },
+    "database": {
+      "path": "database",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1794417131977,
+      "keyFiles": [
+        "AUTH_SESSION_PROPOSAL.md",
+        "FlowerLanternSpa_Dev_pre_003.bak",
+        "initialize-local.sql",
+        "initialize-test.sql",
+        "README.md"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 12,
+      "lastAccessed": 1794417132008,
+      "keyFiles": [
+        "50K141.04.3007.docx",
+        "50K141.04.3007.fig",
+        "BIÊN BẢN TỔNG KẾT PHỎNG VẤN BỔ SUNG.docx",
+        "BIÊN BẢN TỔNG KẾT PHỎNG VẤN.docx",
+        "BO_QUY_CHUAN_TRUOC_FIGMA.docx"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1794417132079,
+      "keyFiles": [
+        "API_HANDOFF_TO_CODEX.md",
+        "components.json",
+        "FIGMA_VISUAL_AUDIT.md",
+        "index.html",
+        "package.json"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1794417132092,
+      "keyFiles": [
+        "audit-sources.ps1",
+        "run-playwright-evidence.mjs"
+      ]
+    },
+    "test-results": {
+      "path": "test-results",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1794417132107,
+      "keyFiles": [
+        "booking-1440.png",
+        "customer-login-1440.png",
+        "my-bookings-1440.png",
+        "service-detail-1440.png",
+        "services-1440.png"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 5,
+      "lastAccessed": 1794417132112,
+      "keyFiles": [
+        "auth.spec.ts",
+        "foundation.spec.ts",
+        "responsive.ts",
+        "sessions.spec.ts",
+        "ui-coverage.spec.ts"
+      ]
+    },
+    "backend\\dist": {
+      "path": "backend\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 16,
+      "lastAccessed": 1794417132123,
+      "keyFiles": [
+        "app.module.js",
+        "app.module.js.map",
+        "catalog.controller.js"
+      ]
+    },
+    "backend\\src": {
+      "path": "backend\\src",
+      "purpose": "Source code",
+      "fileCount": 11,
+      "lastAccessed": 1794417132136,
+      "keyFiles": [
+        "app.module.ts",
+        "app.spec.ts",
+        "catalog.controller.ts"
+      ]
+    },
+    "database\\migrations": {
+      "path": "database\\migrations",
+      "purpose": "Database migrations",
+      "fileCount": 4,
+      "lastAccessed": 1794417132147,
+      "keyFiles": [
+        "001-srs-baseline.sql",
+        "002-business-indexes.sql",
+        "003-auth-lockout.sql"
+      ]
+    },
+    "database\\seeds": {
+      "path": "database\\seeds",
+      "purpose": "Database seeds",
+      "fileCount": 2,
+      "lastAccessed": 1794417132157,
+      "keyFiles": [
+        "001-beds.sql",
+        "002-auth-baseline.sql"
+      ]
+    },
+    "frontend\\dist": {
+      "path": "frontend\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1794417132161,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "frontend\\node_modules": {
+      "path": "frontend\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1794417132162,
+      "keyFiles": []
+    },
+    "frontend\\public": {
+      "path": "frontend\\public",
+      "purpose": "Public files",
+      "fileCount": 0,
+      "lastAccessed": 1794417132173,
+      "keyFiles": []
+    },
+    "frontend\\src": {
+      "path": "frontend\\src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1794417132177,
+      "keyFiles": [
+        "main.tsx",
+        "styles.css"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "HANDOVER.md",
+      "accessCount": 24.20523817691041,
+      "lastAccessed": 1794455919940,
+      "type": "file"
+    },
+    {
+      "path": "PROJECT_STATUS.md",
+      "accessCount": 1.9994724247678208,
+      "lastAccessed": 1794418472054,
+      "type": "file"
+    },
+    {
+      "path": "frontend/FIGMA_VISUAL_AUDIT.md",
+      "accessCount": 45.43687230989509,
+      "lastAccessed": 1794455555261,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_1 · Ngoại lệ 3a · Bỏ trống thông tin.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492037,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_1 · Ngoại lệ 5a.3 · Tạm khóa 15 phút.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492775,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_2.2_01_Lich_theo_giuong.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418492946,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-dashboard.tsx",
+      "accessCount": 44.915149061753354,
+      "lastAccessed": 1794455991392,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/login.tsx",
+      "accessCount": 4.941508788028769,
+      "lastAccessed": 1794420512862,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_2.4_01_Hop_thoai_Tim_kiem.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418567792,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/styles.css",
+      "accessCount": 32.696676077423135,
+      "lastAccessed": 1794456110950,
+      "type": "file"
+    },
+    {
+      "path": "docs/UI/UC_2.1_02_Bieu_mau_Tao_lich_hen.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418655664,
+      "type": "file"
+    },
+    {
+      "path": "audit/test-evidence/figma-visual/2026-11-12_ad-hoc-uc2-uc1-capture/uc2-calendar-toolbar-1440.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418877877,
+      "type": "file"
+    },
+    {
+      "path": "_adhoc_capture.mjs",
+      "accessCount": 1.9997805114388885,
+      "lastAccessed": 1794418911547,
+      "type": "file"
+    },
+    {
+      "path": "audit/test-evidence/figma-visual/2026-11-12_ad-hoc-uc2-uc1-capture/uc2-create-modal-1440.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418930389,
+      "type": "file"
+    },
+    {
+      "path": "audit/test-evidence/figma-visual/2026-11-12_ad-hoc-uc2-uc1-capture/uc1-login-locked-1440.png",
+      "accessCount": 1,
+      "lastAccessed": 1794418931384,
+      "type": "file"
+    },
+    {
+      "path": "audit/FIGMA_FRAME_INVENTORY.md",
+      "accessCount": 4.919295643352906,
+      "lastAccessed": 1794423299270,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/booking-cancel.tsx",
+      "accessCount": 1.7584200534114398,
+      "lastAccessed": 1794454461888,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/lib/booking-api.ts",
+      "accessCount": 4.294619566786819,
+      "lastAccessed": 1794454371634,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/customer-search.tsx",
+      "accessCount": 22.303160901915913,
+      "lastAccessed": 1794454739910,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/lib/management-api.ts",
+      "accessCount": 6.148714987388752,
+      "lastAccessed": 1794452142587,
+      "type": "directory"
+    },
+    {
+      "path": "backend",
+      "accessCount": 1,
+      "lastAccessed": 1794422232787,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src",
+      "accessCount": 1.9987542188155267,
+      "lastAccessed": 1794422430475,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/admin-reviews.tsx",
+      "accessCount": 9.988524610239544,
+      "lastAccessed": 1794422922372,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/lib/api-client.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794422652432,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/customer-booking.tsx",
+      "accessCount": 13.977667238831252,
+      "lastAccessed": 1794423956781,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/customer-dashboard.tsx",
+      "accessCount": 8.950627891035978,
+      "lastAccessed": 1794456456005,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/customer-header.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1794424187824,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/account-menu.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1794424201770,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/service-detail.tsx",
+      "accessCount": 1.9997509472958348,
+      "lastAccessed": 1794424791517,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-employees.tsx",
+      "accessCount": 34.545248714487165,
+      "lastAccessed": 1794456251767,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-services.tsx",
+      "accessCount": 9.86122926991968,
+      "lastAccessed": 1794455409604,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-reports.tsx",
+      "accessCount": 9.865458210358742,
+      "lastAccessed": 1794455511746,
+      "type": "file"
+    },
+    {
+      "path": "backend/src",
+      "accessCount": 1.9999427608380693,
+      "lastAccessed": 1794452100308,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

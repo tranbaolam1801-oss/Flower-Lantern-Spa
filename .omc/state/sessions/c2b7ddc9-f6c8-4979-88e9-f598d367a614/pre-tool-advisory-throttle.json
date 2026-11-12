@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "entries": {
+    "466399dafa2d20f60587180bad0a07358eb7f2bce724df0ff682f038ad33f5ad": {
+      "last_emitted_at_ms": 1794462652872,
+      "message": "Read multiple files in parallel when possible for faster analysis."
+    },
+    "79a93d4a2f8f50b95f852280616242fee1855dc99a3c75211917f55e72e95fae": {
+      "last_emitted_at_ms": 1794462582587,
+      "message": "Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests)."
+    },
+    "15f8597183753e78e8eef5daf7b3d9f1f0e42f8a8c72207b9c107fe89e495800": {
+      "last_emitted_at_ms": 1794462573613,
+      "message": "Spawning agent: oh-my-claudecode:executor (inherit) | Task: DB seed and staging migration proposals"
+    },
+    "d67be0da5af5c09ad38b21271f742f9f591970f01c1368167c9a802feca7a76f": {
+      "last_emitted_at_ms": 1794462545416,
+      "message": "Spawning agent: oh-my-claudecode:executor (inherit) | Task: Uploads, rate limit, bind host, staging config"
+    },
+    "0248715c7ef1130d28da0fdf620ce7ab7491ae27d6edf0bb1c67647bc06992ff": {
+      "last_emitted_at_ms": 1794462523459,
+      "message": "Spawning agent: oh-my-claudecode:executor (inherit) | Task: Booking/customer/employee contracts and UI fixes"
+    },
+    "459c54e5f35d6a58dcd90d2aecc21fa6d1f35d241bc5b134c506f87dc7b6d67b": {
+      "last_emitted_at_ms": 1794461183789,
+      "message": "Combine searches in parallel when investigating multiple patterns."
+    },
+    "378ad4501ba7e23f58d8cfc3516da57a1b4d4a22ea4323f23768f2174154026b": {
+      "last_emitted_at_ms": 1794461177571,
+      "message": "Spawning agent: oh-my-claudecode:security-reviewer (inherit) | Task: Independent security review of payments module"
+    },
+    "445ed27a3872b681d98190bae61ccb84954e1bc4e140df5370be958dee776b3a": {
+      "last_emitted_at_ms": 1794460742204,
+      "message": "Verify changes work after editing. Test functionality before marking complete."
+    }
+  },
+  "updated_at": "2026-11-12T05:50:52.872Z"
+}

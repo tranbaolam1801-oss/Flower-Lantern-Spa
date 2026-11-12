@@ -54,6 +54,26 @@ describe('API contract (test-only database double)',()=>{
     expect(response.body.packages).toHaveLength(1);
     expect(database.query.mock.calls[0][1]).toEqual(['DV001','Hoạt động']);
   });
+  describe('browser request guard and the SePay webhook exemption',()=>{
+    it('still rejects state-changing requests without the app header',async()=>{
+      await request(app.getHttpServer()).post('/api/bookings').send({}).expect(403);
+      await request(app.getHttpServer()).post('/api/payments/mock/webhook').send({}).expect(403);
+      await request(app.getHttpServer()).post('/api/payments/sepay/intent').send({}).expect(403);
+    });
+    it('exempts only the exact webhook route, and it is still authenticated (no header, no credentials)',async()=>{
+      const response = await request(app.getHttpServer()).post('/api/payments/sepay/webhook').send({id:1,transferType:'in'});
+      expect(response.status).not.toBe(403);
+      expect(response.status).toBeGreaterThanOrEqual(401);
+      expect(response.body.success).not.toBe(true);
+      expect(database.query).not.toHaveBeenCalled();
+    });
+    it('does not extend the exemption to near-miss paths or other methods',async()=>{
+      await request(app.getHttpServer()).post('/api/payments/sepay/webhook/').send({}).expect(403);
+      await request(app.getHttpServer()).post('/api/payments/sepay/webhook/extra').send({}).expect(403);
+      await request(app.getHttpServer()).put('/api/payments/sepay/webhook').send({}).expect(403);
+      await request(app.getHttpServer()).patch('/api/payments/sepay/webhook').send({}).expect(403);
+    });
+  });
 });
 describe('configuration invariants',()=>{
   it('never silently falls back to fake data',()=>expect(databaseOptions({})).toBeUndefined());

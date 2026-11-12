@@ -6,9 +6,16 @@ import { AuthModule } from './auth/auth.module';
 import { BookingReadController } from './bookings/booking-read.controller';
 import { CustomerReadController } from './customers/customer-read.controller';
 import { BookingCancelController } from './bookings/booking-cancel.controller';
+import { CustomerWriteController } from './customers/customer-write.controller';
+import { ReviewsController } from './reviews/reviews.controller';
+import { AdminServicesModule } from './admin-services/admin-services.module';
+import { ReportsModule } from './reports/reports.module';
+import { EmployeesModule } from './employees/employees.module';
+import { BookingWriteModule } from './bookings/booking-write.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
-  imports: [DatabaseModule,AuthModule],
-  controllers: [HealthController, CatalogController, BookingReadController, CustomerReadController, BookingCancelController],
+  imports: [DatabaseModule,AuthModule,AdminServicesModule,ReportsModule,EmployeesModule,BookingWriteModule,PaymentsModule],
+  controllers: [HealthController, CatalogController, BookingReadController, CustomerReadController, CustomerWriteController, ReviewsController, BookingCancelController],
 })
 export class AppModule {}
