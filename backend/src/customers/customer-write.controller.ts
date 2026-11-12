@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Inject, NotFoundException, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { DatabaseService } from '../database.service';
+import { returnedRows } from '../common/pg-result';
+import { isUniqueViolation } from '../common/db-errors';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Permissions, Roles } from '../auth/roles.decorator';
@@ -19,77 +21,92 @@ export class CustomerWriteController {
   async detail(@Param('id') id: string) {
     if (!CUSTOMER_ID.test(id)) throw new NotFoundException(NOT_FOUND);
     const rows = await this.database.query<Record<string, unknown>[]>(`
-      SELECT RTRIM(k.MaKhachHang) AS id,k.HoTen AS name,RTRIM(k.SoDienThoai) AS phone,k.KenhLienHe AS channel,
-        k.GioiTinh AS gender,CONVERT(varchar(10),k.NgaySinh,23) AS birthDate,k.DiaChi AS address,k.GhiChu AS notes,
-        CONVERT(varchar(19),k.NgayTao,126) AS createdAt,
-        (SELECT COUNT(*) FROM dbo.LichHen l WHERE l.MaKhachHang=k.MaKhachHang) AS bookingCount
-      FROM dbo.KhachHang k WHERE k.MaKhachHang=@0`, [id]);
+      SELECT RTRIM(k.MaKhachHang) AS "id",k.HoTen AS "name",RTRIM(k.SoDienThoai) AS "phone",k.KenhLienHe AS "channel",
+        k.GioiTinh AS "gender",to_char(k.NgaySinh,'YYYY-MM-DD') AS "birthDate",k.DiaChi AS "address",k.GhiChu AS "notes",
+        to_char(k.NgayTao,'YYYY-MM-DD"T"HH24:MI:SS') AS "createdAt",
+        (SELECT COUNT(*) FROM dbo.LichHen l WHERE l.MaKhachHang=k.MaKhachHang) AS "bookingCount"
+      FROM dbo.KhachHang k WHERE k.MaKhachHang=$1`, [id]);
     if (!rows[0]) throw new NotFoundException(NOT_FOUND);
     const bookings = await this.database.query<{id:string;date:string;time:string;status:string;serviceSummary:string|null}[]>(`
-      SELECT TOP 5 RTRIM(l.MaLichHen) AS id,CONVERT(varchar(10),l.NgayHen,23) AS date,CONVERT(varchar(5),l.GioHen,108) AS time,
-        l.TrangThaiLichHen AS status,
-        (SELECT STRING_AGG(d.TenDichVu+N' - '+g.TenGoi,N', ') FROM dbo.KhachSuDungDichVu c
+      SELECT RTRIM(l.MaLichHen) AS "id",to_char(l.NgayHen,'YYYY-MM-DD') AS "date",to_char(l.GioHen,'HH24:MI') AS "time",
+        l.TrangThaiLichHen AS "status",
+        (SELECT STRING_AGG(d.TenDichVu || ' - ' || g.TenGoi, ', ') FROM dbo.KhachSuDungDichVu c
           JOIN dbo.GoiDichVu g ON g.MaGoi=c.MaGoi JOIN dbo.DichVu d ON d.MaDichVu=g.MaDichVu
-          WHERE c.MaLichHen=l.MaLichHen) AS serviceSummary
-      FROM dbo.LichHen l WHERE l.MaKhachHang=@0 ORDER BY l.NgayHen DESC,l.GioHen DESC,l.MaLichHen DESC`, [id]);
+          WHERE c.MaLichHen=l.MaLichHen) AS "serviceSummary"
+      FROM dbo.LichHen l WHERE l.MaKhachHang=$1 ORDER BY l.NgayHen DESC,l.GioHen DESC,l.MaLichHen DESC LIMIT 5`, [id]);
     return { ...rows[0], recentBookings: bookings.map(b => ({ ...b, serviceSummary: b.serviceSummary ?? '' })) };
   }
 
   @Post()
   async create(@Body() body: CustomerWriteBody) {
     const v = validateCustomer(body);
-    // Serialized by UPDLOCK/HOLDLOCK so concurrent creates cannot duplicate a phone or an ID.
-    const rows = await this.database.query<{result:string;id:string|null}[]>(`SET XACT_ABORT ON;
-      BEGIN TRY
-        BEGIN TRANSACTION;
-        IF EXISTS(SELECT 1 FROM dbo.KhachHang WITH(UPDLOCK,HOLDLOCK) WHERE SoDienThoai=CAST(@0 AS char(10)))
-          SELECT 'duplicate' AS result,CAST(NULL AS char(10)) AS id;
-        ELSE BEGIN
-          DECLARE @id char(10)=(SELECT 'KH'+RIGHT('00000000'+CAST(ISNULL(MAX(TRY_CONVERT(int,SUBSTRING(MaKhachHang,3,8))),0)+1 AS varchar(8)),8)
-            FROM dbo.KhachHang WITH(UPDLOCK,HOLDLOCK) WHERE MaKhachHang LIKE 'KH[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]');
-          INSERT dbo.KhachHang(MaKhachHang,HoTen,SoDienThoai,KenhLienHe,GioiTinh,NgaySinh,DiaChi,GhiChu)
-          VALUES(@id,@1,CAST(@0 AS char(10)),@2,@3,TRY_CONVERT(date,@4),@5,@6);
-          SELECT 'ok' AS result,RTRIM(@id) AS id;
-        END;
-        COMMIT;
-      END TRY BEGIN CATCH
-        IF @@TRANCOUNT>0 ROLLBACK;
-        THROW;
-      END CATCH`, this.params(v));
-    if (rows[0]?.result === 'duplicate') throw duplicatePhoneError();
-    return { id: rows[0]?.id?.trim() ?? '', message: 'Thêm khách hàng thành công!' };
+    // The advisory lock on 'dbo.KhachHang:id' serialises concurrent creates (replaces UPDLOCK/HOLDLOCK range
+    // locks) so neither the phone check nor MAX+1 can race; the unique index is the final guard.
+    try {
+      const id = await this.database.transaction(async (r) => {
+        await r.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, ['dbo.KhachHang:id']);
+        const dup = returnedRows<{one:number}>(await r.query(`SELECT 1 AS one FROM dbo.KhachHang WHERE SoDienThoai=$1::char(10)`, [v.phone]));
+        if (dup.length > 0) return null;
+        const next = returnedRows<{id:string}>(await r.query(
+          `SELECT 'KH' || lpad((COALESCE(MAX(substr(MaKhachHang,3,8)::int),0)+1)::text,8,'0') AS "id"
+           FROM dbo.KhachHang WHERE MaKhachHang ~ '^KH[0-9]{8}$'`));
+        const newId = next[0].id;
+        await r.query(
+          `INSERT INTO dbo.KhachHang(MaKhachHang,HoTen,SoDienThoai,KenhLienHe,GioiTinh,NgaySinh,DiaChi,GhiChu)
+           VALUES($1,$2,$3::char(10),$4,$5,$6::date,$7,$8)`,
+          [newId, v.name, v.phone, v.channel, v.gender, v.birthDate, v.address, v.notes]);
+        return newId;
+      });
+      if (id === null) throw duplicatePhoneError();
+      return { id: id.trim(), message: 'Thêm khách hàng thành công!' };
+    } catch (e) {
+      if (isUniqueViolation(e)) throw duplicatePhoneError();
+      throw e;
+    }
   }
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() body: CustomerWriteBody) {
     if (!CUSTOMER_ID.test(id)) throw new NotFoundException(NOT_FOUND);
     const v = validateCustomer(body);
-    const rows = await this.database.query<{result:string}[]>(`SET XACT_ABORT ON;
-      BEGIN TRY
-        BEGIN TRANSACTION;
-        IF NOT EXISTS(SELECT 1 FROM dbo.KhachHang WITH(UPDLOCK,HOLDLOCK) WHERE MaKhachHang=@7) SELECT 'missing' AS result;
-        ELSE IF EXISTS(SELECT 1 FROM dbo.KhachHang WITH(UPDLOCK,HOLDLOCK) WHERE SoDienThoai=CAST(@0 AS char(10)) AND MaKhachHang<>@7)
-          SELECT 'duplicate' AS result;
-        ELSE BEGIN
-          -- The linked login identity (TaiKhoan.SoDienThoai) follows the customer phone in the same transaction.
-          DECLARE @account char(10)=(SELECT MaTaiKhoan FROM dbo.KhachHang WHERE MaKhachHang=@7);
-          IF @account IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.TaiKhoan WITH(UPDLOCK,HOLDLOCK) WHERE SoDienThoai=@0 AND MaTaiKhoan<>@account)
-            SELECT 'accountDuplicate' AS result;
-          ELSE BEGIN
-            UPDATE dbo.KhachHang SET HoTen=@1,SoDienThoai=CAST(@0 AS char(10)),KenhLienHe=@2,GioiTinh=@3,
-              NgaySinh=TRY_CONVERT(date,@4),DiaChi=@5,GhiChu=@6 WHERE MaKhachHang=@7;
-            IF @account IS NOT NULL UPDATE dbo.TaiKhoan SET SoDienThoai=@0 WHERE MaTaiKhoan=@account;
-            SELECT 'ok' AS result;
-          END;
-        END;
-        COMMIT;
-      END TRY BEGIN CATCH
-        IF @@TRANCOUNT>0 ROLLBACK;
-        THROW;
-      END CATCH`, [...this.params(v), id]);
-    if (rows[0]?.result === 'missing') throw new NotFoundException(NOT_FOUND);
-    if (rows[0]?.result === 'duplicate') throw duplicatePhoneError();
-    if (rows[0]?.result === 'accountDuplicate') throw duplicateAccountPhoneError();
+    const result = await this.database.transaction(async (r) => {
+      const current = returnedRows<{account:string|null}>(await r.query(
+        `SELECT MaTaiKhoan AS "account" FROM dbo.KhachHang WHERE MaKhachHang=$1 FOR UPDATE`, [id]));
+      if (current.length === 0) return 'missing';
+      // Serialise phone changes so the duplicate checks below cannot race another writer.
+      await r.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, ['dbo.KhachHang:phone']);
+      const dup = returnedRows<{one:number}>(await r.query(
+        `SELECT 1 AS one FROM dbo.KhachHang WHERE SoDienThoai=$1::char(10) AND MaKhachHang<>$2`, [v.phone, id]));
+      if (dup.length > 0) return 'duplicate';
+      // The linked login identity (TaiKhoan.SoDienThoai) follows the customer phone in the same transaction.
+      const account = current[0].account?.trim() ?? null;
+      if (account) {
+        const accDup = returnedRows<{one:number}>(await r.query(
+          `SELECT 1 AS one FROM dbo.TaiKhoan WHERE SoDienThoai=$1 AND MaTaiKhoan<>$2 FOR UPDATE`, [v.phone, account]));
+        if (accDup.length > 0) return 'accountDuplicate';
+      }
+      try {
+        await r.query(
+          `UPDATE dbo.KhachHang SET HoTen=$1,SoDienThoai=$2::char(10),KenhLienHe=$3,GioiTinh=$4,
+             NgaySinh=$5::date,DiaChi=$6,GhiChu=$7 WHERE MaKhachHang=$8`,
+          [v.name, v.phone, v.channel, v.gender, v.birthDate, v.address, v.notes, id]);
+      } catch (e) {
+        if (isUniqueViolation(e)) return 'duplicate';
+        throw e;
+      }
+      if (account) {
+        try {
+          await r.query(`UPDATE dbo.TaiKhoan SET SoDienThoai=$1 WHERE MaTaiKhoan=$2`, [v.phone, account]);
+        } catch (e) {
+          if (isUniqueViolation(e)) return 'accountDuplicate';
+          throw e;
+        }
+      }
+      return 'ok';
+    });
+    if (result === 'missing') throw new NotFoundException(NOT_FOUND);
+    if (result === 'duplicate') throw duplicatePhoneError();
+    if (result === 'accountDuplicate') throw duplicateAccountPhoneError();
     return { id, message: 'Cập nhật khách hàng thành công!' };
   }
 

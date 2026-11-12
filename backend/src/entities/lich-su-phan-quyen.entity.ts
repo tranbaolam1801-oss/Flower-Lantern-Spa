@@ -1,28 +1,28 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { TaiKhoan } from './tai-khoan.entity';
 
-@Entity({ name: 'LichSuPhanQuyen' })
+@Entity({ schema: 'dbo', name: 'lichsuphanquyen' })
 export class LichSuPhanQuyen {
-  @PrimaryColumn({ name: 'MaLichSu', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'malichsu', type: 'char', length: 10 })
   maLichSu!: string;
 
-  @Column({ name: 'MaTaiKhoanThucHien', type: 'char', length: 10 })
+  @Column({ name: 'mataikhoanthuchien', type: 'char', length: 10 })
   maTaiKhoanThucHien!: string;
 
-  @Column({ name: 'MaTaiKhoanDuocPhanQuyen', type: 'char', length: 10 })
+  @Column({ name: 'mataikhoanduocphanquyen', type: 'char', length: 10 })
   maTaiKhoanDuocPhanQuyen!: string;
 
-  @Column({ name: 'ThoiDiem', type: 'datetime' })
+  @Column({ name: 'thoidiem', type: 'timestamp', precision: 3 })
   thoiDiem!: Date;
 
-  @Column({ name: 'NoiDungThayDoi', type: 'nvarchar', length: 500, nullable: true })
+  @Column({ name: 'noidungthaydoi', type: 'varchar', length: 500, nullable: true })
   noiDungThayDoi?: string;
 
   @ManyToOne(() => TaiKhoan)
-  @JoinColumn({ name: 'MaTaiKhoanThucHien' })
+  @JoinColumn({ name: 'mataikhoanthuchien' })
   taiKhoanThucHien?: TaiKhoan;
 
   @ManyToOne(() => TaiKhoan)
-  @JoinColumn({ name: 'MaTaiKhoanDuocPhanQuyen' })
+  @JoinColumn({ name: 'mataikhoanduocphanquyen' })
   taiKhoanDuocPhanQuyen?: TaiKhoan;
 }

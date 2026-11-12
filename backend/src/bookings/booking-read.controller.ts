@@ -24,17 +24,18 @@ export class BookingReadController {
   @Roles('Nhân viên','Quản lý') @Permissions('Q01')
   async calendar(@Query() query: BookingDayQuery) {
     const date = query.date ?? new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
-    const beds = await this.database.query<{id:string}[]>('SELECT RTRIM(MaGiuong) AS id FROM dbo.Giuong ORDER BY TRY_CONVERT(int,SUBSTRING(MaGiuong,2,9)),MaGiuong');
-    const items = await this.database.query(`SELECT RTRIM(c.MaChiTiet) AS id,RTRIM(l.MaLichHen) AS bookingId,
-      RTRIM(c.MaGiuong) AS bedId,c.TenKhach AS customerName,RTRIM(c.SoDienThoai) AS customerPhone,d.TenDichVu AS serviceName,g.TenGoi AS packageName,RTRIM(g.MaGoi) AS packageId,
-      l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS paymentStatus,
-      l.HoTenNguoiDat AS bookerName,RTRIM(l.SoDienThoaiNguoiDat) AS bookerPhone,l.EmailNguoiDat AS bookerEmail,l.GhiChu AS notes,
-      CONVERT(varchar(19),c.ThoiDiemBatDau,126) AS startsAt,CONVERT(varchar(19),c.ThoiDiemKetThuc,126) AS endsAt,
-      DATEDIFF(minute,CONVERT(datetime,@0),c.ThoiDiemBatDau) AS startMinute,
-      DATEDIFF(minute,CONVERT(datetime,@0),c.ThoiDiemKetThuc) AS endMinute
+    const beds = await this.database.query<{id:string}[]>(`SELECT RTRIM(MaGiuong) AS id FROM dbo.Giuong
+      ORDER BY CASE WHEN substr(RTRIM(MaGiuong),2) ~ '^[0-9]+$' THEN substr(RTRIM(MaGiuong),2)::int END,MaGiuong`);
+    const items = await this.database.query(`SELECT RTRIM(c.MaChiTiet) AS id,RTRIM(l.MaLichHen) AS "bookingId",
+      RTRIM(c.MaGiuong) AS "bedId",c.TenKhach AS "customerName",RTRIM(c.SoDienThoai) AS "customerPhone",d.TenDichVu AS "serviceName",g.TenGoi AS "packageName",RTRIM(g.MaGoi) AS "packageId",
+      l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS "paymentStatus",
+      l.HoTenNguoiDat AS "bookerName",RTRIM(l.SoDienThoaiNguoiDat) AS "bookerPhone",l.EmailNguoiDat AS "bookerEmail",l.GhiChu AS notes,
+      to_char(c.ThoiDiemBatDau,'YYYY-MM-DD"T"HH24:MI:SS') AS "startsAt",to_char(c.ThoiDiemKetThuc,'YYYY-MM-DD"T"HH24:MI:SS') AS "endsAt",
+      floor(extract(epoch FROM (c.ThoiDiemBatDau-$1::date::timestamp))/60)::int AS "startMinute",
+      floor(extract(epoch FROM (c.ThoiDiemKetThuc-$1::date::timestamp))/60)::int AS "endMinute"
       FROM dbo.KhachSuDungDichVu c JOIN dbo.LichHen l ON l.MaLichHen=c.MaLichHen
       JOIN dbo.GoiDichVu g ON g.MaGoi=c.MaGoi JOIN dbo.DichVu d ON d.MaDichVu=g.MaDichVu
-      WHERE c.ThoiDiemBatDau<DATEADD(day,1,CONVERT(datetime,@0)) AND c.ThoiDiemKetThuc>CONVERT(datetime,@0)
+      WHERE c.ThoiDiemBatDau<($1::date+1)::timestamp AND c.ThoiDiemKetThuc>$1::date::timestamp
       ORDER BY c.ThoiDiemBatDau,c.MaChiTiet`,[date]);
     return { date, beds, items };
   }
@@ -44,14 +45,14 @@ export class BookingReadController {
   async mine(@Req() request: Request & { user: JwtPayload }) {
     // Ownership derives exclusively from authenticated account, never a query parameter.
     const rows = await this.database.query<{id:string;status:string;[key:string]:unknown}[]>(`SELECT RTRIM(l.MaLichHen) AS id,
-      CONVERT(varchar(10),l.NgayHen,23) AS date,CONVERT(varchar(5),l.GioHen,108) AS time,
-      CONVERT(varchar(19),l.ThoiGianDat,126) AS createdAt,l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS paymentStatus,
-      RTRIM(c.MaChiTiet) AS detailId,d.TenDichVu AS serviceName,g.TenGoi AS packageName,
-      CONVERT(varchar(5),c.ThoiDiemBatDau,108) AS startsAt,CONVERT(varchar(5),c.ThoiDiemKetThuc,108) AS endsAt
+      to_char(l.NgayHen,'YYYY-MM-DD') AS "date",to_char(l.GioHen,'HH24:MI') AS "time",
+      to_char(l.ThoiGianDat,'YYYY-MM-DD"T"HH24:MI:SS') AS "createdAt",l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS "paymentStatus",
+      RTRIM(c.MaChiTiet) AS "detailId",d.TenDichVu AS "serviceName",g.TenGoi AS "packageName",
+      to_char(c.ThoiDiemBatDau,'HH24:MI') AS "startsAt",to_char(c.ThoiDiemKetThuc,'HH24:MI') AS "endsAt"
       FROM dbo.LichHen l JOIN dbo.KhachHang k ON k.MaKhachHang=l.MaKhachHang
       LEFT JOIN dbo.KhachSuDungDichVu c ON c.MaLichHen=l.MaLichHen
       LEFT JOIN dbo.GoiDichVu g ON g.MaGoi=c.MaGoi LEFT JOIN dbo.DichVu d ON d.MaDichVu=g.MaDichVu
-      WHERE k.MaTaiKhoan=@0 ORDER BY l.ThoiGianDat DESC,l.MaLichHen DESC,c.MaChiTiet`,[request.user.sub]);
+      WHERE k.MaTaiKhoan=$1 ORDER BY l.ThoiGianDat DESC,l.MaLichHen DESC,c.MaChiTiet`,[request.user.sub]);
     const bookings = new Map<string,Record<string,unknown> & {services:unknown[]}>();
     for (const row of rows) {
       if (!bookings.has(row.id)) bookings.set(row.id,{id:row.id,date:row.date,time:row.time,createdAt:row.createdAt,

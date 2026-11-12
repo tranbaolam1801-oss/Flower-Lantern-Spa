@@ -2,43 +2,43 @@ import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn, OneToMany } from 
 import { TaiKhoan } from './tai-khoan.entity';
 import { PhanHoi } from './phan-hoi.entity';
 
-@Entity({ name: 'NhanVien' })
+@Entity({ schema: 'dbo', name: 'nhanvien' })
 export class NhanVien {
-  @PrimaryColumn({ name: 'MaNhanVien', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'manhanvien', type: 'char', length: 10 })
   maNhanVien!: string;
 
-  @Column({ name: 'MaTaiKhoan', type: 'char', length: 10, nullable: true })
+  @Column({ name: 'mataikhoan', type: 'char', length: 10, nullable: true })
   maTaiKhoan?: string;
 
-  @Column({ name: 'HoTen', type: 'nvarchar', length: 50 })
+  @Column({ name: 'hoten', type: 'varchar', length: 50 })
   hoTen!: string;
 
-  @Column({ name: 'SoDienThoai', type: 'char', length: 10, unique: true })
+  @Column({ name: 'sodienthoai', type: 'char', length: 10, unique: true })
   soDienThoai!: string;
 
-  @Column({ name: 'Email', type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'email', type: 'varchar', length: 100, nullable: true })
   email?: string;
 
-  @Column({ name: 'GioiTinh', type: 'nvarchar', length: 10, nullable: true })
+  @Column({ name: 'gioitinh', type: 'varchar', length: 10, nullable: true })
   gioiTinh?: string;
 
-  @Column({ name: 'NgaySinh', type: 'date', nullable: true })
+  @Column({ name: 'ngaysinh', type: 'date', nullable: true })
   ngaySinh?: Date;
 
-  @Column({ name: 'DiaChi', type: 'nvarchar', length: 255, nullable: true })
+  @Column({ name: 'diachi', type: 'varchar', length: 255, nullable: true })
   diaChi?: string;
 
-  @Column({ name: 'GhiChu', type: 'nvarchar', length: 500, nullable: true })
+  @Column({ name: 'ghichu', type: 'varchar', length: 500, nullable: true })
   ghiChu?: string;
 
-  @Column({ name: 'TrangThaiLamViec', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthailamviec', type: 'varchar', length: 30 })
   trangThaiLamViec!: string;
 
-  @Column({ name: 'TrangThaiHoSo', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthaihoso', type: 'varchar', length: 30 })
   trangThaiHoSo!: string;
 
   @ManyToOne(() => TaiKhoan, { nullable: true })
-  @JoinColumn({ name: 'MaTaiKhoan' })
+  @JoinColumn({ name: 'mataikhoan' })
   taiKhoan?: TaiKhoan;
 
   @OneToMany(() => PhanHoi, (ph) => ph.nhanVien)

@@ -3,43 +3,43 @@ import { DanhMuc } from './danh-muc.entity';
 import { GoiDichVu } from './goi-dich-vu.entity';
 import { DanhGia } from './danh-gia.entity';
 
-@Entity({ name: 'DichVu' })
+@Entity({ schema: 'dbo', name: 'dichvu' })
 export class DichVu {
-  @PrimaryColumn({ name: 'MaDichVu', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'madichvu', type: 'char', length: 10 })
   maDichVu!: string;
 
-  @Column({ name: 'MaDanhMuc', type: 'char', length: 10 })
+  @Column({ name: 'madanhmuc', type: 'char', length: 10 })
   maDanhMuc!: string;
 
-  @Column({ name: 'TenDichVu', type: 'nvarchar', length: 150, unique: true })
+  @Column({ name: 'tendichvu', type: 'varchar', length: 150 }) // unique on lower(tendichvu): UX_DichVu_TenDichVu (see database/postgres/001-schema.sql)
   tenDichVu!: string;
 
-  @Column({ name: 'HinhAnh', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'hinhanh', type: 'varchar', length: 255, nullable: true })
   hinhAnh?: string;
 
-  @Column({ name: 'MoTaNgan', type: 'nvarchar', length: 255, nullable: true })
+  @Column({ name: 'motangan', type: 'varchar', length: 255, nullable: true })
   moTaNgan?: string;
 
-  @Column({ name: 'MoTaChiTiet', type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ name: 'motachitiet', type: 'text', nullable: true })
   moTaChiTiet?: string;
 
-  @Column({ name: 'LoiIch', type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ name: 'loiich', type: 'text', nullable: true })
   loiIch?: string;
 
-  @Column({ name: 'QuyTrinhThucHien', type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ name: 'quytrinhthuchien', type: 'text', nullable: true })
   quyTrinhThucHien?: string;
 
-  @Column({ name: 'DoiTuongPhuHop', type: 'nvarchar', length: 255, nullable: true })
+  @Column({ name: 'doituongphuhop', type: 'varchar', length: 255, nullable: true })
   doiTuongPhuHop?: string;
 
-  @Column({ name: 'ThongTinLieuTrinhVaLuuY', type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ name: 'thongtinlieutrinhvaluuy', type: 'text', nullable: true })
   thongTinLieuTrinhVaLuuY?: string;
 
-  @Column({ name: 'TrangThai', type: 'nvarchar', length: 30 })
+  @Column({ name: 'trangthai', type: 'varchar', length: 30 })
   trangThai!: string;
 
   @ManyToOne(() => DanhMuc, (dm) => dm.dichVus)
-  @JoinColumn({ name: 'MaDanhMuc' })
+  @JoinColumn({ name: 'madanhmuc' })
   danhMuc?: DanhMuc;
 
   @OneToMany(() => GoiDichVu, (g) => g.dichVu)

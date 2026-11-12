@@ -58,12 +58,12 @@ export class ReportsService {
   async services(from: string, to: string) {
     validateRange(from, to);
     const rows = await this.database.query<{ serviceId: string; serviceName: string; usageCount: number }[]>(`
-      SELECT RTRIM(d.MaDichVu) AS serviceId, d.TenDichVu AS serviceName, COUNT(*) AS usageCount
+      SELECT rtrim(d.MaDichVu) AS "serviceId", d.TenDichVu AS "serviceName", COUNT(*) AS "usageCount"
       FROM dbo.KhachSuDungDichVu c
       JOIN dbo.LichHen l ON l.MaLichHen=c.MaLichHen
       JOIN dbo.GoiDichVu g ON g.MaGoi=c.MaGoi
       JOIN dbo.DichVu d ON d.MaDichVu=g.MaDichVu
-      WHERE l.TrangThaiLichHen=N'Hoàn thành' AND l.NgayHen BETWEEN @0 AND @1
+      WHERE l.TrangThaiLichHen='Hoàn thành' AND l.NgayHen BETWEEN $1::date AND $2::date
       GROUP BY d.MaDichVu, d.TenDichVu
       ORDER BY COUNT(*) DESC, d.TenDichVu`, [from, to]);
     const items = rows.map((r) => ({ ...r, usageCount: Number(r.usageCount) }));
@@ -74,15 +74,16 @@ export class ReportsService {
   async customers(from: string, to: string) {
     validateRange(from, to);
     const counts = await this.database.query<{ newCustomers: number; returningCustomers: number }[]>(`
-      SELECT (SELECT COUNT(*) FROM dbo.KhachHang WHERE CAST(NgayTao AS date) BETWEEN @0 AND @1) AS newCustomers,
+      SELECT (SELECT COUNT(*) FROM dbo.KhachHang WHERE NgayTao::date BETWEEN $1::date AND $2::date) AS "newCustomers",
         (SELECT COUNT(DISTINCT k.MaKhachHang) FROM dbo.KhachHang k JOIN dbo.LichHen l ON l.MaKhachHang=k.MaKhachHang
-          WHERE CAST(k.NgayTao AS date)<@0 AND l.NgayHen BETWEEN @0 AND @1 AND l.TrangThaiLichHen<>N'Đã hủy') AS returningCustomers`, [from, to]);
+          WHERE k.NgayTao::date<$1::date AND l.NgayHen BETWEEN $1::date AND $2::date AND l.TrangThaiLichHen<>'Đã hủy') AS "returningCustomers"`, [from, to]);
     const top = await this.database.query<{ customerId: string; fullName: string; phone: string; bookingCount: number }[]>(`
-      SELECT TOP(${TOP_LIMIT}) RTRIM(k.MaKhachHang) AS customerId, k.HoTen AS fullName, RTRIM(k.SoDienThoai) AS phone, COUNT(*) AS bookingCount
+      SELECT rtrim(k.MaKhachHang) AS "customerId", k.HoTen AS "fullName", rtrim(k.SoDienThoai) AS "phone", COUNT(*) AS "bookingCount"
       FROM dbo.KhachHang k JOIN dbo.LichHen l ON l.MaKhachHang=k.MaKhachHang
-      WHERE l.NgayHen BETWEEN @0 AND @1 AND l.TrangThaiLichHen<>N'Đã hủy'
+      WHERE l.NgayHen BETWEEN $1::date AND $2::date AND l.TrangThaiLichHen<>'Đã hủy'
       GROUP BY k.MaKhachHang, k.HoTen, k.SoDienThoai
-      ORDER BY COUNT(*) DESC, k.HoTen COLLATE Vietnamese_100_CI_AS, k.MaKhachHang`, [from, to]);
+      ORDER BY COUNT(*) DESC, k.HoTen, k.MaKhachHang
+      LIMIT ${TOP_LIMIT}`, [from, to]);
     return {
       newCustomers: Number(counts[0]?.newCustomers ?? 0),
       returningCustomers: Number(counts[0]?.returningCustomers ?? 0),
@@ -93,13 +94,13 @@ export class ReportsService {
   /** Revenue = sum over ThanhToan 'Thành công' recorded in range of (SoTienThanhToan - KhoanHoanTien), net of refunds. */
   async revenue(from: string, to: string, groupBy: GroupBy) {
     validateRange(from, to);
-    const excludeMock = await this.hasProviderColumn() ? " AND ISNULL(NhaCungCap,'')<>'MOCK'" : '';
+    const excludeMock = await this.hasProviderColumn() ? " AND COALESCE(NhaCungCap,'')<>'MOCK'" : '';
     const rows = await this.database.query<{ day: string; amount: number }[]>(`
-      SELECT CONVERT(char(10), CAST(NgayGhiNhan AS date), 23) AS day,
-        SUM(CAST(SoTienThanhToan AS decimal(19,2)) - CAST(ISNULL(KhoanHoanTien,0) AS decimal(19,2))) AS amount
+      SELECT to_char(NgayGhiNhan::date, 'YYYY-MM-DD') AS "day",
+        SUM(SoTienThanhToan::numeric(19,2) - COALESCE(KhoanHoanTien,0)::numeric(19,2)) AS "amount"
       FROM dbo.ThanhToan
-      WHERE TrangThaiGiaoDich=N'Thành công' AND CAST(NgayGhiNhan AS date) BETWEEN @0 AND @1${excludeMock}
-      GROUP BY CAST(NgayGhiNhan AS date)`, [from, to]);
+      WHERE TrangThaiGiaoDich='Thành công' AND NgayGhiNhan::date BETWEEN $1::date AND $2::date${excludeMock}
+      GROUP BY NgayGhiNhan::date`, [from, to]);
     return aggregateRevenue(rows, groupBy);
   }
 
@@ -108,8 +109,9 @@ export class ReportsService {
   private async hasProviderColumn() {
     const cached = this.providerColumn;
     if (cached && (cached.present || Date.now() - cached.checkedAt < 60_000)) return cached.present;
-    const rows = await this.database.query<{ len: number | null }[]>(`SELECT COL_LENGTH('dbo.ThanhToan','NhaCungCap') AS len`);
-    const present = rows[0]?.len != null;
+    const rows = await this.database.query<{ present: boolean }[]>(`SELECT EXISTS(SELECT 1 FROM information_schema.columns
+      WHERE table_schema='dbo' AND table_name='thanhtoan' AND column_name='nhacungcap') AS "present"`);
+    const present = rows[0]?.present === true;
     this.providerColumn = { present, checkedAt: Date.now() };
     return present;
   }

@@ -24,14 +24,16 @@ export class CustomerReadController {
 
   @Get()
   async search(@Query() query: CustomerSearchQuery) {
-    // CHARINDEX treats %, _, [ and quotes as literal search text, never SQL patterns.
+    // ILIKE is case-insensitive (SQL Server's collation was). \, % and _ are escaped so the search text is
+    // always literal, never a LIKE pattern.
+    const pattern = `%${query.q.replace(/[\\%_]/g, '\\$&')}%`;
     const result = await this.database.query<{id:string;name:string;phone:string;channel:string|null;bookingCount:number}[]>(`
-      SELECT RTRIM(k.MaKhachHang) AS id,k.HoTen AS name,RTRIM(k.SoDienThoai) AS phone,k.KenhLienHe AS channel,
-        (SELECT COUNT(*) FROM dbo.LichHen l WHERE l.MaKhachHang=k.MaKhachHang) AS bookingCount
+      SELECT RTRIM(k.MaKhachHang) AS "id",k.HoTen AS "name",RTRIM(k.SoDienThoai) AS "phone",k.KenhLienHe AS "channel",
+        (SELECT COUNT(*) FROM dbo.LichHen l WHERE l.MaKhachHang=k.MaKhachHang) AS "bookingCount"
       FROM dbo.KhachHang k
-      WHERE CHARINDEX(@0,k.HoTen COLLATE Vietnamese_100_CI_AS)>0 OR CHARINDEX(@0,k.SoDienThoai)>0 OR @0=N''
-      ORDER BY k.HoTen COLLATE Vietnamese_100_CI_AS,k.MaKhachHang
-      OFFSET @1 ROWS FETCH NEXT 21 ROWS ONLY`, [query.q,(query.page-1)*20]);
+      WHERE k.HoTen ILIKE $1 OR k.SoDienThoai::text ILIKE $1 OR $2::text=''
+      ORDER BY k.HoTen,k.MaKhachHang
+      LIMIT 21 OFFSET $3::int`, [pattern,query.q,(query.page-1)*20]);
     return {items:result.slice(0,20),page:query.page,hasNext:result.length>20};
   }
 }

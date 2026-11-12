@@ -1,16 +1,16 @@
 import { Entity, PrimaryColumn, Column } from 'typeorm';
 
-@Entity({ name: 'KhoaDangNhap' })
+@Entity({ schema: 'dbo', name: 'khoadangnhap' })
 export class KhoaDangNhap {
-  @PrimaryColumn({ name: 'SoDienThoai', type: 'varchar', length: 15 })
+  @PrimaryColumn({ name: 'sodienthoai', type: 'varchar', length: 15 })
   soDienThoai!: string;
 
-  @Column({ name: 'SoLanSai', type: 'int', default: 0 })
+  @Column({ name: 'solansai', type: 'integer', default: 0 })
   soLanSai!: number;
 
-  @Column({ name: 'ThoiDiemKhoaDen', type: 'datetime', nullable: true })
+  @Column({ name: 'thoidiemkhoaden', type: 'timestamp', precision: 3, nullable: true })
   thoiDiemKhoaDen?: Date;
 
-  @Column({ name: 'LanCuoiSai', type: 'datetime', nullable: true })
+  @Column({ name: 'lancuoisai', type: 'timestamp', precision: 3, nullable: true })
   lanCuoiSai?: Date;
 }

@@ -13,7 +13,7 @@ function build(handler: (sql: string, params: unknown[]) => unknown[]) {
   const calls: Call[] = [];
   const manager_ = { query: jest.fn(async (sql: string, params: unknown[] = []) => { calls.push({ sql, params }); return handler(sql, params); }) };
   const database = {
-    getDataSource: async () => ({ transaction: async (fn: (m: typeof manager_) => unknown) => fn(manager_) }),
+    transaction: async (fn: (m: typeof manager_) => unknown) => fn(manager_),
     query: jest.fn(async () => []),
   };
   const passwords = { hash: jest.fn(async () => '$argon2id$fake-hash') };
@@ -22,8 +22,8 @@ function build(handler: (sql: string, params: unknown[]) => unknown[]) {
 }
 const target = (role: string, accountId = 'TK00000009', status = 'Hoạt động') => [{ id: 'NV00000009', accountId, role, status }];
 const base = (role: string, accountId?: string) => (sql: string) => {
-  if (sql.includes('FROM dbo.NhanVien n WITH')) return target(role, accountId);
-  if (sql.includes('MAX(CAST')) return [{ n: 7 }];
+  if (sql.includes('FOR UPDATE OF n')) return target(role, accountId);
+  if (sql.includes('MAX(substring')) return [{ n: 7 }];
   if (sql.includes('FROM dbo.TaiKhoanQuyen')) return [{ code: 'Q01' }];
   return [];
 };
@@ -63,22 +63,22 @@ describe('EmployeesService.create', () => {
     const res = await service.create(owner, createDto());
     expect(res.id).toBe('NV00000007');
     expect(passwords.hash).toHaveBeenCalledWith('Abcdef1!x');
-    const insert = calls.find((c) => c.sql.includes('INSERT dbo.TaiKhoan '));
+    const insert = calls.find((c) => c.sql.includes('INSERT INTO dbo.TaiKhoan '));
     expect(insert?.params).toContain('$argon2id$fake-hash');
     expect(insert?.params).not.toContain('Abcdef1!x');
-    expect(insert?.sql).toContain("N'Nhân viên'");
+    expect(insert?.sql).toContain("'Nhân viên'");
     expect(JSON.stringify(res)).not.toContain('argon2');
   });
   it.each([
     ['TenDangNhap', 'Tên đăng nhập đã tồn tại!'],
-    ['SoDienThoai = @0 AND MaTaiKhoan', 'Số điện thoại đã tồn tại!'],
-    ['Email = @0', 'Email đã tồn tại!'],
+    ['SoDienThoai = $1::text AND MaTaiKhoan', 'Số điện thoại đã tồn tại!'],
+    ['lower(Email) = lower($1)', 'Email đã tồn tại!'],
   ])('returns 409 on duplicate (%s)', async (marker, message) => {
     const { service } = build((sql) => (sql.includes(marker) ? [{ x: 1 }] : base('Nhân viên')(sql)));
     await expect(service.create(owner, createDto())).rejects.toThrow(new ConflictException(message));
   });
   it('maps SQL unique-violation races to 409 and hides other driver errors', async () => {
-    const dup = build(() => { throw Object.assign(new Error('boom: connection string xyz'), { number: 2627 }); });
+    const dup = build(() => { throw Object.assign(new Error('boom: connection string xyz'), { code: '23505' }); });
     await expect(dup.service.create(owner, createDto())).rejects.toBeInstanceOf(ConflictException);
     const other = build(() => { throw new Error('secret driver detail'); });
     await expect(other.service.create(owner, createDto())).rejects.toThrow('Không thể kết nối dữ liệu. Vui lòng thử lại!');
@@ -132,9 +132,9 @@ describe('EmployeesService.setPermissions', () => {
     const { service, calls } = build(base('Nhân viên'));
     await service.setPermissions(owner, 'NV00000009', { role: 'Quản lý', permissions: ['Q02', 'Q01'] });
     const sqls = calls.map((c) => c.sql);
-    expect(sqls.findIndex((s) => s.includes('DELETE FROM dbo.TaiKhoanQuyen'))).toBeLessThan(sqls.findIndex((s) => s.includes('INSERT dbo.TaiKhoanQuyen')));
-    expect(calls.filter((c) => c.sql.includes('INSERT dbo.TaiKhoanQuyen')).map((c) => c.params[1])).toEqual(['Q01', 'Q02']);
-    const audit = calls.find((c) => c.sql.includes('INSERT dbo.LichSuPhanQuyen'))!;
+    expect(sqls.findIndex((s) => s.includes('DELETE FROM dbo.TaiKhoanQuyen'))).toBeLessThan(sqls.findIndex((s) => s.includes('INSERT INTO dbo.TaiKhoanQuyen')));
+    expect(calls.filter((c) => c.sql.includes('INSERT INTO dbo.TaiKhoanQuyen')).map((c) => c.params[1])).toEqual(['Q01', 'Q02']);
+    const audit = calls.find((c) => c.sql.includes('INSERT INTO dbo.LichSuPhanQuyen'))!;
     expect(audit.params.slice(0, 3)).toEqual(['LS00000007', owner.sub, 'TK00000009']);
     expect(String(audit.params[3])).toBe('Vai trò: Nhân viên -> Quản lý; Quyền: [Q01] -> [Q01,Q02]');
   });
@@ -160,14 +160,14 @@ describe('EmployeesService status / delete', () => {
     const { service, calls } = build(base('Nhân viên'));
     await service.softDelete(owner, 'NV00000009');
     expect(calls.some((c) => /DELETE\s/i.test(c.sql))).toBe(false);
-    expect(calls.some((c) => c.sql.includes("TrangThai = N'Vô hiệu hóa'"))).toBe(true);
+    expect(calls.some((c) => c.sql.includes("TrangThai = 'Vô hiệu hóa'"))).toBe(true);
   });
   it('update syncs TaiKhoan.SoDienThoai in the same transaction and rejects a phone used by another account', async () => {
     const { service, calls } = build(base('Nhân viên'));
     await service.update(owner, 'NV00000009', { fullName: 'A', phone: '0911111111', email: 'a@b.vn' });
     const sync = calls.find((c) => c.sql.includes('UPDATE dbo.TaiKhoan SET SoDienThoai'));
     expect(sync?.params).toEqual(['TK00000009', '0911111111']);
-    const dup = build((sql) => (sql.includes('SoDienThoai = @0 AND MaTaiKhoan') ? [{ x: 1 }] : base('Nhân viên')(sql)));
+    const dup = build((sql) => (sql.includes('SoDienThoai = $1::text AND MaTaiKhoan') ? [{ x: 1 }] : base('Nhân viên')(sql)));
     await expect(dup.service.update(owner, 'NV00000009', { fullName: 'A', phone: '0911111111', email: 'a@b.vn' }))
       .rejects.toThrow(new ConflictException({ message: 'Số điện thoại đã tồn tại!', field: 'phone' }));
     expect(dup.calls.some((c) => c.sql.includes('UPDATE dbo.TaiKhoan SET SoDienThoai'))).toBe(false);

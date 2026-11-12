@@ -17,7 +17,15 @@ function makeService(handler: (sql: string, p: unknown[]) => unknown[]) {
     commitTransaction: jest.fn(), rollbackTransaction: jest.fn(),
     query: jest.fn(async (sql: string, p: unknown[] = []) => handler(sql, p)),
   };
-  const db = { getDataSource: async () => ({ createQueryRunner: () => runner }), query: jest.fn() };
+  // Same contract as DatabaseService.transaction(): commit on success, rollback + rethrow on error.
+  const db = {
+    transaction: async (work: (r: typeof runner) => Promise<unknown>) => {
+      await runner.connect(); await runner.startTransaction();
+      try { const out = await work(runner); await runner.commitTransaction(); return out; }
+      catch (e) { await runner.rollbackTransaction(); throw e; }
+    },
+    query: jest.fn(),
+  };
   return { svc: new AdminServicesService(db as never), runner };
 }
 
@@ -43,7 +51,7 @@ describe('admin services DTO', () => {
 
 describe('AdminServicesService', () => {
   it('create: duplicate name -> 409 and rollback', async () => {
-    const { svc, runner } = makeService((sql) => (sql.includes('DanhMuc') ? [{ x: 1 }] : sql.includes('TenDichVu COLLATE') ? [{ x: 1 }] : []));
+    const { svc, runner } = makeService((sql) => (sql.includes('DanhMuc') ? [{ x: 1 }] : sql.includes('lower(TenDichVu)=lower($1)') ? [{ x: 1 }] : []));
     await expect(svc.create(plainToInstance(AdminServiceWriteDto, base))).rejects.toThrow(MSG.duplicate);
     expect(runner.rollbackTransaction).toHaveBeenCalled();
     expect(runner.commitTransaction).not.toHaveBeenCalled();
@@ -68,7 +76,7 @@ describe('AdminServicesService', () => {
     const m = makeService((sql, p) => {
       if (sql.includes('SELECT TrangThai')) return [{ TrangThai: 'Hoạt động' }];
       if (sql.includes('DanhMuc')) return [{ x: 1 }];
-      if (sql.includes('RTRIM(MaGoi)')) return existing.map((id) => ({ id }));
+      if (sql.includes('rtrim(MaGoi)')) return existing.map((id) => ({ id }));
       if (sql.includes('FROM dbo.KhachSuDungDichVu WHERE MaGoi')) return history.includes(p[0] as string) ? [{ x: 1 }] : [];
       if (sql.includes('MAX(')) return [{ n: 9 }];
       return [];
@@ -83,7 +91,7 @@ describe('AdminServicesService', () => {
     expect(deleted(t.runner)).toEqual([]);
     expect(res.retainedPackageIds).toEqual([]);
     expect(sqls.some((x) => x.startsWith('UPDATE dbo.GoiDichVu'))).toBe(true);
-    expect(sqls.some((x) => x.startsWith('INSERT dbo.GoiDichVu'))).toBe(true);
+    expect(sqls.some((x) => x.startsWith('INSERT INTO dbo.GoiDichVu'))).toBe(true);
   });
   it('update: explicit remove deletes only unreferenced, retains those with history', async () => {
     const t = upd({ packages: [], removePackageIds: ['G2', 'G3'] }, ['G2']);
@@ -116,7 +124,7 @@ describe('AdminServicesService', () => {
     await expect(svc.create(plainToInstance(AdminServiceWriteDto, { ...base, removePackageIds: ['G1'] }))).rejects.toThrow(MSG.lastPackage);
   });
   it('update: package id of another service -> 400', async () => {
-    const { svc } = makeService((sql) => (sql.includes('SELECT TrangThai') ? [{ TrangThai: 'Hoạt động' }] : sql.includes('DanhMuc') ? [{ x: 1 }] : sql.includes('RTRIM(MaGoi)') ? [{ id: 'G1' }] : []));
+    const { svc } = makeService((sql) => (sql.includes('SELECT TrangThai') ? [{ TrangThai: 'Hoạt động' }] : sql.includes('DanhMuc') ? [{ x: 1 }] : sql.includes('rtrim(MaGoi)') ? [{ id: 'G1' }] : []));
     await expect(svc.update('DV1', plainToInstance(AdminServiceWriteDto, { ...base, packages: [{ id: 'ZZ', name: 'A', durationMinutes: 30, price: 1 }] }))).rejects.toThrow(MSG.package);
   });
   it('stop: blocked by future bookings -> 409, no update', async () => {
@@ -135,7 +143,7 @@ describe('AdminServicesService', () => {
     expect(b.runner.query.mock.calls.some((c) => String(c[0]).startsWith('UPDATE'))).toBe(false);
   });
   it('unique-violation from driver maps to 409', async () => {
-    const { svc } = makeService((sql) => { if (sql.includes('DanhMuc')) return [{ x: 1 }]; if (sql.includes('INSERT')) throw Object.assign(new Error('dup'), { number: 2627 }); return sql.includes('MAX(') ? [{ n: 0 }] : []; });
+    const { svc } = makeService((sql) => { if (sql.includes('DanhMuc')) return [{ x: 1 }]; if (sql.includes('INSERT')) throw Object.assign(new Error('dup'), { code: '23505' }); return sql.includes('MAX(') ? [{ n: 0 }] : []; });
     await expect(svc.create(plainToInstance(AdminServiceWriteDto, base))).rejects.toThrow(MSG.duplicate);
   });
 });

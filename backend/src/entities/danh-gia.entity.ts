@@ -4,39 +4,39 @@ import { KhachHang } from './khach-hang.entity';
 import { DichVu } from './dich-vu.entity';
 import { PhanHoi } from './phan-hoi.entity';
 
-@Entity({ name: 'DanhGia' })
+@Entity({ schema: 'dbo', name: 'danhgia' })
 export class DanhGia {
-  @PrimaryColumn({ name: 'MaDanhGia', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'madanhgia', type: 'char', length: 10 })
   maDanhGia!: string;
 
-  @Column({ name: 'MaLichHen', type: 'char', length: 10, unique: true })
+  @Column({ name: 'malichhen', type: 'char', length: 10, unique: true })
   maLichHen!: string;
 
-  @Column({ name: 'MaKhachHang', type: 'char', length: 10 })
+  @Column({ name: 'makhachhang', type: 'char', length: 10 })
   maKhachHang!: string;
 
-  @Column({ name: 'MaDichVu', type: 'char', length: 10 })
+  @Column({ name: 'madichvu', type: 'char', length: 10 })
   maDichVu!: string;
 
-  @Column({ name: 'SoSao', type: 'tinyint' })
+  @Column({ name: 'sosao', type: 'smallint' })
   soSao!: number;
 
-  @Column({ name: 'NoiDungDanhGia', type: 'nvarchar', length: 1000, nullable: true })
+  @Column({ name: 'noidungdanhgia', type: 'varchar', length: 1000, nullable: true })
   noiDungDanhGia?: string;
 
-  @Column({ name: 'NgayDanhGia', type: 'datetime', default: () => 'GETDATE()' })
+  @Column({ name: 'ngaydanhgia', type: 'timestamp', precision: 3, default: () => 'dbo.vn_now()' })
   ngayDanhGia!: Date;
 
   @ManyToOne(() => LichHen, (lh) => lh.danhGias)
-  @JoinColumn({ name: 'MaLichHen' })
+  @JoinColumn({ name: 'malichhen' })
   lichHen?: LichHen;
 
   @ManyToOne(() => KhachHang, (kh) => kh.danhGias)
-  @JoinColumn({ name: 'MaKhachHang' })
+  @JoinColumn({ name: 'makhachhang' })
   khachHang?: KhachHang;
 
   @ManyToOne(() => DichVu, (dv) => dv.danhGias)
-  @JoinColumn({ name: 'MaDichVu' })
+  @JoinColumn({ name: 'madichvu' })
   dichVu?: DichVu;
 
   @OneToMany(() => PhanHoi, (ph) => ph.danhGia)

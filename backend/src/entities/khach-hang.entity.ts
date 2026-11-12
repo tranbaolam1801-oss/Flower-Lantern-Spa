@@ -3,40 +3,40 @@ import { TaiKhoan } from './tai-khoan.entity';
 import { LichHen } from './lich-hen.entity';
 import { DanhGia } from './danh-gia.entity';
 
-@Entity({ name: 'KhachHang' })
+@Entity({ schema: 'dbo', name: 'khachhang' })
 export class KhachHang {
-  @PrimaryColumn({ name: 'MaKhachHang', type: 'char', length: 10 })
+  @PrimaryColumn({ name: 'makhachhang', type: 'char', length: 10 })
   maKhachHang!: string;
 
-  @Column({ name: 'MaTaiKhoan', type: 'char', length: 10, nullable: true })
+  @Column({ name: 'mataikhoan', type: 'char', length: 10, nullable: true })
   maTaiKhoan?: string;
 
-  @Column({ name: 'HoTen', type: 'nvarchar', length: 50 })
+  @Column({ name: 'hoten', type: 'varchar', length: 50 })
   hoTen!: string;
 
-  @Column({ name: 'SoDienThoai', type: 'char', length: 10, unique: true })
+  @Column({ name: 'sodienthoai', type: 'char', length: 10, unique: true })
   soDienThoai!: string;
 
-  @Column({ name: 'NgaySinh', type: 'date', nullable: true })
+  @Column({ name: 'ngaysinh', type: 'date', nullable: true })
   ngaySinh?: Date;
 
-  @Column({ name: 'KenhLienHe', type: 'nvarchar', length: 50, nullable: true })
+  @Column({ name: 'kenhlienhe', type: 'varchar', length: 50, nullable: true })
   kenhLienHe?: string;
 
-  @Column({ name: 'GioiTinh', type: 'nvarchar', length: 10, nullable: true })
+  @Column({ name: 'gioitinh', type: 'varchar', length: 10, nullable: true })
   gioiTinh?: string;
 
-  @Column({ name: 'DiaChi', type: 'nvarchar', length: 255, nullable: true })
+  @Column({ name: 'diachi', type: 'varchar', length: 255, nullable: true })
   diaChi?: string;
 
-  @Column({ name: 'GhiChu', type: 'nvarchar', length: 500, nullable: true })
+  @Column({ name: 'ghichu', type: 'varchar', length: 500, nullable: true })
   ghiChu?: string;
 
-  @Column({ name: 'NgayTao', type: 'datetime', default: () => 'GETDATE()' })
+  @Column({ name: 'ngaytao', type: 'timestamp', precision: 3, default: () => 'dbo.vn_now()' })
   ngayTao!: Date;
 
   @ManyToOne(() => TaiKhoan, { nullable: true })
-  @JoinColumn({ name: 'MaTaiKhoan' })
+  @JoinColumn({ name: 'mataikhoan' })
   taiKhoan?: TaiKhoan;
 
   @OneToMany(() => LichHen, (lh) => lh.khachHang)
