@@ -13,20 +13,12 @@ jest.mock('typeorm', () => {
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { DatabaseService } = require('./database.service');
 
-describe('DatabaseService cold-start retry (Azure SQL serverless auto-pause)', () => {
+describe('DatabaseService cold-start retry (serverless database resume)', () => {
   const baseEnv = { ...process.env };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env = {
-      ...baseEnv,
-      DB_HOST: 'test-server.database.windows.net',
-      DB_NAME: 'FlowerLanternSpa_Test',
-      DB_USER: 'spa_app',
-      DB_PASSWORD: 'x',
-      DB_AUTH: undefined,
-    };
-    delete process.env.DB_AUTH;
+    process.env = { ...baseEnv, DATABASE_URL: 'postgres://app:x@ep-demo-pooler.neon.tech/spa' };
     delete process.env.DB_CONNECT_RETRIES;
     delete process.env.DB_CONNECT_RETRY_DELAY_MS;
   });
@@ -72,10 +64,7 @@ describe('DatabaseService cold-start retry (Azure SQL serverless auto-pause)', (
   });
 
   it('throws 503 when no DB env is configured at all', async () => {
-    delete process.env.DB_HOST;
-    delete process.env.DB_NAME;
-    delete process.env.DB_USER;
-    delete process.env.DB_PASSWORD;
+    delete process.env.DATABASE_URL;
     const service = new DatabaseService();
     await expect(service.getDataSource()).rejects.toThrow(ServiceUnavailableException);
     expect(initializeMock).not.toHaveBeenCalled();

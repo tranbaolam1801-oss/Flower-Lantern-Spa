@@ -1,44 +1,69 @@
 import { DataSourceOptions } from 'typeorm';
-import { createRequire } from 'node:module';
-import * as entities from './entities';
+import { types } from 'pg';
 
-// DB_CONNECT_TIMEOUT_MS / DB_REQUEST_TIMEOUT_MS: override the 5000ms default. Needed for Azure SQL Database
-// serverless (free offer), whose auto-pause can take well over 5s to resume on the first query after idle.
-function timeoutMs(env: NodeJS.ProcessEnv, key: 'DB_CONNECT_TIMEOUT_MS' | 'DB_REQUEST_TIMEOUT_MS'): number {
+// ---- pg result parsing: keep the values the application received from the previous SQL Server driver ----
+// timestamp WITHOUT time zone (OID 1114): tedious (useUTC=true, its default) read DATETIME as UTC wall-clock.
+// node-pg would otherwise interpret it in the process's local zone (UTC+7 on a developer PC, UTC on Vercel).
+types.setTypeParser(1114, (value: string) => new Date(value.replace(' ', 'T') + 'Z'));
+// date (OID 1082): tedious returned DATE as a Date at UTC midnight; node-pg would use LOCAL midnight.
+types.setTypeParser(1082, (value: string) => new Date(value + 'T00:00:00Z'));
+// time (OID 1083): tedious returned TIME as a Date on 1970-01-01 (UTC); node-pg would return a string.
+types.setTypeParser(1083, (value: string) => new Date('1970-01-01T' + value + 'Z'));
+// numeric (OID 1700, MONEY -> numeric(19,4)) and bigint (OID 20, COUNT(*)) arrive as strings in node-pg;
+// SQL Server returned JS numbers. Amounts here are VND <= 1e12, well inside Number's exact-integer range.
+types.setTypeParser(1700, (value: string) => Number(value));
+types.setTypeParser(20, (value: string) => Number(value));
+
+// DB_CONNECT_TIMEOUT_MS / DB_REQUEST_TIMEOUT_MS override the defaults. Neon Free scales to zero after
+// 5 minutes idle and usually resumes in a few hundred ms; the first query after a pause can still be slower.
+function timeoutMs(env: NodeJS.ProcessEnv, key: 'DB_CONNECT_TIMEOUT_MS' | 'DB_REQUEST_TIMEOUT_MS', fallback: number): number {
   const raw = env[key];
-  if (raw === undefined || raw === '') return 5000;
+  if (raw === undefined || raw === '') return fallback;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1000 || n > 120000) throw new Error(`${key} không hợp lệ (1000-120000)`);
   return n;
 }
 
+function poolMax(env: NodeJS.ProcessEnv): number {
+  const raw = env.DB_POOL_MAX;
+  if (raw === undefined || raw === '') return 5;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > 50) throw new Error('DB_POOL_MAX không hợp lệ (1-50)');
+  return n;
+}
+
+/**
+ * PostgreSQL connection (Neon in production). DATABASE_URL is the POOLED connection string
+ * (host contains "-pooler"; PgBouncer transaction mode) — the application only uses transaction-scoped
+ * features (row locks, SET LOCAL), never session state. Migrations use the direct URL instead.
+ * TLS: Neon requires it; certificates are verified (rejectUnauthorized) unless DB_SSL=disable, which is
+ * refused in production and only meant for the local PGlite test server.
+ */
 export function databaseOptions(env: NodeJS.ProcessEnv): DataSourceOptions | undefined {
-  const entityList = Object.values(entities);
-  const connectionTimeout = timeoutMs(env, 'DB_CONNECT_TIMEOUT_MS');
-  const requestTimeout = timeoutMs(env, 'DB_REQUEST_TIMEOUT_MS');
-  if (env.DB_AUTH === 'windows') {
-    if (env.NODE_ENV === 'production') throw new Error('Windows integrated development mode is disabled in production');
-    if (env.DB_HOST !== 'localhost' || !env.DB_NAME || !/^[A-Za-z0-9_]+$/.test(env.DB_NAME)) throw new Error('Windows mode requires localhost and a valid explicit database name');
-    const load = createRequire(__filename);
-    return {
-      type:'mssql', host:'localhost', database:env.DB_NAME,
-      driver:load('mssql/msnodesqlv8'),
-      extra:{connectionString:`Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=${env.DB_NAME};Trusted_Connection=Yes;Encrypt=Yes;TrustServerCertificate=Yes;`},
-      entities: entityList,
-      synchronize:false,migrationsRun:false,logging:false,
-      connectionTimeout,requestTimeout,pool:{max:10,min:0,idleTimeoutMillis:30000},
-    };
-  }
-  if (!env.DB_HOST || !env.DB_NAME || !env.DB_USER || !env.DB_PASSWORD) return undefined;
-  const port = Number(env.DB_PORT ?? 1433);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('DB_PORT không hợp lệ');
+  const url = env.DATABASE_URL?.trim();
+  if (!url) return undefined;
+  if (!/^postgres(ql)?:\/\//i.test(url)) throw new Error('DATABASE_URL phải là chuỗi kết nối postgres://');
+  const sslDisabled = env.DB_SSL === 'disable';
+  if (sslDisabled && env.NODE_ENV === 'production') throw new Error('DB_SSL=disable is not allowed in production');
+  const connectionTimeout = timeoutMs(env, 'DB_CONNECT_TIMEOUT_MS', 10000);
+  const requestTimeout = timeoutMs(env, 'DB_REQUEST_TIMEOUT_MS', 15000);
   return {
-    type: 'mssql', host: env.DB_HOST, port, database: env.DB_NAME,
-    username: env.DB_USER, password: env.DB_PASSWORD,
-    entities: entityList,
-    synchronize: false, migrationsRun: false, logging: false,
-    options: { encrypt: true, trustServerCertificate: env.NODE_ENV !== 'production' && env.DB_TRUST_CERTIFICATE === 'true' },
-    connectionTimeout, requestTimeout,
-    pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+    type: 'postgres',
+    url,
+    ssl: sslDisabled ? false : { rejectUnauthorized: true },
+    // The application uses raw SQL only; the entity classes document the schema but are not loaded.
+    entities: [],
+    synchronize: false,
+    migrationsRun: false,
+    logging: false,
+    connectTimeoutMS: connectionTimeout,
+    extra: {
+      max: poolMax(env),
+      idleTimeoutMillis: 10000,
+      // Client-side timeout only. A server-side statement_timeout would travel as a startup parameter,
+      // which PgBouncer in front of Neon's pooled endpoint can reject.
+      query_timeout: requestTimeout,
+      application_name: 'flower-lantern-spa',
+    },
   };
 }

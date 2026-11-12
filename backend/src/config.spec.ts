@@ -1,41 +1,44 @@
-import { DataSourceOptions } from 'typeorm';
 import { databaseOptions } from './config';
 
-function withTimeouts(opts: DataSourceOptions | undefined): { connectionTimeout?: number; requestTimeout?: number } {
-  return opts as unknown as { connectionTimeout?: number; requestTimeout?: number };
-}
+type PgOptions = { type: string; url: string; ssl: unknown; connectTimeoutMS: number; extra: { max: number; query_timeout: number } };
+const opts = (env: NodeJS.ProcessEnv) => databaseOptions(env) as unknown as PgOptions;
+const url = 'postgres://app:x@ep-demo-pooler.ap-southeast-1.aws.neon.tech/spa?sslmode=require';
 
-const baseEnv: NodeJS.ProcessEnv = {
-  DB_HOST: 'test-server.database.windows.net',
-  DB_NAME: 'FlowerLanternSpa_Test',
-  DB_USER: 'spa_app',
-  DB_PASSWORD: 'x',
-};
-
-describe('databaseOptions timeouts (Azure SQL serverless cold start)', () => {
-  it('defaults both timeouts to 5000ms when unset', () => {
-    const opts = withTimeouts(databaseOptions({ ...baseEnv }));
-    expect(opts.connectionTimeout).toBe(5000);
-    expect(opts.requestTimeout).toBe(5000);
-  });
-
-  it('honors DB_CONNECT_TIMEOUT_MS / DB_REQUEST_TIMEOUT_MS overrides', () => {
-    const opts = withTimeouts(databaseOptions({
-      ...baseEnv,
-      DB_CONNECT_TIMEOUT_MS: '30000',
-      DB_REQUEST_TIMEOUT_MS: '15000',
-    }));
-    expect(opts.connectionTimeout).toBe(30000);
-    expect(opts.requestTimeout).toBe(15000);
-  });
-
-  it('rejects an out-of-range DB_CONNECT_TIMEOUT_MS', () => {
-    expect(() => databaseOptions({ ...baseEnv, DB_CONNECT_TIMEOUT_MS: '500' })).toThrow();
-    expect(() => databaseOptions({ ...baseEnv, DB_CONNECT_TIMEOUT_MS: '999999' })).toThrow();
-    expect(() => databaseOptions({ ...baseEnv, DB_CONNECT_TIMEOUT_MS: 'abc' })).toThrow();
-  });
-
-  it('returns undefined when DB env is incomplete (unchanged behavior)', () => {
+describe('databaseOptions (PostgreSQL / Neon)', () => {
+  it('returns undefined when DATABASE_URL is not set', () => {
     expect(databaseOptions({})).toBeUndefined();
+  });
+
+  it('uses the postgres driver with verified TLS by default', () => {
+    const o = opts({ DATABASE_URL: url });
+    expect(o.type).toBe('postgres');
+    expect(o.url).toBe(url);
+    expect(o.ssl).toEqual({ rejectUnauthorized: true });
+  });
+
+  it('rejects non-postgres URLs', () => {
+    expect(() => databaseOptions({ DATABASE_URL: 'mssql://x' })).toThrow();
+  });
+
+  it('allows DB_SSL=disable only outside production (local PGlite tests)', () => {
+    expect(opts({ DATABASE_URL: url, DB_SSL: 'disable' }).ssl).toBe(false);
+    expect(() => databaseOptions({ DATABASE_URL: url, DB_SSL: 'disable', NODE_ENV: 'production' })).toThrow();
+  });
+
+  it('defaults timeouts and pool size, and honours valid overrides', () => {
+    const d = opts({ DATABASE_URL: url });
+    expect(d.connectTimeoutMS).toBe(10000);
+    expect(d.extra.query_timeout).toBe(15000);
+    expect(d.extra.max).toBe(5);
+    const o = opts({ DATABASE_URL: url, DB_CONNECT_TIMEOUT_MS: '30000', DB_REQUEST_TIMEOUT_MS: '20000', DB_POOL_MAX: '2' });
+    expect(o.connectTimeoutMS).toBe(30000);
+    expect(o.extra.query_timeout).toBe(20000);
+    expect(o.extra.max).toBe(2);
+  });
+
+  it('rejects out-of-range timeouts and pool sizes', () => {
+    expect(() => databaseOptions({ DATABASE_URL: url, DB_CONNECT_TIMEOUT_MS: '500' })).toThrow();
+    expect(() => databaseOptions({ DATABASE_URL: url, DB_REQUEST_TIMEOUT_MS: 'abc' })).toThrow();
+    expect(() => databaseOptions({ DATABASE_URL: url, DB_POOL_MAX: '0' })).toThrow();
   });
 });
