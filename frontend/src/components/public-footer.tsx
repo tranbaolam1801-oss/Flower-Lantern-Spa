@@ -5,7 +5,7 @@ export function PublicFooter({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <footer className="customer-footer">
-        © 2026 Hoa Đăng Spa · 102 Bà Triệu, Hội An · Giờ hoạt động 08:00 – 22:00
+        © 2026 Flower Lantern Spa · 102 Bà Triệu, Hội An · Giờ hoạt động 08:00 – 22:00
       </footer>
     );
   }
@@ -15,10 +15,10 @@ export function PublicFooter({ compact = false }: { compact?: boolean }) {
       <div className="public-footer-inner">
         <div className="public-footer-brand">
           <div className="public-footer-logo-wrap">
-            <BrandLogo className="public-footer-logo" />
+            <BrandLogo className="public-footer-logo" tone="light" />
           </div>
           <p>
-            Hoa Đăng Spa (Flower Lantern Spa) mang đến liệu trình thư giãn, phục hồi năng lượng và chăm sóc sắc đẹp
+            Flower Lantern Spa mang đến liệu trình thư giãn, phục hồi năng lượng và chăm sóc sắc đẹp
             trong không gian yên bình đậm chất phố cổ Hội An.
           </p>
           <ul className="public-footer-meta">
@@ -59,7 +59,7 @@ export function PublicFooter({ compact = false }: { compact?: boolean }) {
       </div>
 
       <div className="public-footer-bottom">
-        <span>© 2026 Flower Lantern Spa (Hoa Đăng Spa). Tất cả quyền được bảo lưu.</span>
+        <span>© 2026 Flower Lantern Spa. Tất cả quyền được bảo lưu.</span>
         <span>Giờ hoạt động: 08:00 – 22:00</span>
       </div>
     </footer>

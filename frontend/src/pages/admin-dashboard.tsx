@@ -519,20 +519,6 @@ export function AdminDashboard() {
               </div>
             </div>
           </div>
-          {query.data.items.length === 0 && (
-            <div className="calendar-empty-overlay" role="status">
-              <span className="calendar-empty-count">0</span>
-              <strong>Chưa có lịch hẹn nào trong ngày</strong>
-              <span>Nhấn vào bất kỳ ô trống nào trên lưới {query.data.beds.length} giường<br />để tạo lịch hẹn mới</span>
-              <time>
-                {new Intl.DateTimeFormat('vi-VN', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                }).format(new Date(`${date}T00:00:00`))}
-              </time>
-            </div>
-          )}
         </div>
       )}
 

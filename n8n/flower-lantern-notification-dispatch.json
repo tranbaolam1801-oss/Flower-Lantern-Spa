@@ -1,0 +1,103 @@
+{
+  "name": "Flower Lantern - dispatch due notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Flower Lantern notification dispatcher\nEvery minute this calls the protected NestJS endpoint, which claims due jobs (FOR UPDATE SKIP LOCKED), sends them through the server-side provider and records delivery. The endpoint is idempotent, so overlapping or repeated runs never double-send.\n\nCredential: create a **Header Auth** credential named `Flower Lantern Internal API` with Name `Authorization` and Value `Bearer <INTERNAL_API_KEY>` (the same value as the INTERNAL_API_KEY Vercel env var). Set the workflow timezone to Asia/Ho_Chi_Minh. No provider (Zalo) secrets belong in n8n.",
+        "height": 260,
+        "width": 440
+      },
+      "id": "5f6a1c1e-0000-4000-8000-000000000001",
+      "name": "Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-200, -120]
+    },
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] }
+      },
+      "id": "5f6a1c1e-0000-4000-8000-000000000002",
+      "name": "Every minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [280, 120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://flower-lantern-spa.vercel.app/api/internal/notifications/dispatch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"limit\": 25 }",
+        "options": {
+          "timeout": 30000,
+          "response": { "response": { "neverError": false } }
+        }
+      },
+      "id": "5f6a1c1e-0000-4000-8000-000000000003",
+      "name": "Dispatch due notifications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 120],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_AFTER_IMPORT", "name": "Flower Lantern Internal API" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "failed-gt-zero",
+              "leftValue": "={{ $json.failed }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "5f6a1c1e-0000-4000-8000-000000000004",
+      "name": "Any failed jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [760, 120]
+    },
+    {
+      "parameters": {},
+      "id": "5f6a1c1e-0000-4000-8000-000000000005",
+      "name": "Failures to review (connect an alert here)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1000, 40]
+    },
+    {
+      "parameters": {},
+      "id": "5f6a1c1e-0000-4000-8000-000000000006",
+      "name": "All good",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1000, 200]
+    }
+  ],
+  "connections": {
+    "Every minute": { "main": [[{ "node": "Dispatch due notifications", "type": "main", "index": 0 }]] },
+    "Dispatch due notifications": { "main": [[{ "node": "Any failed jobs?", "type": "main", "index": 0 }]] },
+    "Any failed jobs?": {
+      "main": [
+        [{ "node": "Failures to review (connect an alert here)", "type": "main", "index": 0 }],
+        [{ "node": "All good", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Ho_Chi_Minh", "saveManualExecutions": false },
+  "active": false,
+  "pinData": {}
+}

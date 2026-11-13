@@ -1,3 +1,4 @@
+import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { API_BASE_URL } from '../lib/api-client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -64,7 +65,6 @@ export function CustomerSearch() {
   const cache = useQueryClient();
   const [text, setText] = useState('');
   const [q, setQuery] = useState('');
-  const [page, setPage] = useState(1);
   const [channelFilter, setChannelFilter] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [notice, setNotice] = useState('');
@@ -87,15 +87,14 @@ export function CustomerSearch() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(text.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [text]);
 
   const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q02');
-  const query = useQuery({
-    queryKey: ['customers', q, page],
-    queryFn: ({ signal }) => search(q, page, signal),
+  const query = useContinuousList({
+    queryKey: ['customers', q],
+    queryFn: (page, signal) => search(q, page, signal),
     enabled: !!allowed,
   });
 
@@ -251,7 +250,7 @@ export function CustomerSearch() {
           <p role="status">Đang tải kết quả tìm kiếm…</p>
         ) : query.isError ? (
           <div role="alert">
-            <p>{query.error.message}</p>
+            <p>{query.error?.message}</p>
             <Button type="button" size="sm" onClick={() => void query.refetch()}>
               Thử lại
             </Button>
@@ -307,25 +306,7 @@ export function CustomerSearch() {
                 Không tìm thấy khách hàng phù hợp!
               </p>
             )}
-            <nav className="customer-search-pagination" aria-label="Phân trang khách hàng">
-              <div className="figma-pagination-pill">
-                <button
-                  type="button"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  ‹ Trước
-                </button>
-                <span className="page-current">{page}</span>
-                <button
-                  type="button"
-                  disabled={!query.data.hasNext}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Sau ›
-                </button>
-              </div>
-            </nav>
+            <ContinuousListEnd query={query}/>
           </>
         )}
       </section>

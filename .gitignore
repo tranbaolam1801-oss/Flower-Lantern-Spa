@@ -20,3 +20,6 @@ backend/uploads/
 
 .vercel
 .neon
+
+.vercel
+.env*

@@ -15,3 +15,11 @@ backend/uploads
 *.md
 !README.md
 .env*
+.npm-cache
+.playwright
+test-results
+docs
+.claude
+.mcp.json
+.neon
+.vercel

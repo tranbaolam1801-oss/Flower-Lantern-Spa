@@ -1,6 +1,7 @@
+import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+
 import { CustomerHeader } from '../components/customer-header';
 import { PublicFooter } from '../components/public-footer';
 import { ServiceCard } from '../components/service-card';
@@ -9,11 +10,12 @@ import { getPublicServices, type PublicServiceItem } from '../lib/catalog-api';
 
 const CATEGORY_TABS = [
   { id: '', label: 'Tất cả', icon: '/assets/uc7-category-all.svg' },
-  { id: 'DM01', label: 'Massage', icon: '/assets/uc7-category-massage.svg' },
-  { id: 'DM02', label: 'Chăm sóc da', icon: '/assets/uc7-category-skin.svg' },
-  { id: 'DM03', label: 'Dưỡng sinh', icon: '/assets/uc7-category-wellness.svg' },
-  { id: 'DM04', label: 'Chăm sóc body', icon: '/assets/uc7-category-body.svg' },
-  { id: 'DM05', label: 'Gội đầu dưỡng sinh', icon: '/assets/uc7-category-hair.svg' },
+  // Existing catalog IDs (database/postgres/002-demo-catalog.sql), verified against the public API.
+  { id: 'DM00000001', label: 'Massage', icon: '/assets/uc7-category-massage.svg' },
+  { id: 'DM00000002', label: 'Chăm sóc da', icon: '/assets/uc7-category-skin.svg' },
+  { id: 'DM00000003', label: 'Dưỡng sinh', icon: '/assets/uc7-category-wellness.svg' },
+  { id: 'DM00000004', label: 'Chăm sóc body', icon: '/assets/uc7-category-body.svg' },
+  { id: 'DM00000005', label: 'Gội đầu dưỡng sinh', icon: '/assets/uc7-category-hair.svg' },
 ] as const;
 
 /** Clearly isolated design-only fixture matching Figma UC_7 01_DanhSachDichVu when SQL catalog is empty. */
@@ -103,13 +105,13 @@ const FIGMA_VISUAL_FIXTURE: PublicServiceItem[] = [
 export function ServicesCatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQ = searchParams.get('q') ?? '';
-  const initialCat = searchParams.get('category') ?? '';
+  // Keep links saved with the former UI-only codes working with the real catalog IDs.
+  const initialCat = (searchParams.get('category') ?? '').replace(/^DM0([1-5])$/, 'DM0000000$1');
   const previewParam = searchParams.get('preview') === 'figma';
 
   const [text, setText] = useState(initialQ);
   const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState(initialCat);
-  const [page, setPage] = useState(1);
   const [searchError, setSearchError] = useState('');
   const [showVisualFixture, setShowVisualFixture] = useState(previewParam);
 
@@ -117,7 +119,6 @@ export function ServicesCatalogPage() {
     const timer = setTimeout(() => {
       const trimmed = text.trim();
       setQ(trimmed);
-      setPage(1);
       const next = new URLSearchParams();
       if (trimmed) next.set('q', trimmed);
       if (category) next.set('category', category);
@@ -127,9 +128,9 @@ export function ServicesCatalogPage() {
     return () => clearTimeout(timer);
   }, [text, category, showVisualFixture, setSearchParams]);
 
-  const query = useQuery({
-    queryKey: ['public-services', q, category, page],
-    queryFn: () => getPublicServices({ q, category, page, limit: 12 }),
+  const query = useContinuousList({
+    queryKey: ['public-services', q, category],
+    queryFn: (page) => getPublicServices({ q, category, page, limit: 12 }),
   });
 
   const items = query.data?.items ?? [];
@@ -144,7 +145,6 @@ export function ServicesCatalogPage() {
     }
     setSearchError('');
     setQ(trimmed);
-    setPage(1);
   };
 
   return (
@@ -161,12 +161,13 @@ export function ServicesCatalogPage() {
           </p>
           <h1>Liệu trình chăm sóc &amp; thư giãn</h1>
           <span>
-            Trải nghiệm các dịch vụ massage, chăm sóc da và dưỡng sinh được thiết kế riêng tại FLOWERLANTERN SPA.
+            Trải nghiệm các dịch vụ massage, chăm sóc da và dưỡng sinh được thiết kế riêng tại Flower Lantern Spa.
           </span>
         </div>
       </section>
 
       <main className="catalog-main">
+        <div className="catalog-sticky-controls">
         {/* Figma UC_7 Centered Pill Search Bar */}
         <div className="catalog-search-wrapper">
           <form
@@ -205,13 +206,14 @@ export function ServicesCatalogPage() {
               aria-pressed={category === cat.id}
               onClick={() => {
                 setCategory(cat.id);
-                setPage(1);
               }}
             >
               <img src={cat.icon} alt="" aria-hidden="true" />
               {cat.label}
             </button>
           ))}
+        </div>
+
         </div>
 
         {query.isPending ? (
@@ -296,27 +298,7 @@ export function ServicesCatalogPage() {
                 <ServiceCard key={service.id} service={service} />
               ))}
             </div>
-            <nav className="customer-search-pagination" aria-label="Phân trang dịch vụ">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Trang trước
-              </Button>
-              <span>Trang {page}</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={items.length < 12}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Trang sau
-              </Button>
-            </nav>
+            <ContinuousListEnd query={query}/>
           </>
         )}
       </main>

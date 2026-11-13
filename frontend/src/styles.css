@@ -215,7 +215,7 @@
 
 .public-footer{background:#2d4728;color:#eaf2e6;padding:48px 24px 24px;margin-top:auto}
 .public-footer-inner{width:min(1240px,100%);margin:0 auto 32px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:28px}
-.public-footer-logo-wrap{background:white;display:inline-block;padding:8px 14px;border-radius:12px;margin-bottom:14px}
+.public-footer-logo-wrap{background:transparent;display:inline-block;padding:8px 14px;border-radius:12px;margin-bottom:14px}
 .public-footer-logo{width:190px;height:auto}
 .public-footer-brand p{font-size:14px;line-height:1.6;color:#d6e4d0;margin:0 0 12px}
 .public-footer-meta{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:#d6e4d0}
@@ -462,8 +462,8 @@
 .figma-service-card:hover{box-shadow:0 8px 20px var(--color-shadow)}
 .figma-service-thumb{aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:var(--color-hero)}
 .figma-service-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.figma-service-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
-.figma-cat-badge{background:var(--color-filter-surface);color:var(--color-heading);padding:4px 10px;border-radius:999px;font-weight:600}
+.figma-service-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px}
+.figma-cat-badge{display:inline-flex;align-items:center;flex:0 0 auto;max-width:100%;white-space:nowrap;background:var(--color-filter-surface);color:var(--color-heading);padding:4px 10px;border-radius:999px;font-weight:600}
 .figma-dur-label{color:var(--color-customer-muted);font-weight:500}
 .figma-service-body{display:flex;flex-direction:column;gap:6px;flex:1}
 .figma-service-body h3{margin:0;font-size:16px;font-weight:700;color:var(--color-customer-heading);line-height:1.35}
@@ -738,3 +738,181 @@
 }
 
 .svc-image-preview{width:96px;height:72px;border-radius:8px;object-fit:cover;display:block;margin-top:6px}
+.otp-code-input{letter-spacing:.5em;font-weight:600;font-variant-numeric:tabular-nums}.otp-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.otp-links .text-link:disabled{color:var(--color-muted);cursor:not-allowed}
+.login-card>.otp-notice{color:var(--color-primary);font-weight:600}.otp-banner,.otp-error,.login-card>.otp-error{color:var(--color-danger)}
+.otp-consent{display:flex;gap:8px;align-items:center;font-size:14px}.otp-consent input{width:18px;height:18px;margin:0;accent-color:var(--color-primary)}
+.otp-login-link{display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:12px;background:var(--color-primary);color:white;font-weight:700;text-decoration:none}.otp-login-link:hover{background:var(--color-primary-hover)}.otp-login-link img{width:20px;height:20px}
+
+/* Shared scroll boundaries: preserve header/sidebar geometry and scroll content only. */
+.admin-shell{height:100svh;overflow:hidden}
+.desktop-sidebar{min-height:0;height:100svh}
+.desktop-sidebar .admin-sidebar{height:100%;min-height:0;overflow-y:auto}
+.admin-workspace{display:flex;flex-direction:column;min-height:0}
+.admin-header{flex-shrink:0;z-index:30}
+.admin-content{flex:1;min-height:0;overflow:auto}
+.customer-header{position:sticky;top:0;z-index:30}
+html{scroll-padding-top:90px}
+
+/* Flexible identity fields keep long employee emails inside the delete dialog. */
+.emp-identity-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.emp-identity-meta>div{min-width:0;display:flex;flex-direction:column;gap:6px}
+.emp-identity-meta strong{overflow-wrap:anywhere;white-space:normal}
+.spa-modal{max-width:calc(100vw - 24px)}
+.spa-modal:has(#emp-del-title){display:none;flex-direction:column;overflow:hidden}
+.spa-modal[open]:has(#emp-del-title){display:flex}
+.spa-modal:has(#emp-del-title) .spa-modal-header,.spa-modal:has(#emp-del-title) .spa-modal-footer{flex-shrink:0}
+.spa-modal:has(#emp-del-title) .spa-modal-body{min-height:0;overflow-y:auto}
+.continuous-list-end{min-height:1px;padding-block:8px;text-align:center}
+@media(max-width:700px){.emp-identity-meta{grid-template-columns:minmax(0,1fr)}}
+
+/* Admin density follows CSS viewport, independently of physical display resolution/DPR. */
+@media(min-width:1024px) and (max-width:1536px){
+  .admin-shell{grid-template-columns:clamp(200px,16vw,240px) minmax(0,1fr)}
+  .desktop-sidebar{display:block}
+  .admin-header .navigation-toggle{display:none}
+  .admin-sidebar{padding:18px 10px}
+  .admin-brand{height:112px;gap:8px}
+  .admin-brand img{width:80px;height:auto;object-fit:contain}
+  .admin-brand strong{font-size:14px;letter-spacing:-.4px;max-width:100%}
+  .admin-sidebar nav{gap:8px}
+  .admin-sidebar nav button{height:42px;padding:0 10px;gap:10px;font-size:14px}
+  .admin-sidebar nav button img{width:18px;height:18px;flex-shrink:0}
+  .admin-header{height:40px;margin:16px 16px 14px;gap:12px}
+  .admin-header .account-avatar{width:36px;height:36px}
+  .admin-header .account-menu summary{font-size:14px;gap:10px}
+  .admin-content{margin:0 16px 16px;font-size:14px}
+  .admin-content :is(.admin-panel-card,.customer-search-card){padding:16px}
+  .admin-content :is(.admin-page-title,.admin-panel-header h1){font-size:20px;margin-bottom:14px}
+  .admin-content .overview-card{padding:16px;gap:6px}
+  .admin-content .overview-card h2{font-size:15px}
+  .admin-content .overview-grid{gap:12px}
+  .admin-content .figma-toolbar-card{padding:12px;gap:10px}
+  .admin-content :is(.spa-select-toolbar,.figma-filter-submit,.figma-add-submit,.customer-add-btn,.customer-filter-btn){height:40px;min-width:0;font-size:14px;padding-inline:12px}
+  .admin-content .customer-search-input{min-width:0;height:40px;padding:8px 12px}
+  .admin-content :is(.customer-search-table,.booking-table){font-size:14px}
+  .admin-content .customer-search-table th{height:42px;font-size:13px;padding:12px}
+  .admin-content .customer-search-table td{height:auto;padding:14px 12px}
+  .admin-content .reports-kpi-card{padding:14px}
+  .admin-content .reports-kpi-row>div>strong{font-size:20px}
+  .admin-content .calendar-toolbar{gap:10px}
+  .admin-content .calendar-toolbar button{width:auto;font-size:14px;padding-inline:12px;height:40px}
+  .admin-content .calendar-date-picker{height:40px;width:240px}
+  .admin-content .calendar-date-picker span{font-size:14px}
+  .admin-content .calendar-legend{gap:12px;margin:14px 0 12px;flex-wrap:wrap}
+  .admin-content .calendar-legend h1{font-size:18px}
+}
+/* One vertical scroller for the schedule; retain all 15 columns and their click geometry. */
+.admin-content:has(.bed-calendar){display:flex;flex-direction:column}
+.admin-content:has(.bed-calendar) .calendar-toolbar{height:auto;min-height:44px;flex-wrap:wrap;flex-shrink:0}
+.admin-content:has(.bed-calendar) .calendar-legend{flex-shrink:0}
+.admin-content .bed-calendar{flex:1;min-height:0}
+.admin-content .calendar-grid{height:100%;display:flex;flex-direction:column}
+.admin-content .calendar-grid-header{flex-shrink:0}
+.admin-content .calendar-hours{flex:1;height:auto;min-height:0}
+
+/* Keep compact labels/actions intact; wide tables scroll inside their existing wrapper. */
+.admin-content .customer-search-table{table-layout:auto}
+.admin-content .customer-search-table th{white-space:nowrap}
+.admin-content .customer-search-table td{vertical-align:middle}
+.admin-content :is(.figma-admin-table,.admin-employee-table) td:first-child{white-space:nowrap}
+.admin-content .customer-search-table .pill-status{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;line-height:1.4;padding:5px 12px;max-width:none}
+.admin-content .customer-search-table td:has(>.pill-status),.admin-content .customer-search-table td:has(>.figma-row-actions){width:1%;white-space:nowrap}
+.admin-content .figma-row-actions{flex-wrap:nowrap;width:max-content;min-width:max-content}
+.admin-content .figma-row-actions>*{flex-shrink:0;white-space:nowrap}
+.admin-content .figma-row-actions button{min-height:36px}
+.admin-content .admin-employee-table{min-width:1120px}
+.admin-content .admin-employee-table :is(th,td):nth-child(2){min-width:140px;white-space:nowrap}
+.admin-content .admin-employee-table td:nth-child(3){min-width:160px;white-space:normal;overflow-wrap:anywhere}
+.admin-content .admin-employee-table td:nth-child(4){white-space:nowrap}
+.admin-content .admin-table-email{display:block;max-width:24ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-content .admin-service-table{min-width:1160px}
+.admin-content .admin-service-table td:nth-child(3){min-width:180px;max-width:320px;white-space:normal;overflow-wrap:anywhere}
+.admin-content .admin-service-table td:nth-child(4){min-width:200px;max-width:320px;white-space:normal}
+.admin-content .admin-service-table .svc-table-desc{display:block;-webkit-line-clamp:unset;overflow:visible;white-space:normal;overflow-wrap:anywhere}
+.admin-content .admin-service-table td:nth-child(6){white-space:nowrap}
+
+/* Employee page only: compact shared search style and balanced table columns. */
+.admin-content .employee-management{padding:16px}
+.employee-management .customer-search-toolbar{display:grid;grid-template-columns:minmax(240px,1fr) 160px 68px 132px;align-items:center;gap:10px;margin-bottom:16px}
+.admin-content .employee-management .customer-search-input{height:40px;min-width:0;padding:8px 12px}
+.employee-management .customer-search-input input{font-size:14px}
+.admin-content .employee-management .spa-select-toolbar,.admin-content .employee-management .customer-search-toolbar>button{height:40px;min-width:0;width:100%;padding:0 12px;font-size:14px;white-space:nowrap}
+.employee-management .admin-employee-table :is(th,td):nth-child(6),.employee-management .admin-employee-table :is(th,td):nth-child(7){text-align:center}
+.admin-content .employee-management .admin-employee-table td:nth-child(3){min-width:200px;white-space:nowrap;overflow-wrap:normal;word-break:normal}
+.employee-management .admin-employee-table :is(th,td):nth-child(6){min-width:120px}
+.employee-management .admin-employee-table :is(th,td):nth-child(7){min-width:310px}
+.admin-content .employee-management .figma-row-actions{justify-content:center;margin-inline:auto;gap:6px}
+.admin-content .employee-management .figma-row-actions button{height:36px;min-height:36px;border-radius:8px;font-size:13px}
+@media(max-width:700px){.employee-management .customer-search-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.employee-management .customer-search-input{grid-column:1/-1}.employee-management .spa-select-toolbar{grid-column:1/-1}}
+
+/* Reports page only: compact inline date filters and fully scrollable report content. */
+.admin-content .reports-stack{gap:14px;min-width:0;padding-bottom:8px}
+.reports-stack .reports-filter-card{display:grid;grid-template-columns:minmax(240px,320px) minmax(240px,320px) max-content;justify-content:start;align-items:center;gap:14px;padding:12px 16px}
+.reports-stack .reports-filter-card .spa-field{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0}
+.reports-stack .reports-filter-card .spa-field>span{white-space:nowrap;font-size:14px}
+.reports-stack .reports-filter-card input{height:38px;padding:7px 10px;min-width:0;font-size:14px}
+.reports-stack .reports-filter-card .spa-field-error-text{grid-column:1/-1}
+.reports-stack .reports-submit-btn{height:38px;padding:0 16px;white-space:nowrap;font-size:14px}
+.admin-content .reports-stack .reports-kpi-grid{gap:12px}
+.admin-content .reports-stack .reports-kpi-card{padding:14px 16px;min-width:0;gap:12px}
+.reports-stack .reports-kpi-row>div:last-child{min-width:0}
+.reports-stack .reports-kpi-row>div>strong{font-size:clamp(18px,1.5vw,22px);overflow-wrap:anywhere}
+.reports-stack .reports-kpi-icon{width:40px;height:40px;font-size:18px}
+.admin-content .reports-stack .admin-panel-card{padding:16px;min-width:0}
+.reports-stack .admin-panel-card>h2{margin:0 0 12px;font-size:16px}
+.reports-stack .reports-chart-head{margin-bottom:12px;gap:10px}
+.reports-stack .reports-chart-head h2{font-size:16px}
+.reports-stack .reports-bars{min-height:170px;padding-top:10px;max-width:100%}
+.reports-stack .reports-bar-col small{white-space:nowrap}
+.reports-stack .reports-bottom-grid{gap:14px;align-items:start;min-width:0}
+.reports-stack .reports-table-scroll{max-width:100%;overflow-x:auto}
+.reports-stack .customer-search-table{min-width:360px}
+.reports-stack .customer-search-table :is(th,td){height:auto;padding:12px;font-size:13px}
+.reports-stack .customer-search-table td:first-child{white-space:normal;overflow-wrap:anywhere}
+.reports-stack .customer-search-empty{padding:24px 16px;margin:0}
+@media(max-width:1200px){.reports-stack .reports-bottom-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:767px){.reports-stack .reports-filter-card{grid-template-columns:minmax(0,1fr);gap:10px}.reports-stack .reports-submit-btn{justify-self:start}.reports-stack .reports-granularity{flex-wrap:wrap;gap:6px}.reports-stack .reports-granularity button{padding:6px 10px}}
+/* Reserve each tick label's actual text width; dense series scroll inside the chart. */
+.reports-stack .reports-bar-col{min-width:max-content;flex:1 0 auto}
+
+/* Catalog controls share one sticky boundary below the responsive public header. */
+.uc7-catalog-page{--catalog-header-height:86px}
+.uc7-catalog-page .catalog-sticky-controls{position:sticky;top:var(--catalog-header-height);z-index:20;background:white;border-bottom:1px solid var(--color-customer-border);margin-bottom:16px}
+.uc7-catalog-page .catalog-sticky-controls .catalog-search-wrapper{min-height:0;padding:10px 0 8px}
+.uc7-catalog-page .catalog-sticky-controls .catalog-search-error{position:static;margin:6px 16px 0}
+.uc7-catalog-page .catalog-sticky-controls .catalog-category-pills{min-height:0;padding:4px 16px 10px;flex-wrap:nowrap;justify-content:safe center;overflow-x:auto;gap:10px}
+.uc7-catalog-page .catalog-category-pills button{flex-shrink:0}
+.uc7-catalog-page .figma-service-card{height:auto;min-height:346px}
+.uc7-catalog-page .figma-service-meta{height:auto;min-height:40px;flex-basis:auto;flex-wrap:wrap}
+.uc7-catalog-page .figma-service-body{height:auto;min-height:162px;flex:1 0 auto;overflow:visible}
+.uc7-catalog-page .figma-service-body h3{height:auto;flex-basis:auto;white-space:normal;overflow:visible;overflow-wrap:anywhere;font-size:clamp(18px,1.4vw,20px)}
+.uc7-catalog-page .figma-service-body p{height:auto;flex:1;display:block;-webkit-line-clamp:unset;overflow:visible;overflow-wrap:anywhere}
+.uc7-catalog-page .figma-service-footer{height:auto;min-height:36px;flex-wrap:wrap}
+.uc7-catalog-page .figma-service-footer strong{font-size:clamp(18px,1.5vw,22px)}
+@media(max-width:1366px){.uc7-catalog-page .catalog-sticky-controls .catalog-search-pill{height:48px}.uc7-catalog-page .catalog-sticky-controls .catalog-search-btn{height:38px;flex-basis:120px;width:120px;padding-inline:16px}.uc7-catalog-page .catalog-sticky-controls .catalog-category-pills button{height:38px;font-size:14px;padding-inline:14px}}
+@media(max-width:1024px){.uc7-catalog-page{--catalog-header-height:76px}}
+@media(max-width:700px){
+  .uc7-catalog-page{--catalog-header-height:68px}
+  .customer-header .brand-home-link{min-width:0;flex:0 1 auto;max-width:45vw}
+  .customer-header .brand-home-link .brand-logo-shared{width:100%;height:auto}
+  .uc7-catalog-page .catalog-sticky-controls .catalog-search-pill{padding-left:12px;gap:8px}
+  .uc7-catalog-page .catalog-sticky-controls .catalog-search-btn{flex-basis:100px;width:100px;padding-inline:10px;font-size:13px}
+  .uc7-catalog-page .catalog-search-pill input{min-width:0;font-size:16px}
+  .uc7-catalog-page .catalog-sticky-controls .catalog-category-pills{justify-content:flex-start}
+  .admin-content :is(.customer-search-toolbar,.figma-toolbar-card){min-width:0;flex-wrap:wrap}
+  .admin-content .customer-search-input{min-width:0;flex-basis:100%}
+  .admin-content .calendar-toolbar-right{flex-wrap:wrap}
+}
+
+/* Shared service-card CTA: label and arrow are one non-shrinking inline unit. */
+.figma-service-footer{flex-wrap:wrap;row-gap:8px}
+.figma-service-footer>strong{flex-shrink:0;white-space:nowrap}
+.figma-service-footer .figma-detail-pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;min-width:max-content;white-space:nowrap}
+.figma-detail-pill>span{white-space:nowrap}
+.figma-detail-pill .figma-detail-arrow{display:block;width:14px;height:14px;flex:0 0 14px;object-fit:contain}
+.home-contact .contact-map-link{color:inherit;text-decoration:none}
+.home-contact .contact-map-link:hover{text-decoration:underline;text-underline-offset:3px}
+.home-contact .contact-map-link:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px}
+
+/* Logo surfaces remain transparent; original sizing and spacing are preserved. */
+.brand-logo-shared,.brand-home-link,.login-brand-slot,.admin-brand,.admin-brand>img,.public-footer-logo-wrap{background:transparent;background-color:transparent;box-shadow:none}

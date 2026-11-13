@@ -29,12 +29,19 @@ export function setup(app: INestApplication) {
       'POST /api/payments/sepay/intent': rateLimitMiddleware(make(limits.intent), sessionKey),
       'POST /api/auth/login': rateLimitMiddleware(make(limits.login)),
       'POST /api/admin/services/image': rateLimitMiddleware(make(limits.upload), sessionKey),
+      // Per-instance only (serverless); the OTP service enforces the real per-phone/per-IP limits in the database.
+      'POST /api/auth/otp/request': rateLimitMiddleware(make(limits.otp)),
+      'POST /api/auth/otp/verify': rateLimitMiddleware(make(limits.otp * 2)),
+      'POST /api/auth/register': rateLimitMiddleware(make(limits.otp)),
+      'POST /api/auth/password/reset': rateLimitMiddleware(make(limits.otp)),
+      'POST /api/internal/notifications/dispatch': rateLimitMiddleware(make(limits.dispatch)),
     };
     app.use((req: Request, res: Response, next: NextFunction) => (byRoute[routeOf(req)] ?? ((_q, _s, n) => n()))(req, res, next));
   }
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Server-to-server webhook: no browser cookie/origin; the handler authenticates the caller (SePay API key or HMAC) and fails closed.
-    const sepayWebhook = req.method === 'POST' && req.path === '/api/payments/sepay/webhook';
+    // The internal dispatch endpoint is called by a scheduler (n8n / GitHub Actions), not a browser; it authenticates with a Bearer INTERNAL_API_KEY.
+    const sepayWebhook = req.method === 'POST' && (req.path === '/api/payments/sepay/webhook' || req.path === '/api/internal/notifications/dispatch');
     if (!sepayWebhook && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const origin = process.env.FRONTEND_ORIGIN ?? 'http://127.0.0.1:5173';
       if (req.headers['x-spa-request'] !== '1' || (req.headers.origin && req.headers.origin !== origin)) {

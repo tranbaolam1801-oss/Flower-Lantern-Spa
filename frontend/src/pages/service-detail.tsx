@@ -78,7 +78,7 @@ export function ServiceDetailPage() {
                 </div>
                 <h1>{service.name}</h1>
                 <p className="service-detail-desc">
-                  {service.details || service.description || 'Liệu trình chăm sóc toàn diện tại Hoa Đăng Spa.'}
+                  {service.details || service.description || 'Liệu trình chăm sóc toàn diện tại Flower Lantern Spa.'}
                 </p>
                 <div className="service-meta-row">
                   <span>Thời lượng: <strong>{durationLabel}</strong></span>

@@ -4,3 +4,6 @@
 {"t":0,"agent":"acf2c9f","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":517820}
 {"t":0,"agent":"acf2c9f","agent_type":"executor","event":"agent_start","parent_mode":"none"}
 {"t":0,"agent":"acf2c9f","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":520387}
+{"t":0,"agent":"a41e2ca","agent_type":"general-purpose","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"a74a20d","agent_type":"general-purpose","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}
+{"t":0,"agent":"ad23f7a","agent_type":"general-purpose","event":"agent_stop","success":true,"synthetic":true,"telemetry_status":"unmatched_stop","reason":"SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."}

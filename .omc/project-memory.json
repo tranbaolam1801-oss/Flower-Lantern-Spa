@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1794417132313,
-  "projectRoot": "C:\\Spa",
+  "lastScanned": 1794560140208,
+  "projectRoot": "c:\\Spa",
   "techStack": {
     "languages": [
       {
         "name": "JavaScript/TypeScript",
-        "version": ">=22.12.0",
+        "version": "22.x",
         "confidence": "high",
         "markers": [
           "package.json"
@@ -21,7 +21,7 @@
       }
     ],
     "packageManager": "npm",
-    "runtime": "Node.js 22.12.0"
+    "runtime": "Node.js 22.x"
   },
   "build": {
     "buildCommand": "npm run build",
@@ -34,7 +34,8 @@
       "typecheck": "npm run typecheck --workspaces",
       "lint": "eslint backend/src frontend/src tests",
       "test": "npm run test -w backend",
-      "test:e2e": "playwright test"
+      "test:e2e": "playwright test",
+      "e2e:local": "node scripts/e2e-local.mjs"
     }
   },
   "conventions": {
@@ -54,15 +55,27 @@
       "scripts",
       "tests"
     ],
-    "gitBranches": null
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [],
   "directoryMap": {
+    "api": {
+      "path": "api",
+      "purpose": "API routes",
+      "fileCount": 1,
+      "lastAccessed": 1794560139932,
+      "keyFiles": [
+        "index.js"
+      ]
+    },
     "audit": {
       "path": "audit",
       "purpose": null,
       "fileCount": 3,
-      "lastAccessed": 1794417131930,
+      "lastAccessed": 1794560139953,
       "keyFiles": [
         "FIGMA_FRAME_INVENTORY.md",
         "handover-history.md",
@@ -73,7 +86,7 @@
       "path": "backend",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1794417131974,
+      "lastAccessed": 1794560139954,
       "keyFiles": [
         "jest.config.cjs",
         "package.json",
@@ -84,21 +97,21 @@
     "database": {
       "path": "database",
       "purpose": null,
-      "fileCount": 8,
-      "lastAccessed": 1794417131977,
+      "fileCount": 11,
+      "lastAccessed": 1794560139956,
       "keyFiles": [
         "AUTH_SESSION_PROPOSAL.md",
+        "AZURE_MIGRATION_APPROVAL_CHECKLIST.md",
         "FlowerLanternSpa_Dev_pre_003.bak",
         "initialize-local.sql",
-        "initialize-test.sql",
-        "README.md"
+        "initialize-test.sql"
       ]
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 12,
-      "lastAccessed": 1794417132008,
+      "lastAccessed": 1794560139957,
       "keyFiles": [
         "50K141.04.3007.docx",
         "50K141.04.3007.fig",
@@ -107,11 +120,24 @@
         "BO_QUY_CHUAN_TRUOC_FIGMA.docx"
       ]
     },
+    "docs-deploy": {
+      "path": "docs-deploy",
+      "purpose": null,
+      "fileCount": 13,
+      "lastAccessed": 1794560139958,
+      "keyFiles": [
+        "azure.env.example",
+        "AZURE_BILLING_ELIGIBILITY_CHECK.md",
+        "AZURE_FREE_TIER_DEPLOYMENT.md",
+        "DEPLOYMENT_GUIDE.md",
+        "DEPLOYMENT_READINESS.md"
+      ]
+    },
     "frontend": {
       "path": "frontend",
       "purpose": null,
       "fileCount": 7,
-      "lastAccessed": 1794417132079,
+      "lastAccessed": 1794560139959,
       "keyFiles": [
         "API_HANDOFF_TO_CODEX.md",
         "components.json",
@@ -120,34 +146,47 @@
         "package.json"
       ]
     },
+    "n8n": {
+      "path": "n8n",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1794560139960,
+      "keyFiles": [
+        "flower-lantern-notification-dispatch.json",
+        "workflow.test.mjs"
+      ]
+    },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 2,
-      "lastAccessed": 1794417132092,
+      "fileCount": 11,
+      "lastAccessed": 1794560139961,
       "keyFiles": [
         "audit-sources.ps1",
-        "run-playwright-evidence.mjs"
+        "e2e-live-browser.cjs",
+        "e2e-live-webhook.mjs",
+        "e2e-live.mjs",
+        "e2e-local-otp-browser.mjs"
       ]
     },
     "test-results": {
       "path": "test-results",
       "purpose": null,
-      "fileCount": 5,
-      "lastAccessed": 1794417132107,
+      "fileCount": 40,
+      "lastAccessed": 1794560139962,
       "keyFiles": [
+        "admin-measure-after.json",
+        "admin-measure-before.json",
+        "admin-viewport-check.cjs",
         "booking-1440.png",
-        "customer-login-1440.png",
-        "my-bookings-1440.png",
-        "service-detail-1440.png",
-        "services-1440.png"
+        "customer-login-1440.png"
       ]
     },
     "tests": {
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 5,
-      "lastAccessed": 1794417132112,
+      "lastAccessed": 1794560139963,
       "keyFiles": [
         "auth.spec.ts",
         "foundation.spec.ts",
@@ -159,51 +198,41 @@
     "backend\\dist": {
       "path": "backend\\dist",
       "purpose": "Distribution/build output",
-      "fileCount": 16,
-      "lastAccessed": 1794417132123,
+      "fileCount": 20,
+      "lastAccessed": 1794560139966,
       "keyFiles": [
         "app.module.js",
         "app.module.js.map",
-        "catalog.controller.js"
+        "bootstrap.js"
       ]
     },
     "backend\\src": {
       "path": "backend\\src",
       "purpose": "Source code",
-      "fileCount": 11,
-      "lastAccessed": 1794417132136,
+      "fileCount": 15,
+      "lastAccessed": 1794560139967,
       "keyFiles": [
         "app.module.ts",
         "app.spec.ts",
-        "catalog.controller.ts"
+        "bootstrap.ts"
       ]
     },
     "database\\migrations": {
       "path": "database\\migrations",
       "purpose": "Database migrations",
-      "fileCount": 4,
-      "lastAccessed": 1794417132147,
+      "fileCount": 9,
+      "lastAccessed": 1794560139969,
       "keyFiles": [
         "001-srs-baseline.sql",
         "002-business-indexes.sql",
         "003-auth-lockout.sql"
       ]
     },
-    "database\\seeds": {
-      "path": "database\\seeds",
-      "purpose": "Database seeds",
-      "fileCount": 2,
-      "lastAccessed": 1794417132157,
-      "keyFiles": [
-        "001-beds.sql",
-        "002-auth-baseline.sql"
-      ]
-    },
     "frontend\\dist": {
       "path": "frontend\\dist",
       "purpose": "Distribution/build output",
       "fileCount": 1,
-      "lastAccessed": 1794417132161,
+      "lastAccessed": 1794560139971,
       "keyFiles": [
         "index.html"
       ]
@@ -212,326 +241,327 @@
       "path": "frontend\\node_modules",
       "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1794417132162,
+      "lastAccessed": 1794560139972,
       "keyFiles": []
     },
     "frontend\\public": {
       "path": "frontend\\public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1794417132173,
+      "lastAccessed": 1794560139973,
       "keyFiles": []
     },
     "frontend\\src": {
       "path": "frontend\\src",
       "purpose": "Source code",
-      "fileCount": 2,
-      "lastAccessed": 1794417132177,
+      "fileCount": 3,
+      "lastAccessed": 1794560139974,
       "keyFiles": [
         "main.tsx",
-        "styles.css"
+        "styles.css",
+        "vite-env.d.ts"
       ]
     }
   },
   "hotPaths": [
     {
-      "path": "HANDOVER.md",
-      "accessCount": 27.602365217647648,
-      "lastAccessed": 1794458862288,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/pages/admin-dashboard.tsx",
-      "accessCount": 53.01557148981669,
-      "lastAccessed": 1794479508495,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/pages/admin-services.tsx",
-      "accessCount": 10.640472009817893,
-      "lastAccessed": 1794458231749,
-      "type": "file"
-    },
-    {
-      "path": "backend/src",
-      "accessCount": 5.810814476222046,
-      "lastAccessed": 1794461304853,
-      "type": "directory"
-    },
-    {
-      "path": "",
-      "accessCount": 2.947649302314302,
-      "lastAccessed": 1794461192532,
-      "type": "directory"
-    },
-    {
-      "path": "backend/src/bookings/booking-write.dto.ts",
-      "accessCount": 3.5291010350956498,
-      "lastAccessed": 1794479385688,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/customers/customer-validation.ts",
-      "accessCount": 3.995808379731581,
-      "lastAccessed": 1794458247608,
-      "type": "file"
-    },
-    {
       "path": "backend/src/customers/customer-write.controller.ts",
-      "accessCount": 1.8449419428874814,
-      "lastAccessed": 1794478845750,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/reviews/reviews.controller.ts",
-      "accessCount": 6.988750655354261,
-      "lastAccessed": 1794459153030,
+      "accessCount": 3.599944189566106,
+      "lastAccessed": 1794496596144,
       "type": "file"
     },
     {
       "path": "backend/src/employees/employees.service.ts",
-      "accessCount": 1.845042705676218,
-      "lastAccessed": 1794478845926,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/app.module.ts",
-      "accessCount": 5.928061915093922,
-      "lastAccessed": 1794459832143,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/bookings/booking-write.spec.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794458041344,
+      "accessCount": 3.6217098773985357,
+      "lastAccessed": 1794494720702,
       "type": "file"
     },
     {
       "path": "database/migrations/005-goi-dich-vu-status.PROPOSED.sql",
-      "accessCount": 1.9977742051186071,
-      "lastAccessed": 1794458382630,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/employees/employees.dto.ts",
-      "accessCount": 3.99864642065009,
-      "lastAccessed": 1794458250426,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/common/phone.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794458243555,
+      "accessCount": 2.6510685980115034,
+      "lastAccessed": 1794482142066,
       "type": "file"
     },
     {
       "path": "database/migrations/006-phan-hoi-ngay-phan-hoi.PROPOSED.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794458389406,
-      "type": "file"
-    },
-    {
-      "path": "TEST_REPORT.md",
-      "accessCount": 1,
-      "lastAccessed": 1794458859729,
+      "accessCount": 1.8264672320391715,
+      "lastAccessed": 1794482146855,
       "type": "file"
     },
     {
       "path": "backend/src/config.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794459047312,
+      "accessCount": 4.645954919382917,
+      "lastAccessed": 1794494449516,
       "type": "file"
-    },
-    {
-      "path": "backend/src/setup.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794459826291,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/main.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794459829386,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/app.spec.ts",
-      "accessCount": 1.9999054348076295,
-      "lastAccessed": 1794459853347,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/entities/phan-hoi.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794460197716,
-      "type": "file"
-    },
-    {
-      "path": "database/setup/001-test-sql-login.MANUAL.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794460224550,
-      "type": "file"
-    },
-    {
-      "path": "COMPLETION_REPORT.md",
-      "accessCount": 1,
-      "lastAccessed": 1794460745273,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/payments/payments.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794461206960,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/payments/payments.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794461207175,
-      "type": "file"
-    },
-    {
-      "path": "database/PAYMENT_SEPAY_PROPOSAL.md",
-      "accessCount": 1,
-      "lastAccessed": 1794461305299,
-      "type": "directory"
     },
     {
       "path": "backend/src/bookings/booking-write.service.ts",
-      "accessCount": 3.7299958332481764,
-      "lastAccessed": 1794479389206,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/common/rate-limit.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478613791,
-      "type": "file"
-    },
-    {
-      "path": "frontend/public/assets/uc7-card-6.png",
-      "accessCount": 1,
-      "lastAccessed": 1794478614603,
-      "type": "file"
-    },
-    {
-      "path": "frontend/public/assets/uc7-card-1.png",
-      "accessCount": 1,
-      "lastAccessed": 1794478614851,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/uploads/image-storage.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478617439,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/uploads/uploads.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478622270,
-      "type": "file"
-    },
-    {
-      "path": "frontend/public/assets/uc7-card-4.png",
-      "accessCount": 1,
-      "lastAccessed": 1794478624417,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/uploads/uploads.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478625783,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/lib/booking-api.ts",
-      "accessCount": 1.9944686129305915,
-      "lastAccessed": 1794479338521,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/lib/api-client.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478647423,
-      "type": "file"
-    },
-    {
-      "path": "database/seeds/PROPOSED-010-sample-catalog.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794478664869,
-      "type": "file"
-    },
-    {
-      "path": "database/seeds/PROPOSED-011-test-accounts.mjs",
-      "accessCount": 1,
-      "lastAccessed": 1794478711229,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/common/rate-limit.spec.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478724049,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/PROPOSED-008-booking-source-prepaid.md",
-      "accessCount": 1,
-      "lastAccessed": 1794478819489,
+      "accessCount": 17.065112656467395,
+      "lastAccessed": 1794496453461,
       "type": "file"
     },
     {
       "path": "backend/src/customers/customer-write.spec.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794478846064,
+      "accessCount": 4.8658169102912705,
+      "lastAccessed": 1794496760677,
       "type": "file"
     },
     {
-      "path": "scripts/run-sql-integration.ps1",
+      "path": "database/migrations/001-srs-baseline.sql",
       "accessCount": 1,
-      "lastAccessed": 1794478899131,
+      "lastAccessed": 1794482115427,
       "type": "file"
     },
     {
-      "path": "database/migrations/STAGING_MIGRATION_ORDER.md",
-      "accessCount": 1.9999007902088624,
-      "lastAccessed": 1794478916064,
+      "path": "database/migrations/002-business-indexes.sql",
+      "accessCount": 1,
+      "lastAccessed": 1794482126222,
       "type": "file"
     },
     {
-      "path": "database/seeds/PROPOSED-011-test-accounts.md",
+      "path": "database/migrations/003-auth-lockout.sql",
       "accessCount": 1,
-      "lastAccessed": 1794478920548,
+      "lastAccessed": 1794482131037,
       "type": "file"
     },
     {
-      "path": "database/PROPOSALS_INDEX.md",
+      "path": "database/migrations/004-auth-sessions.sql",
       "accessCount": 1,
-      "lastAccessed": 1794478935876,
+      "lastAccessed": 1794482135800,
       "type": "file"
     },
     {
-      "path": "frontend/FIGMA_VISUAL_AUDIT.md",
+      "path": "database/migrations/007-sepay-payments.PROPOSED.sql",
       "accessCount": 1,
-      "lastAccessed": 1794479301194,
+      "lastAccessed": 1794482151177,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/config.spec.ts",
+      "accessCount": 2.999841778518309,
+      "lastAccessed": 1794482488482,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/auth/auth.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794482851683,
+      "type": "file"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "accessCount": 3.937789525529805,
+      "lastAccessed": 1794486932454,
+      "type": "file"
+    },
+    {
+      "path": ".dockerignore",
+      "accessCount": 1,
+      "lastAccessed": 1794483015839,
+      "type": "file"
+    },
+    {
+      "path": "docs-deploy/azure.env.example",
+      "accessCount": 1,
+      "lastAccessed": 1794485715846,
+      "type": "file"
+    },
+    {
+      "path": "scripts/azure-deploy.sh",
+      "accessCount": 1,
+      "lastAccessed": 1794485750908,
+      "type": "file"
+    },
+    {
+      "path": "database/AZURE_MIGRATION_APPROVAL_CHECKLIST.md",
+      "accessCount": 1,
+      "lastAccessed": 1794485785177,
+      "type": "file"
+    },
+    {
+      "path": "docs-deploy/SEPAY_WEBHOOK_TEST_PLAN.md",
+      "accessCount": 1,
+      "lastAccessed": 1794485821455,
+      "type": "file"
+    },
+    {
+      "path": "frontend/public/staticwebapp.config.json",
+      "accessCount": 1,
+      "lastAccessed": 1794486876621,
+      "type": "file"
+    },
+    {
+      "path": "database/postgres/001-schema.sql",
+      "accessCount": 2.991298028462837,
+      "lastAccessed": 1794494463726,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/common/pg-result.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794493699333,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/common/pg-result.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794493701866,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/testing/pg-test-server.ts",
+      "accessCount": 1.9069403497947865,
+      "lastAccessed": 1794505902576,
+      "type": "file"
+    },
+    {
+      "path": "database/postgres/CONVERSION_GUIDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1794494177746,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/payments/payments.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794494341183,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/sql.integration.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794494440364,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1794494452359,
       "type": "directory"
     },
     {
-      "path": "backend/src/bookings/booking-read.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794479436264,
+      "path": "backend/src/bookings/booking-transaction.service.ts",
+      "accessCount": 1.999904584499506,
+      "lastAccessed": 1794494544879,
       "type": "file"
     },
     {
-      "path": "backend/src/bookings/booking-read.spec.ts",
+      "path": "backend/src",
+      "accessCount": 1.9990497651020882,
+      "lastAccessed": 1794494668784,
+      "type": "directory"
+    },
+    {
+      "path": "backend/src/common/phone.ts",
       "accessCount": 1,
-      "lastAccessed": 1794479446354,
+      "lastAccessed": 1794494601394,
       "type": "file"
     },
     {
-      "path": "docs-deploy/DEPLOYMENT_READINESS.md",
+      "path": "backend/src/auth/auth.service.ts",
       "accessCount": 1,
-      "lastAccessed": 1794480039889,
+      "lastAccessed": 1794496534562,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/bookings/booking-transaction.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496736947,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/bookings/booking-concurrency.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496743849,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/schema.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496750914,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/reports/reports.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496758214,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/catalog.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496758635,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/reviews/reviews.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794496966286,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/bookings/booking-write.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794497039803,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/bookings/booking-read.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794497054325,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/customers/customers.pg.spec.ts",
+      "accessCount": 1.9929032465425474,
+      "lastAccessed": 1794498006360,
+      "type": "file"
+    },
+    {
+      "path": "scripts/pg-apply.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794498847833,
+      "type": "file"
+    },
+    {
+      "path": "database/postgres/003-demo-accounts.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794498851122,
+      "type": "file"
+    },
+    {
+      "path": "docs-deploy/VERCEL_NEON_DEPLOYMENT.md",
+      "accessCount": 1,
+      "lastAccessed": 1794499323138,
+      "type": "file"
+    },
+    {
+      "path": "scripts/e2e-live-webhook.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794501525890,
+      "type": "file"
+    },
+    {
+      "path": "scripts/e2e-live-browser.cjs",
+      "accessCount": 1,
+      "lastAccessed": 1794501599264,
+      "type": "file"
+    },
+    {
+      "path": "n8n/flower-lantern-notification-dispatch.json",
+      "accessCount": 1,
+      "lastAccessed": 1794505271914,
+      "type": "file"
+    },
+    {
+      "path": "n8n/workflow.test.mjs",
+      "accessCount": 1.9997947805011405,
+      "lastAccessed": 1794505354031,
+      "type": "file"
+    },
+    {
+      "path": "docs-deploy/ZALO_N8N_PROVIDER_SETUP.md",
+      "accessCount": 1,
+      "lastAccessed": 1794505411917,
       "type": "file"
     }
   ],

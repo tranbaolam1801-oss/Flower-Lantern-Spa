@@ -47,7 +47,7 @@ describe('RateLimiter', () => {
     expect(sessionKey({ cookies: {}, headers: {}, ip: '9.9.9.9' } as unknown as Request)).toBe('ip:9.9.9.9');
   });
   it('reads env settings with sane defaults', () => {
-    expect(readRateLimitSettings({})).toEqual({ enabled: true, windowMs: 60_000, webhook: 300, intent: 20, login: 20, upload: 30 });
+    expect(readRateLimitSettings({})).toEqual({ enabled: true, windowMs: 60_000, webhook: 300, intent: 20, login: 20, upload: 30, otp: 10, dispatch: 30 });
     expect(readRateLimitSettings({ RATE_LIMIT_ENABLED: 'false', RATE_LIMIT_LOGIN_PER_WINDOW: '5', RATE_LIMIT_INTENT_PER_WINDOW: 'x' })).toMatchObject({ enabled: false, login: 5, intent: 20 });
   });
 });

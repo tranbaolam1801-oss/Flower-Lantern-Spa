@@ -37,7 +37,9 @@ describe('DTO validation', () => {
 });
 
 function setup(responses: ((sql: string, p: unknown[]) => unknown)[]) {
-  const database = { query: jest.fn(async (sql: string, p: unknown[]) => { const r = responses.shift(); return r ? r(sql, p) : []; }) };
+  const query = jest.fn(async (sql: string, p: unknown[]) => { const r = responses.shift(); return r ? r(sql, p) : []; });
+  // Status changes run in a transaction (notification jobs commit with the booking); the double reuses the same scripted responses.
+  const database = { query, transaction: jest.fn(async (work: (runner: { query: typeof query }) => unknown) => work({ query })) };
   const transactions = { reserve: jest.fn(async (...args: [unknown, (r: unknown) => unknown, string?]) => args[1]({ query: jest.fn(async (sql: string) => (sql.includes('FOR UPDATE') ? [{ status: 'Chờ xác nhận', pay: 'Chưa thanh toán' }] : [])) })) };
   const service = new BookingWriteService(database as never, transactions as never);
   service.now = () => NOW;

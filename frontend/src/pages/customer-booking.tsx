@@ -197,7 +197,7 @@ export function CustomerBookingPage() {
           </p>
           <h1>Đặt lịch hẹn</h1>
           <span>
-            Chọn dịch vụ và thời gian phù hợp để chúng tôi chăm sóc bạn thật chu đáo tại Hoa Đăng Spa.
+            Chọn dịch vụ và thời gian phù hợp để chúng tôi chăm sóc bạn thật chu đáo tại Flower Lantern Spa.
           </span>
         </div>
         {heroAlert && (
