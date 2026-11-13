@@ -742,3 +742,13 @@
 .login-card>.otp-notice{color:var(--color-primary);font-weight:600}.otp-banner,.otp-error,.login-card>.otp-error{color:var(--color-danger)}
 .otp-consent{display:flex;gap:8px;align-items:center;font-size:14px}.otp-consent input{width:18px;height:18px;margin:0;accent-color:var(--color-primary)}
 .otp-login-link{display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:12px;background:var(--color-primary);color:white;font-weight:700;text-decoration:none}.otp-login-link:hover{background:var(--color-primary-hover)}.otp-login-link img{width:20px;height:20px}
+
+/* Shared scroll boundaries: preserve header/sidebar geometry and scroll content only. */
+.admin-shell{height:100svh;overflow:hidden}
+.desktop-sidebar{min-height:0;height:100svh}
+.desktop-sidebar .admin-sidebar{height:100%;min-height:0;overflow-y:auto}
+.admin-workspace{display:flex;flex-direction:column;min-height:0}
+.admin-header{flex-shrink:0;z-index:30}
+.admin-content{flex:1;min-height:0;overflow:auto}
+.customer-header{position:sticky;top:0;z-index:30}
+html{scroll-padding-top:90px}
