@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +21,7 @@ export function Login() {
   const [visible, setVisible] = useState(false);
   const { setUser } = useAuth();
   const navigate = useNavigate();
+  const submitting=useRef(false);
 
   const {
     register,
@@ -49,10 +50,11 @@ export function Login() {
         });
       } else {
         setError('root', {
-          message: err.status ? err.message : 'Không thể kết nối hệ thống. Vui lòng thử lại!',
+          message: err.message || 'Không thể kết nối hệ thống. Vui lòng thử lại!',
         });
       }
     },
+    onSettled:()=>{submitting.current=false;},
   });
 
   const showInvalidCredentials =
@@ -64,6 +66,8 @@ export function Login() {
   const isTemporarilyLocked = mutation.isError && mutation.error.code === 'ACCOUNT_TEMPORARILY_LOCKED';
 
   const submit = (data: LoginInput) => {
+    if(submitting.current)return;
+    submitting.current=true;
     mutation.mutate({ phone: data.phone.trim(), password: data.password });
   };
 
@@ -75,7 +79,7 @@ export function Login() {
         <form className="login-card" noValidate onSubmit={handleSubmit(submit)}>
           <header>
             <h1>Đăng nhập</h1>
-            <p>Chào mừng bạn quay lại FLOWERLANTERN SPA</p>
+            <p>Chào mừng bạn quay lại Flower Lantern Spa</p>
           </header>
           <div className="login-fields">
             <div className="field">
@@ -169,7 +173,7 @@ export function Login() {
               disabled={mutation.isPending || isTemporarilyLocked}
             >
               <Icon name="log-in" />
-              {mutation.isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {mutation.isPending ? 'Đang đăng nhập...' : mutation.isError && !showInvalidCredentials && !isTemporarilyLocked ? 'Thử lại' : 'Đăng nhập'}
             </Button>
             {!showInvalidCredentials && (
               <p className="register-row">

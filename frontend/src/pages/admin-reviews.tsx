@@ -1,3 +1,4 @@
+import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
@@ -33,7 +34,6 @@ export function AdminReviewsPage() {
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
-  const [page, setPage] = useState(1);
   const [notice, setNotice] = useState('');
 
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -47,15 +47,14 @@ export function AdminReviewsPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setQ(text.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [text]);
 
   const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q03');
-  const query = useQuery({
-    queryKey: ['admin-reviews', q, status, page],
-    queryFn: () => listReviews({ q, status, page }),
+  const query = useContinuousList({
+    queryKey: ['admin-reviews', q, status],
+    queryFn: (page) => listReviews({ q, status, page }),
     enabled: !!allowed,
   });
 
@@ -203,7 +202,6 @@ export function AdminReviewsPage() {
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value);
-                  setPage(1);
                 }}
               >
                 <option value="">Tất cả trạng thái</option>
@@ -241,7 +239,7 @@ export function AdminReviewsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {query.data.items.map((r) => (
+                        {(query.data?.items ?? []).map((r) => (
                           <tr key={r.id}>
                             <td>{r.id}</td>
                             <td><strong>{r.customerName}</strong></td>
@@ -277,22 +275,12 @@ export function AdminReviewsPage() {
                       </tbody>
                     </table>
                   </div>
-                  {query.data.items.length === 0 && (
+                  {(query.data?.items.length ?? 0) === 0 && (
                     <p className="customer-search-empty" role="status">
                       Không tìm thấy đánh giá phù hợp!
                     </p>
                   )}
-                  <nav className="customer-search-pagination" aria-label="Phân trang đánh giá">
-                    <div className="figma-pagination-pill">
-                      <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                        ‹ Trước
-                      </button>
-                      <span className="page-current">{page}</span>
-                      <button type="button" disabled={!query.data.hasNext} onClick={() => setPage((p) => p + 1)}>
-                        Sau ›
-                      </button>
-                    </div>
-                  </nav>
+                  <ContinuousListEnd query={query}/>
                 </>
               )}
             </section>

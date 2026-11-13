@@ -63,7 +63,6 @@ export function AdminReportsPage() {
   return (
     <ManagementLayout active="Q06">
       <div className="reports-stack">
-        <h1 className="admin-page-title">Báo cáo thống kê</h1>
 
         {!allowed ? (
           <p role="alert">Bạn không có quyền xem báo cáo thống kê.</p>
@@ -178,7 +177,7 @@ export function AdminReportsPage() {
                 ) : !svcQuery.data?.items.length ? (
                   <p className="customer-search-empty">Không có lượt sử dụng dịch vụ trong khoảng thời gian đã chọn.</p>
                 ) : (
-                  <table className="customer-search-table" style={{ minWidth: 0 }}>
+                  <div className="reports-table-scroll"><table className="customer-search-table">
                     <thead>
                       <tr>
                         <th>Dịch vụ</th>
@@ -193,7 +192,7 @@ export function AdminReportsPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </section>
 
@@ -204,7 +203,7 @@ export function AdminReportsPage() {
                 ) : !custQuery.data?.topCustomers.length ? (
                   <p className="customer-search-empty">Không có khách hàng trong khoảng thời gian đã chọn.</p>
                 ) : (
-                  <table className="customer-search-table" style={{ minWidth: 0 }}>
+                  <div className="reports-table-scroll"><table className="customer-search-table">
                     <thead>
                       <tr>
                         <th>Họ tên</th>
@@ -221,7 +220,7 @@ export function AdminReportsPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </section>
             </div>

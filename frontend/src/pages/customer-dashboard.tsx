@@ -124,7 +124,7 @@ export function CustomerDashboard() {
           </p>
           <h1>Lịch hẹn của tôi</h1>
           <span>
-            Theo dõi dịch vụ, thời gian và trạng thái các lịch hẹn bạn đã đặt tại Hoa Đăng Spa.
+            Theo dõi dịch vụ, thời gian và trạng thái các lịch hẹn bạn đã đặt tại Flower Lantern Spa.
           </span>
         </div>
       </section>
@@ -167,7 +167,7 @@ export function CustomerDashboard() {
           <div className="booking-state-card">
             <span className="booking-state-icon" aria-hidden="true">📅</span>
             <h2>Bạn chưa có lịch hẹn nào!</h2>
-            <p>Hãy đặt lịch để trải nghiệm dịch vụ tại Hoa Đăng Spa.</p>
+            <p>Hãy đặt lịch để trải nghiệm dịch vụ tại Flower Lantern Spa.</p>
             <Link to="/dat-lich"><Button>Đặt lịch ngay</Button></Link>
           </div>
         ) : (
@@ -401,7 +401,7 @@ export function CustomerDashboard() {
         <div className="spa-modal-header">
           <div>
             <h2 id="review-title">Đánh giá dịch vụ</h2>
-            <p className="spa-modal-subtitle">Chia sẻ trải nghiệm của bạn để Hoa Đăng Spa phục vụ tốt hơn.</p>
+            <p className="spa-modal-subtitle">Chia sẻ trải nghiệm của bạn để Flower Lantern Spa phục vụ tốt hơn.</p>
           </div>
           <button type="button" className="spa-modal-close" onClick={() => reviewDialog.current?.close()}>×</button>
         </div>

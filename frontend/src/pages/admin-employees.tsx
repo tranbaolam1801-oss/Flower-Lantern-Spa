@@ -1,3 +1,4 @@
+import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
@@ -33,7 +34,6 @@ export function AdminEmployeesPage() {
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [page, setPage] = useState(1);
   const [notice, setNotice] = useState('');
 
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -77,7 +77,6 @@ export function AdminEmployeesPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       setQ(text.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(t);
   }, [text]);
@@ -86,9 +85,9 @@ export function AdminEmployeesPage() {
   const allowed = user?.role === 'Chủ Spa' || (user?.role === 'Quản lý' && !!user.permissions.includes('Q05'));
   const isOwner = user?.role === 'Chủ Spa';
 
-  const query = useQuery({
-    queryKey: ['admin-employees', q, statusFilter, page],
-    queryFn: () => listEmployees({ q, status: statusFilter, page }),
+  const query = useContinuousList({
+    queryKey: ['admin-employees', q, statusFilter],
+    queryFn: (page) => listEmployees({ q, status: statusFilter, page }),
     enabled: !!allowed,
   });
 
@@ -269,8 +268,7 @@ export function AdminEmployeesPage() {
 
   return (
     <ManagementLayout active="Q05">
-      <section className="customer-search-card" aria-label="Quản lý nhân viên">
-        <h1 className="admin-page-title">Danh sách nhân viên</h1>
+      <section className="customer-search-card employee-management" aria-label="Quản lý nhân viên">
         {notice && <p role="status" className="spa-toast-success">{notice}</p>}
 
         <div className="customer-search-toolbar">
@@ -289,7 +287,6 @@ export function AdminEmployeesPage() {
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
-              setPage(1);
             }}
           >
             <option value="">Tất cả trạng thái</option>
@@ -360,7 +357,7 @@ export function AdminEmployeesPage() {
         ) : (
           <>
             <div className="customer-search-scroll">
-              <table className="customer-search-table">
+              <table className="customer-search-table admin-employee-table">
                 <thead>
                   <tr>
                     <th>Mã NV</th>
@@ -373,7 +370,7 @@ export function AdminEmployeesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {query.data.items.map((emp) => (
+                  {(query.data?.items ?? []).map((emp) => (
                     <tr key={emp.id}>
                       <td>{emp.id}</td>
                       <td><strong>{emp.username}</strong></td>
@@ -382,7 +379,7 @@ export function AdminEmployeesPage() {
                         <small className="role-subchip">{emp.role}</small>
                       </td>
                       <td>{emp.phone}</td>
-                      <td>{emp.email || '—'}</td>
+                      <td><span className="admin-table-email" title={emp.email || undefined}>{emp.email || '—'}</span></td>
                       <td>
                         <span className={`pill-status ${emp.accountStatus === 'Hoạt động' ? 'pill-ok' : 'pill-warn'}`}>
                           {emp.accountStatus}
@@ -451,20 +448,12 @@ export function AdminEmployeesPage() {
                 </tbody>
               </table>
             </div>
-            {query.data.items.length === 0 && (
+            {(query.data?.items.length ?? 0) === 0 && (
               <p className="customer-search-empty" role="status">
                 Không có kết quả phù hợp
               </p>
             )}
-            <nav className="customer-search-pagination" aria-label="Phân trang nhân viên">
-              <Button type="button" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                Trang trước
-              </Button>
-              <span>Trang {page}</span>
-              <Button type="button" variant="outline" disabled={!query.data.hasNext} onClick={() => setPage((p) => p + 1)}>
-                Trang sau
-              </Button>
-            </nav>
+            <ContinuousListEnd query={query}/>
           </>
         )}
       </section>

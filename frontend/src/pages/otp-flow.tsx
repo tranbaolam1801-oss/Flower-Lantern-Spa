@@ -190,7 +190,7 @@ export function OtpFlow({ purpose }: Props) {
       ? 'Nhập số điện thoại để nhận mã xác thực'
       : 'Nhập số điện thoại để nhận mã xác thực đặt lại mật khẩu',
     code: `Nhập mã gồm 6 chữ số đã gửi tới ${phone}`,
-    details: isRegister ? 'Nhập thông tin để tạo tài khoản FLOWERLANTERN SPA' : 'Nhập mật khẩu mới cho tài khoản của bạn',
+    details: isRegister ? 'Nhập thông tin để tạo tài khoản Flower Lantern Spa' : 'Nhập mật khẩu mới cho tài khoản của bạn',
     done: isRegister
       ? 'Tài khoản của bạn đã được tạo. Bạn có thể đăng nhập ngay.'
       : 'Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập bằng mật khẩu mới.',

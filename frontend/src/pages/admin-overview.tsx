@@ -52,7 +52,7 @@ export function AdminOverviewPage() {
       <section className="admin-panel-card">
         <div className="admin-panel-header">
           <div>
-            <h1>Tổng quan vận hành Hoa Đăng Spa</h1>
+            <h1>Tổng quan vận hành Flower Lantern Spa</h1>
             <p>
               Xin chào <strong>{user?.fullName}</strong> ({user?.role}) · Giờ hoạt động: 08:00 – 22:00 · 15 giường mặc định (G1–G15).
             </p>

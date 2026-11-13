@@ -26,8 +26,8 @@ export function ManagementSidebar({
     <aside className="admin-sidebar">
       <img className="sidebar-lotus" src="/assets/admin-imgLotusDecoration.png" alt="" />
       <div className="admin-brand">
-        <img src="/assets/admin-imgBrandLotus.png" alt="" />
-        <strong>FLOWERLANTERN SPA</strong>
+        <img src="/assets/admin-lotus-transparent.svg" alt="" />
+        <strong>Flower Lantern Spa</strong>
       </div>
       <nav aria-label="Quản lý Spa">
         {menu

@@ -6,6 +6,9 @@ import { ServiceCard } from '../components/service-card';
 import { Button } from '../components/ui/button';
 import { getPublicReviews, getPublicServices } from '../lib/catalog-api';
 
+// Address-based Google Maps search; no unverified coordinates or Place ID.
+const spaMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Flower Lantern Spa, 102 Bà Triệu, Hội An, Đà Nẵng, Việt Nam')}`;
+
 const whyChooseItems = [
   {
     icon: '🏮',
@@ -30,10 +33,10 @@ const whyChooseItems = [
 ];
 
 const galleryItems = [
-  { src: '/assets/hero-hoian-bg.png', alt: 'Phố cổ Hội An và hoa đăng tại Hoa Đăng Spa' },
+  { src: '/assets/hero-hoian-bg.png', alt: 'Phố cổ Hội An và hoa đăng tại Flower Lantern Spa' },
   { src: '/assets/lotus-decor.png', alt: 'Họa tiết hoa sen thanh khiết đặc trưng' },
   { src: '/assets/login-lotus.png', alt: 'Không gian thư giãn với hương sen dịu nhẹ' },
-  { src: '/assets/admin-imgLotusDecoration.png', alt: 'Góc đón tiếp nhẹ nhàng tại Hoa Đăng Spa' },
+  { src: '/assets/admin-imgLotusDecoration.png', alt: 'Góc đón tiếp nhẹ nhàng tại Flower Lantern Spa' },
 ];
 
 export function HomePage() {
@@ -60,7 +63,7 @@ export function HomePage() {
           <div className="home-hero-copy">
             <h1>Thư giãn, phục hồi và chăm sóc toàn diện</h1>
             <p>
-              Hoa Đăng Spa là điểm đến chăm sóc sức khỏe và sắc đẹp lấy cảm hứng từ vẻ đẹp an yên của Hội An,
+              Flower Lantern Spa là điểm đến chăm sóc sức khỏe và sắc đẹp lấy cảm hứng từ vẻ đẹp an yên của Hội An,
               mang đến những liệu trình thư giãn, phục hồi năng lượng và cân bằng thân – tâm – trí.
             </p>
             <div className="home-hero-actions">
@@ -85,13 +88,13 @@ export function HomePage() {
       <section id="gioi-thieu" className="home-section home-about">
         <div className="home-container home-about-grid">
           <div className="home-about-media">
-            <img src="/assets/lotus-decor.png" alt="Không gian hoa sen thanh tịnh tại Hoa Đăng Spa" />
+            <img src="/assets/lotus-decor.png" alt="Không gian hoa sen thanh tịnh tại Flower Lantern Spa" />
           </div>
           <div className="home-about-body">
             <span className="home-section-tag">GIỚI THIỆU</span>
-            <h2>Hoa Đăng Spa</h2>
+            <h2>Flower Lantern Spa</h2>
             <p>
-              Hoa Đăng Spa là spa chăm sóc sức khỏe và sắc đẹp tại Hội An, nơi kết hợp giữa các liệu pháp trị
+              Flower Lantern Spa là spa chăm sóc sức khỏe và sắc đẹp tại Hội An, nơi kết hợp giữa các liệu pháp trị
               liệu truyền thống và phương pháp chăm sóc hiện đại, đem đến trải nghiệm thư giãn sâu, phục hồi
               năng lượng và tái tạo vẻ đẹp tự nhiên.
             </p>
@@ -123,7 +126,7 @@ export function HomePage() {
         <div className="home-container">
           <div className="home-section-header">
             <span className="home-section-tag">DỊCH VỤ NỔI BẬT</span>
-            <h2>Các liệu trình chăm sóc tại Hoa Đăng Spa</h2>
+            <h2>Các liệu trình chăm sóc tại Flower Lantern Spa</h2>
             <p>
               Đa dạng dịch vụ từ thư giãn, chăm sóc da đến các gói trị liệu chuyên sâu, được thiết kế phù hợp
               với nhu cầu của từng khách hàng.
@@ -158,7 +161,7 @@ export function HomePage() {
       <section className="home-section home-why">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-section-tag">VÌ SAO CHỌN HOA ĐĂNG SPA?</span>
+            <span className="home-section-tag">VÌ SAO CHỌN Flower Lantern Spa?</span>
             <h2>Trải nghiệm khác biệt và trọn vẹn</h2>
           </div>
           <div className="home-why-grid">
@@ -200,7 +203,7 @@ export function HomePage() {
           <div className="home-section-header">
             <span className="home-section-tag">CẢM NHẬN KHÁCH HÀNG</span>
             <h2>Khách hàng nói gì về chúng tôi?</h2>
-            <p>Sự hài lòng của bạn là nguồn cảm hứng để Hoa Đăng Spa không ngừng hoàn thiện.</p>
+            <p>Sự hài lòng của bạn là nguồn cảm hứng để Flower Lantern Spa không ngừng hoàn thiện.</p>
           </div>
 
           {reviewsQuery.isPending ? (
@@ -235,7 +238,7 @@ export function HomePage() {
           <div className="home-cta-text">
             <h2>Đặt lịch ngay hôm nay</h2>
             <p>
-              Dành tặng cho bản thân những phút giây thư giãn, phục hồi và chăm sóc toàn diện tại Hoa Đăng Spa.
+              Dành tặng cho bản thân những phút giây thư giãn, phục hồi và chăm sóc toàn diện tại Flower Lantern Spa.
             </p>
           </div>
           <Button type="button" className="home-cta-button" onClick={() => navigate('/dat-lich')}>
@@ -250,7 +253,7 @@ export function HomePage() {
         <div className="home-container">
           <div className="home-section-header">
             <span className="home-section-tag">LIÊN HỆ &amp; ĐỊA CHỈ</span>
-            <h2>Đến với Hoa Đăng Spa</h2>
+            <h2>Đến với Flower Lantern Spa</h2>
             <p>Chúng tôi luôn sẵn sàng chào đón và mang đến cho bạn trải nghiệm chăm sóc tốt nhất!</p>
           </div>
           <div className="home-contact-grid">
@@ -258,7 +261,7 @@ export function HomePage() {
               <dl className="home-contact-list">
                 <div>
                   <dt>Địa chỉ</dt>
-                  <dd>102 Bà Triệu, Phường Hội An, Thành Phố Đà Nẵng</dd>
+                  <dd><a className="contact-map-link" href={spaMapsUrl} target="_blank" rel="noopener noreferrer">102 Bà Triệu, Phường Hội An, Thành Phố Đà Nẵng</a></dd>
                 </div>
                 <div>
                   <dt>Giờ mở cửa</dt>
@@ -268,18 +271,18 @@ export function HomePage() {
                   <dt>Đặt lịch trực tuyến</dt>
                   <dd>
                     <Link to="/dat-lich" className="home-text-link">
-                      Đặt lịch tại hệ thống trực tuyến Hoa Đăng Spa →
+                      Đặt lịch tại hệ thống trực tuyến Flower Lantern Spa →
                     </Link>
                   </dd>
                 </div>
               </dl>
             </div>
             <div className="home-contact-map-placeholder">
-              <img src="/assets/hero-hoian-bg.png" alt="Hoa Đăng Spa — 102 Bà Triệu, Hội An" />
-              <div className="home-map-pin">
-                <strong>Hoa Đăng Spa</strong>
+              <img src="/assets/hero-hoian-bg.png" alt="Flower Lantern Spa — 102 Bà Triệu, Hội An" />
+              <a className="home-map-pin contact-map-link" href={spaMapsUrl} target="_blank" rel="noopener noreferrer">
+                <strong>Flower Lantern Spa</strong>
                 <span>102 Bà Triệu, Hội An · 08:00 – 22:00</span>
-              </div>
+              </a>
             </div>
           </div>
         </div>

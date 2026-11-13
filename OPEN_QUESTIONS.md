@@ -96,3 +96,7 @@ Nguồn: báo cáo agent `be-sepay`, `database/PAYMENT_SEPAY_PROPOSAL.md`. Mã h
 11. Chuyển khoản trễ vì độ trễ webhook (phát hiện từ rà soát bảo mật độc lập): hạn thanh toán hiện so với thời điểm webhook ĐẾN, không phải `transactionDate` của ngân hàng; một khoản chuyển lúc 14:59 trong cửa sổ 15 phút có thể bị `EXPIRED` nếu webhook đến lúc 15:02. Ngoài ra khi số tiền phải trả đổi, mọi mã đang chờ bị đánh `Hết hạn` nên khoản đã chuyển cho QR cũ cũng thành `EXPIRED`. Chọn: (a) thêm thời gian ân hạn (ví dụ +10 phút), (b) so với `transactionDate`, (c) giữ nguyên và đối soát thủ công qua `GET /api/payments/unreconciled`. Hiện: (c).
 12. Giới hạn tốc độ (rate limit) cho webhook/intent cần thêm dependency (`@nestjs/throttler`) — có duyệt thêm không; chính sách lưu giữ `DuLieuTho` (payload thô chứa memo/thông tin ngân hàng của người chuyển).
 13. `main.ts` gắn cứng bind `127.0.0.1`; reverse proxy ở container/máy khác sẽ không tới được backend — có cho phép đổi thành cấu hình (ví dụ `HOST`) khi chọn hosting không.
+
+
+## 2026-11-13 — Direct guest homepage loading (observed, outside badge scope)
+Local browser with auth/me401: direct homepage rendered0 service cards for30s, while catalog→homepage SPA navigation correctly rendered4. Suspected interaction with AuthProvider initial null-session non-auth query removal; requires separate investigation. No Auth changes made during category-label task.

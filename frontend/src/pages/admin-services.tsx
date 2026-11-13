@@ -1,6 +1,7 @@
+import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { useEffect, useRef, useState } from 'react';
 import { resolveApiUrl } from '../lib/api-client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/auth-context';
@@ -57,7 +58,6 @@ export function AdminServicesPage() {
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [page, setPage] = useState(1);
   const [notice, setNotice] = useState('');
 
   const [editing, setEditing] = useState<AdminServiceItem | null>(null);
@@ -84,15 +84,14 @@ export function AdminServicesPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setQ(text.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [text]);
 
   const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q04');
-  const query = useQuery({
-    queryKey: ['admin-services', q, category, statusFilter, page],
-    queryFn: () => listAdminServices({ q, category, status: statusFilter, page }),
+  const query = useContinuousList({
+    queryKey: ['admin-services', q, category, statusFilter],
+    queryFn: (page) => listAdminServices({ q, category, status: statusFilter, page }),
     enabled: !!allowed,
   });
 
@@ -223,7 +222,6 @@ export function AdminServicesPage() {
             value={category}
             onChange={(e) => {
               setCategory(e.target.value);
-              setPage(1);
             }}
           >
             <option value="">Tất cả danh mục</option>
@@ -237,7 +235,6 @@ export function AdminServicesPage() {
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
-              setPage(1);
             }}
           >
             <option value="">Tất cả trạng thái</option>
@@ -268,7 +265,7 @@ export function AdminServicesPage() {
           ) : (
             <>
               <div className="customer-search-scroll">
-                <table className="customer-search-table figma-admin-table">
+                <table className="customer-search-table figma-admin-table admin-service-table">
                   <thead>
                     <tr>
                       <th>Mã DV</th>
@@ -282,7 +279,7 @@ export function AdminServicesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {query.data.items.map((svc) => (
+                    {(query.data?.items ?? []).map((svc) => (
                       <tr key={svc.id}>
                         <td>{svc.id}</td>
                         <td>
@@ -350,22 +347,12 @@ export function AdminServicesPage() {
                   </tbody>
                 </table>
               </div>
-              {query.data.items.length === 0 && (
+              {(query.data?.items.length ?? 0) === 0 && (
                 <p className="customer-search-empty" role="status">
                   Không tìm thấy dịch vụ phù hợp!
                 </p>
               )}
-              <nav className="customer-search-pagination" aria-label="Phân trang dịch vụ">
-                <div className="figma-pagination-pill">
-                  <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                    ‹ Trước
-                  </button>
-                  <span className="page-current">{page}</span>
-                  <button type="button" disabled={!query.data.hasNext} onClick={() => setPage((p) => p + 1)}>
-                    Sau ›
-                  </button>
-                </div>
-              </nav>
+              <ContinuousListEnd query={query}/>
             </>
           )}
         </section>

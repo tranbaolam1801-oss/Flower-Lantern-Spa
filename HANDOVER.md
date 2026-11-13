@@ -325,3 +325,69 @@ Báo cáo kiểm toán tổng thể: `COMPLETION_REPORT.md`. Lần chạy độc
 ## Checkpoint 004 — 2026-11-11
 
 APPLIED Test only: verify-004-test.sql exit 0, 17 tables, 20 beds, existing columns/row counts unchanged. First preflight failed parsing reserved alias RowCount before DDL; fixed to ExistingRows then applied once. Dev untouched. Auth session code IN PROGRESS (AUTH_SESSION_STORE=sql on Test only); no new test PASS claimed yet. Entity PhienDangNhap added; schema audit now expects 17 on Test.
+
+## Auth local checkpoint — 2026-11-13
+
+Auth reliability patch only in frontend/src/contexts/auth-context.tsx, frontend/src/lib/auth-api.ts and frontend/src/pages/login.tsx; no backend or layout changes in this task. Session request now abortable/deadline15s, login30s, revalidates arbitrary API401 instead of clearing observed auth query; duplicate-submit guard and BroadcastChannel refresh. Existing user state retained on transient network errors, other-account data cleared appropriately.
+
+Verification: 51/51 targeted Auth tests; real browser NestJS/PGlite login/reload/logout/replay for4roles PASS; before/after unresponsive hydration reproduced (before spinner beyond16.5s, after retry); TypeScript/lint/frontend build PASS. Scripts verify-auth-real-browser.mjs, verify-auth-reliability.cjs, verify-auth-timeout.cjs; generated reports under ignored test-results. Full details/timing/limitations in TEST_REPORT.md Auth reliability section. No authenticated Production/Preview test, no deploy. Do not infer a Vercel/Neon root cause from local timings.
+
+NEXT ACTION — RESUME HERE (Auth): inspect final test output for scripts/verify-auth-reliability.cjs (503 retention + deadlines + multi-tab); request separate approval only if asked to deploy. Production source dirty snapshot blocker remains; never deploy current mixed tree wholesale. Preserve all earlier UI/OTP/Claude changes. Other milestone handover sections above remain historical/current as marked.
+
+Final Auth checkpoint: verify-auth-reliability.cjs last run PASS for all4roles including temporary503 retention, initial hydration3s, stale401, duplicate submit, wrong password, session/login deadlines, retry, two-tab logout and repeated login. The previously pending output has been inspected. Next task is only further investigation or isolated deployment if explicitly requested; current patch remains local.
+
+
+## Local catalog filter and transparent logo checkpoint — 2026-11-13
+
+- Scope: frontend only; no commit, push, deploy, backend/API/database writes. Existing mixed-tree work preserved.
+- UC_7 category root cause verified by read-only Production API: old UI IDs DM01–DM05 each returned zero; existing catalog IDs DM00000001–DM00000005 returned 4 / 1 / 0 / 2 / 1 active public services (All=8). Mapping corroborated database/postgres/002-demo-catalog.sql. Only CATEGORY_TABS IDs and legacy query-code normalization changed in services-catalog.tsx for this fix; API and data unchanged.
+- Browser real-public-API forwarding test: node test-results/category-real-check.cjs PASS at 390/1280/1366: all categories, repeated switching, combined search, detail navigation, legacy URL, no page errors or whole-page overflow. Dưỡng sinh genuinely has 0 active public results; inactive records are not exposed by the public API.
+- Logo cause: original horizontal PNG 308×45 is fully opaque RGBA; sidebar lotus PNG 94×56 is RGB; pale neutral backdrop is baked into both images. Footer also had a white wrapper. Figma 3:3233 inspected via MCP; no suitable transparent original lotus found. Automatic extraction candidates had edge artifacts and were NOT installed.
+- Added flower-lantern-logo-transparent.svg and admin-lotus-transparent.svg: embed exact original PNG bytes, preserve intrinsic dimensions, apply native SVG chroma-alpha rendering to exclude neutral backdrop; no redraw/raster overwrite. BrandLogo and ManagementSidebar now reference these assets. Scoped CSS makes only logo wrappers/images transparent and removes their shadow; footer padding/spacing preserved.
+- Logo browser checks: node test-results/logo-check.cjs PASS 375/768/1366/1920 across home, catalog, login, register, forgot password, admin reports; customer/admin mobile drawers opened; assets loaded, canvas corner alpha=0 and visible foreground retained. Auth/catalog responses in this logo-only test are doubles; no OTP or authentication mutations. node test-results/logo-footer-check.cjs PASS: Footer wrapper transparent; old/new displayed bounds identical (190×27.75 at 1366px). Screenshots under ignored test-results/logo-*.png, visually inspected Header/Sidebar/Footer.
+- npm.cmd run build -w frontend PASS (includes tsc --noEmit); targeted ESLint for three touched TSX files PASS; git diff --check PASS (existing CRLF warnings only). Build retains existing third-party Zod annotation warnings.
+- Limits: Chromium viewport checks, not physical iOS/Safari/Android hardware. Original PNGs remain unchanged. No claim of byte-identical antialiased edge opacity after backdrop mask.
+- Next: review local UI changes; no Production deployment authorized by these current requests. Earlier milestones/auth/Claude work remain preserved and separate.
+
+Logo final refinement: horizontal wordmark uses original Figma 3:3235 vector path at its original offset (82.6866,13.7928), avoiding baked gray antialias fringes; lotus pixels still come from unchanged original PNG via alpha mask. Footer alone uses a white-wordmark transparent variant (pink lotus preserved) to keep contrast on its existing dark green background. BrandLogo tone prop is presentation only; public-footer.tsx changed only this logo prop. No layout/business logic changes.
+
+
+## Service card category badges — 2026-11-13 (local only)
+
+Scope: ServiceCard presentation shared by homepage and UC_7 catalog; no filter/API/backend/data changes, commit, push or deployment. Existing uncommitted work preserved.
+
+Root cause verified: GET /api/services returns categoryId but no categoryName. Shared service-card.tsx used categoryName || 'Spa', so all8 real public services fell back to Spa. Fixed by preferring a nonblank API categoryName, then the exact existing frontend category-tab ID/name mapping (DM00000001–DM00000005); no inference from service names. Unknown/missing IDs visibly say “Chưa rõ danh mục”, with ID in title; all8 current records match. Existing badge colors/padding preserved; inline-flex, nowrap, nonshrinking width and wrapping metadata row prevent long badge/duration collision.
+
+Actual public catalog checked 2026-11-13: Chăm sóc body thảo dược / Tẩy tế bào chết → Chăm sóc body; Chăm sóc da chuyên sâu → Chăm sóc da; Gội đầu dưỡng sinh → Gội đầu dưỡng sinh; Massage chân / Massage cổ vai gáy / Massage thư giãn toàn thân / Massage đá nóng → Massage. Dưỡng sinh has0 public services. Current public detail response also lacks categoryName; no extra per-card requests introduced.
+
+Executed: npm.cmd run build -w frontend PASS (includes tsc --noEmit; existing Zod annotation warnings); targeted ESLint PASS; git diff --check on changed source PASS. node test-results/category-badges-check.cjs PASS at320/375/390/768/1024/1280/1366/1920: real public API responses forwarded into local Chromium; homepage4 cards via SPA navigation + catalog8 cards verified by service ID/categoryId; all6 filters checked at390/1280 (8/4/1/0/2/1), no badge clipping/wrapping, no whole-page horizontal overflow or page exceptions. Separate explicit test doubles verify unknown category and API-name precedence. Screenshot test-results/category-badges-1280.png visually inspected. No native phone/Safari test claimed.
+
+Separate limitation observed during testing: fresh guest direct homepage navigation (auth/me401) rendered0 service cards for30s; after auth settles on catalog, SPA navigation home renders all4 featured services. AuthProvider currently removes/cancels non-auth query cache on initial null session; this is a suspected cause, not fully investigated here. Auth was not changed because this task expressly excludes unrelated functions. Thus direct guest homepage loading is NOT marked PASS; only its rendered card labels via SPA navigation are verified.
+
+Next: review local badge patch; investigate direct guest homepage loading separately within an appropriate authorized scope. No deploy.
+
+
+## Brand text consistency — 2026-11-13 (local only)
+
+User-approved display name: Flower Lantern Spa. Changed exactly28 textual locations across11 TSX files; no CSS changes needed. Existing approved logo assets/lettering unchanged. Sidebar label is DOM text rather than pixels inside logo, so it now also uses Flower Lantern Spa. Removed redundant bilingual brand aliases in Footer, preserving surrounding wording. Changed only visible text/alt/fallback strings, including one registration step description; OTP/auth/booking/filter logic untouched.
+
+Changed source locations:
+- frontend/src/components/management-sidebar.tsx: 1
+- frontend/src/components/public-footer.tsx: 3
+- frontend/src/components/service-card.tsx: 1
+- frontend/src/pages/admin-overview.tsx: 1
+- frontend/src/pages/customer-booking.tsx: 1
+- frontend/src/pages/customer-dashboard.tsx: 3
+- frontend/src/pages/home.tsx: 14
+- frontend/src/pages/login.tsx: 1
+- frontend/src/pages/otp-flow.tsx: 1
+- frontend/src/pages/service-detail.tsx: 1
+- frontend/src/pages/services-catalog.tsx: 1
+
+Executed verification: static scan of38 runtime TS/TSX files PASS (no old brand aliases); HTML browser title already uses Flower Lantern Spa and is unchanged. node test-results/brand-text-check.cjs PASS:18 route/anchor destinations ×375/768/1280/1920 (72 browser checks), with API test doubles: no old display name, no clipped branded headings/prose, no document horizontal overflow or page exceptions; admin Sidebar label checked. Includes home/about/contact anchors, catalog/detail, booking, login/register/forgot, all7 admin screens, customer bookings, system status. Modal and later OTP-step copy additionally covered by source audit; no business actions sent. Screenshot test-results/brand-home-1280.png inspected. Real read-only Production public services list (8 items) and8 detail payloads scanned; no old brand strings found in those responses. Private backend data/messages not exhaustively inspected and never rewritten.
+
+npm.cmd run build -w frontend PASS (includes TypeScript noEmit, existing third-party Zod annotation warnings only). Targeted ESLint across11 changed TSX files PASS; git diff --check PASS (existing CRLF warnings only). Existing mixed-tree work preserved; incremental implementation is text replacements only. No Backend/API/Neon/env/route URL/technical identifiers/logo/images/functional changes, no commit/push/deploy.
+
+Names intentionally retained: uppercase wordmark inside approved logo assets; historical/source documentation, asset names and technical identifiers; common noun “hoa đăng” in gallery alt text describes lanterns and is not a brand alias. Earlier direct guest homepage loading issue remains outside this text-only task and is not marked fixed. Browser checks used fixtures, not authenticated Production or physical phone tests.
+
+Next: review the28 local copy replacements. No deployment or additional feature work authorized by this request.
