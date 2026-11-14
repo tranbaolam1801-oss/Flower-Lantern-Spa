@@ -6,7 +6,7 @@ import { isUniqueViolation } from '../common/db-errors';
 import { returnedRows } from '../common/pg-result';
 import { JwtPayload } from '../auth/auth.dto';
 import { MockPaymentProvider, NormalizedPaymentEvent, SepayProvider, WebhookRequest } from './payment-provider';
-import { EXPIRED, Outcome, PENDING, REFUNDED, SUCCESS, buildQrUrl, generateReference, paymentStatusFor, reconcile } from './payment-rules';
+import { EXPIRED, Outcome, extractReference, PENDING, REFUNDED, SUCCESS, buildQrUrl, generateReference, paymentStatusFor, reconcile } from './payment-rules';
 import { readPaymentsConfig } from './payments.config';
 import { MockWebhookDto, RefundPaymentDto, UnreconciledQuery } from './payments.dto';
 
@@ -130,6 +130,44 @@ export class PaymentsService {
         throw new ServiceUnavailableException('Không thể ghi nhận webhook. Vui lòng thử lại sau!');
       }
     }
+  }
+
+
+  /**
+   * Missed-webhook recovery. Requires SEPAY_API_TOKEN (SePay REST API, Bearer). Every returned INCOMING transfer is validated exactly like a webhook
+   * (account, reference, amount, expiry, booking state) and is idempotent per SePay transaction id, so running it repeatedly - or after the webhook
+   * finally arrives - never double-confirms. Held outcomes (cancelled booking, expired, wrong amount...) stay audited for manual reconciliation.
+   * It only ever reads from SePay; the token is never logged or returned.
+   */
+  async reconcileFromSepay(hours: number) {
+    const cfg = readPaymentsConfig();
+    if (!cfg.apiToken || !cfg.accountNumber) throw new ServiceUnavailableException('Chưa cấu hình SEPAY_API_TOKEN để đối soát giao dịch.');
+    await this.ensureSchema();
+    const vn = (ms: number) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'medium' }).format(new Date(ms));
+    const url = `${cfg.apiBase}/transactions/list?${new URLSearchParams({ account_number: cfg.accountNumber, transaction_date_min: vn(Date.now() - hours * 3600_000), limit: '200' })}`;
+    let json: { transactions?: Record<string, unknown>[] };
+    try {
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${cfg.apiToken}`, Accept: 'application/json' }, signal: AbortSignal.timeout(15_000) });
+      if (!response.ok) { this.logger.warn(`SEPAY_RECONCILE_API_HTTP_${response.status}`); throw new Error('http'); }
+      json = (await response.json()) as typeof json;
+    } catch {
+      throw new ServiceUnavailableException('Không thể lấy giao dịch từ SePay. Vui lòng thử lại sau!');
+    }
+    const counts: Record<string, number> = {};
+    for (const t of json.transactions ?? []) {
+      const id = String(t.id ?? '');
+      const amountIn = Number(t.amount_in ?? 0);
+      if (!/^\d{1,20}$/.test(id) || !Number.isFinite(amountIn)) { counts.SKIPPED = (counts.SKIPPED ?? 0) + 1; continue; }
+      const event: NormalizedPaymentEvent = {
+        provider: 'SEPAY', providerTxId: id, transferType: amountIn > 0 ? 'in' : 'out', amount: amountIn > 0 ? amountIn : Number(t.amount_out ?? 0),
+        accountNumber: String(t.account_number ?? ''), content: String(t.transaction_content ?? ''),
+        reference: extractReference(cfg.prefix, t.code, t.transaction_content),
+      };
+      const outcome = await this.processEvent(event, JSON.stringify({ source: 'reconcile', id, amount: event.amount, reference: event.reference }));
+      counts[outcome] = (counts[outcome] ?? 0) + 1;
+    }
+    this.logger.log(`SEPAY_RECONCILE_DONE ${JSON.stringify(counts)}`);
+    return { checked: (json.transactions ?? []).length, outcomes: counts };
   }
 
   /** Staff view of webhook events that did not confirm a payment (held transfers). Never returns the raw payload. */

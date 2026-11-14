@@ -28,15 +28,15 @@ export class ProfileController {
     return { success: true, ...(await this.profile.setAvatar(req.user!, declared, req.body)) };
   }
 
-  /** Names are random 128-bit values and immutable (a new upload gets a new name), so responses are cacheable. */
-  @Get('uploads/avatars/:file')
-  async read(@Param('file') file: string, @Res() res: Response) {
+  /** Private Blob bytes are served only after checking the existing account/employee permissions. */
+  @Get('uploads/avatars/:file') @UseGuards(AuthGuard)
+  async read(@Param('file') file: string, @Req() req: WithUser, @Res() res: Response) {
     if (!IMAGE_FILE_PATTERN.test(file)) throw new NotFoundException();
-    const bytes = await this.profile.readAvatar(file);
+    const bytes = await this.profile.readAvatar(file, req.user!);
     if (!bytes) throw new NotFoundException();
     res.setHeader('Content-Type', CONTENT_TYPE_BY_EXTENSION[file.split('.')[1] as ImageExtension]);
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.send(bytes);
   }
 }

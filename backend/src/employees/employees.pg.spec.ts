@@ -51,7 +51,7 @@ describe('employees on real PostgreSQL', () => {
     expect(got).toEqual({
       id: 'NV00000001', accountId: 'TK00000002', username: 'nv.moi', fullName: 'Nhân Viên Mới', phone: '0912345678', email: 'moi@example.com',
       gender: 'Nữ', birthDate: '1990-05-20', address: 'HCM', notes: 'ghi chú', role: 'Nhân viên', workStatus: 'Đang làm việc',
-      accountStatus: 'Hoạt động', permissions: [],
+      accountStatus: 'Hoạt động', permissions: [], avatarUrl: null,
     });
     expect(JSON.stringify(got)).not.toContain('hashed');
     await expect(svc.get('NV99999999')).rejects.toBeInstanceOf(NotFoundException);

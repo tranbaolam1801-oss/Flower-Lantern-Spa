@@ -819,10 +819,17 @@ html{scroll-padding-top:90px}
 .admin-content:has(.bed-calendar){display:flex;flex-direction:column}
 .admin-content:has(.bed-calendar) .calendar-toolbar{height:auto;min-height:44px;flex-wrap:wrap;flex-shrink:0}
 .admin-content:has(.bed-calendar) .calendar-legend{flex-shrink:0}
-.admin-content .bed-calendar{flex:1;min-height:0}
-.admin-content .calendar-grid{height:100%;display:flex;flex-direction:column}
-.admin-content .calendar-grid-header{flex-shrink:0}
-.admin-content .calendar-hours{flex:1;height:auto;min-height:0}
+.admin-content .bed-calendar{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;isolation:isolate}
+.admin-content .calendar-grid{min-height:100%;display:flex;flex-direction:column}
+.admin-content .calendar-grid-header{flex-shrink:0;position:sticky;top:0;z-index:4}
+.admin-content .calendar-grid-header>span:first-child{position:sticky;left:0;z-index:5;background:var(--color-table-header)}
+.admin-content .calendar-hours{height:auto;min-height:0;overflow:visible}
+.admin-content .hour-row>span{position:sticky;left:0;z-index:3;background:var(--color-white)}
+.calendar-end-hour{position:absolute;left:0;width:84px;text-align:center;font-size:13px;color:var(--color-calendar-muted)}
+.calendar-now-line{position:absolute;left:0;right:0;border-top:1px solid var(--color-danger);z-index:3;pointer-events:none}
+.calendar-now-line>span{position:sticky;left:0;display:block;width:64px;text-align:center;background:var(--color-white);color:var(--color-danger);font-size:12px;line-height:18px;transform:translateY(-50%)}
+.calendar-outside-hours{flex-shrink:0;max-height:96px;overflow:auto;font-size:13px;margin-bottom:8px}
+.calendar-outside-hours button{display:block;text-align:left;text-decoration:underline;padding:3px 0}
 
 /* Keep compact labels/actions intact; wide tables scroll inside their existing wrapper. */
 .admin-content .customer-search-table{table-layout:auto}
@@ -1163,3 +1170,69 @@ html{scroll-padding-top:90px}
 .booking-list-heading h2{font-size:var(--fluid-heading)}
 .booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .7)}.booking-table td:nth-child(5){white-space:normal}
 .resch-current-date{display:flex;flex-direction:column;gap:2px;align-items:flex-end}.booking-table td:nth-child(5){white-space:nowrap}
+
+/* Employee table (Figma UC_8.6 01_DanhSachNhanVien): one row of actions, never wrapped; only the table area scrolls sideways when the card is too narrow */
+.employee-management .customer-search-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.admin-content .employee-management .admin-employee-table {
+  width: 100%;
+  min-width: 1040px;
+  table-layout: auto;
+}
+/* Cancel the shared 1% cell widths before intrinsic table sizing distributes space. */
+.admin-content .employee-management .admin-employee-table :is(th,td) {
+  width: auto;
+  min-width: 0;
+  padding-inline: 6px;
+  padding-block: clamp(10px,1vh,16px);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.admin-content .employee-management .admin-employee-table td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.admin-content .employee-management .admin-employee-table td:nth-child(3) {
+  min-width: 150px;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.employee-management .admin-table-email {
+  display: block;
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-content .employee-management .admin-employee-table :is(th,td):nth-child(6),
+.admin-content .employee-management .admin-employee-table :is(th,td):nth-child(7) {
+  text-align: center;
+}
+.admin-content .employee-management .figma-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  min-width: 0;
+  margin-inline: auto;
+}
+.employee-management .figma-row-actions > * { flex: 0 0 auto; }
+.admin-content .employee-management .figma-row-actions .figma-icon-btn {
+  width: 34px;
+  height: 36px;
+  min-height: 36px;
+}
+.admin-content .employee-management .figma-row-actions .emp-action-btn {
+  height: 36px;
+  min-height: 36px;
+  min-width: 0;
+  padding-inline: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}

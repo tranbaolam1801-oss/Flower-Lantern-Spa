@@ -107,3 +107,9 @@ Local browser with auth/me401: direct homepage rendered0 service cards for30s, w
 2. Neon row for LH33987572/FLSZAD2VKYC9C is not verified because local connection is unusable. Need a locally configured read-only connection; never send URL/keys in chat.
 3. Production environment metadata is redacted: key presence is known, effective auth mode/key length/bank/account are not. Do not infer empty configuration from redacted values.
 4. If bank receipt predates expiry but replay arrives later, existing rules hold EXPIRED; any exception/reconciliation requires explicit verified-evidence approval. Existing held events remain idempotent. Bank is not snapshotted on this schema; verify gateway against original QR/SePay evidence rather than inventing mappings or adding schema.
+
+
+## Avatar/calendar scope — 2026-11-14
+- Resolved: user explicitly authorizes both Dashboard avatar and bed-calendar UI, retaining Booking logic.
+- Open verification (not marked PASS): actual Production NhanVien/TaiKhoan avatar linkage and live private Blob reads require authorized environment access and separately approved deployment. No schema/data intervention proposed or performed.
+- Figma file accessible; calendar1:49090 inspected. Dedicated overview staff-card frame not identified in metadata; existing layout preserved, no pixel-perfect claim.

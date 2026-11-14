@@ -398,10 +398,7 @@ export function AdminEmployeesPage() {
                     <tr key={emp.id}>
                       <td>{emp.id}</td>
                       <td><strong>{emp.username}</strong></td>
-                      <td>
-                        <strong>{emp.fullName}</strong>
-                        <small className="role-subchip">{emp.role}</small>
-                      </td>
+                      <td><strong>{emp.fullName}</strong></td>
                       <td>{emp.phone}</td>
                       <td><span className="admin-table-email" title={emp.email || undefined}>{emp.email || '—'}</span></td>
                       <td>
@@ -420,7 +417,7 @@ export function AdminEmployeesPage() {
                           >
                             👁
                           </button>
-                          {emp.role !== 'Chủ Spa' ? (
+                          {emp.role !== 'Chủ Spa' && (
                             <>
                               <button
                                 type="button"
@@ -431,28 +428,6 @@ export function AdminEmployeesPage() {
                               >
                                 ✎
                               </button>
-                              {isOwner && (
-                                <Button type="button" size="sm" variant="outline" onClick={() => openPermissions(emp)}>
-                                  Phân quyền
-                                </Button>
-                              )}
-                              {emp.accountStatus === 'Hoạt động' || emp.accountStatus === 'Đã khóa' ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className={emp.accountStatus === 'Hoạt động' ? 'emp-lock-btn' : 'emp-unlock-btn'}
-                                  onClick={() => {
-                                    setStatusTarget(emp);
-                                    lockMutation.reset();
-                                    lockDialog.current?.showModal();
-                                  }}
-                                >
-                                  {emp.accountStatus === 'Hoạt động' ? 'Khóa' : 'Mở khóa'}
-                                </Button>
-                              ) : (
-                                <span className="role-subchip" title="Tài khoản đã bị vô hiệu hóa (xóa nhân viên) nên không thể khóa/mở khóa.">Không thể thay đổi</span>
-                              )}
                               <button
                                 type="button"
                                 className="figma-icon-btn figma-icon-delete"
@@ -466,9 +441,27 @@ export function AdminEmployeesPage() {
                               >
                                 🗑
                               </button>
+                              {isOwner && (
+                                <Button type="button" size="sm" variant="outline" className="emp-action-btn" onClick={() => openPermissions(emp)}>
+                                  Phân quyền
+                                </Button>
+                              )}
+                              {(emp.accountStatus === 'Hoạt động' || emp.accountStatus === 'Đã khóa') && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className={`emp-action-btn ${emp.accountStatus === 'Hoạt động' ? 'emp-lock-btn' : 'emp-unlock-btn'}`}
+                                  onClick={() => {
+                                    setStatusTarget(emp);
+                                    lockMutation.reset();
+                                    lockDialog.current?.showModal();
+                                  }}
+                                >
+                                  {emp.accountStatus === 'Hoạt động' ? 'Khóa' : 'Mở khóa'}
+                                </Button>
+                              )}
                             </>
-                          ) : (
-                            <span className="role-subchip">Tài khoản Chủ Spa</span>
                           )}
                         </div>
                       </td>

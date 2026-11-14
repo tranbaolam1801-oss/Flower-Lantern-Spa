@@ -27,6 +27,12 @@ export class UnreconciledQuery {
   pageSize?: number;
 }
 
+export class ReconcileDto {
+  /** Look-back window in hours (default 24). */
+  @IsOptional() @IsInt() @Min(1) @Max(168)
+  hours?: number;
+}
+
 /** Test-only: simulates an incoming transfer for a pending payment; `amount` defaults to the exact payable amount. */
 export class MockWebhookDto {
   @Matches(ID, { message: 'Mã thanh toán không hợp lệ.' })

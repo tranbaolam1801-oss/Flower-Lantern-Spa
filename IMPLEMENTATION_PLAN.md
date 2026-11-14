@@ -401,3 +401,11 @@ The final application must automatically adapt to desktop, laptop, tablet, and m
 - [x] CUSTOMER avatar toggles profile/appointments/logout dropdown; original routes/profile/auth flows retained; ADMIN branch unchanged.
 - [x] UI-only Playwright9/9, frontend build/typecheck/lint/diff and Production source/bundle comparison.
 - [ ] Only after separate approval: isolate Header patch from mixed local work and deploy to existing verified Production source; recheck authenticated live menu. No global fluid-scaling redesign in this scoped task.
+
+
+## Scoped avatar + calendar follow-up — 2026-11-14
+- [x] Trace NhanVien→TaiKhoan.AnhDaiDien→private image proxy→Dashboard; retain baseline compatibility and existing permissions.
+- [x] Upload event invalidation across tabs; no new polling; per-employee fallback.
+- [x] Calendar08:00–22:00 display, VN first scroll/Today reset, sticky axes and minute line; preserve callbacks/data, expose historical anomalies separately.
+- [x]41API/PostgreSQL/storage +12browser cases, builds/typechecks/lint/diff; screenshots and handover.
+- [ ] Production verification of actual employee images/private Blob after separate deployment approval. No deployment currently authorized.

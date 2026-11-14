@@ -1,4 +1,5 @@
 import { notifyAccountStatus, notifyPermissionChanged } from '../inbox/inbox-notify';
+import { avatarUrl } from '../uploads/avatar-url';
 import {
   BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable,
   NotFoundException, ServiceUnavailableException,
@@ -18,7 +19,7 @@ type Run = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[
 export interface EmployeeItem {
   id: string; accountId: string | null; username: string; fullName: string; phone: string; email: string | null;
   gender: string | null; birthDate: string | null; address: string | null; notes: string | null;
-  role: string; workStatus: string; accountStatus: string; permissions: string[];
+  role: string; workStatus: string; accountStatus: string; permissions: string[]; avatarUrl?: string | null; avatarFile?: string | null;
 }
 interface Target { id: string; accountId: string | null; role: string | null; status: string | null }
 
@@ -32,7 +33,7 @@ const SELECT_EMPLOYEE = `SELECT rtrim(n.MaNhanVien) AS id, rtrim(n.MaTaiKhoan) A
     n.HoTen AS "fullName", rtrim(n.SoDienThoai) AS phone, n.Email AS email, n.GioiTinh AS gender,
     to_char(n.NgaySinh, 'YYYY-MM-DD') AS "birthDate", n.DiaChi AS address, n.GhiChu AS notes,
     COALESCE(t.VaiTro, '${STAFF}') AS role, COALESCE(n.TrangThaiLamViec, '') AS "workStatus",
-    COALESCE(t.TrangThai, '${DISABLED}') AS "accountStatus"
+    COALESCE(t.TrangThai, '${DISABLED}') AS "accountStatus", to_jsonb(t)->>'anhdaidien' AS "avatarFile"
   FROM dbo.NhanVien n LEFT JOIN dbo.TaiKhoan t ON t.MaTaiKhoan = n.MaTaiKhoan`;
 
 @Injectable()
@@ -240,6 +241,6 @@ function toItem(row: EmployeeItem): EmployeeItem {
     id: row.id, accountId: row.accountId ?? null, username: row.username ?? '', fullName: row.fullName, phone: row.phone,
     email: row.email ?? null, gender: row.gender ?? null, birthDate: row.birthDate ?? null, address: row.address ?? null,
     notes: row.notes ?? null, role: row.role, workStatus: row.workStatus, accountStatus: row.accountStatus,
-    permissions: row.permissions ?? [],
+    permissions: row.permissions ?? [], avatarUrl: avatarUrl(row.avatarFile),
   };
 }

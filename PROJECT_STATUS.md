@@ -269,3 +269,7 @@ Local patch verified (108payment tests,2browser scenarios, builds/lint PASS). Ac
 
 ## Customer Header — 2026-11-14
 Local CUSTOMER dropdown3items verified;6responsive customer cases +3admin role cases PASS, frontend build PASS. Production bundle remains old; no deployment authorized or performed. Actual sources AccountMenu(customer) + CustomerHeader shared by public/customer routes. See latest TEST_REPORT/HANDOVER. Other milestones and SePay incident status unchanged.
+
+
+## Dashboard avatars + bed-calendar UI — 2026-11-14
+Local patch verified: per-account employee avatars via authenticated private proxy; upload-triggered dashboard invalidation across tabs. Calendar08:00–22:00, VN initial scroll/current-time line, one scrollport with sticky headers/hour labels, out-of-hours history retained. Booking handlers unchanged. Builds/typechecks/lint/diff PASS;41PostgreSQL/API/storage tests +12Chrome fixture cases PASS. See TEST_REPORT.md for exact scope, source inventory and screenshots. Live Neon/Blob/Production avatars NOT verified. No migration, Production writes, commit/push/deploy. Next: user review; separately approved isolated deployment and authorized live-avatar verification only. Preserve earlier milestones and open SePay incident.

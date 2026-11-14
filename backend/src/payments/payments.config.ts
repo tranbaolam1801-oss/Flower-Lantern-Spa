@@ -11,6 +11,9 @@ export interface PaymentsConfig {
   apiKey: string;
   hmacSecret: string;
   hmacToleranceSeconds: number;
+  /** SePay REST API token (Bearer) used ONLY by the staff-triggered reconciliation pull. Distinct from the webhook key. Optional. */
+  apiToken: string;
+  apiBase: string;
 }
 
 /** Secrets come from the environment only. Read at call time so tests and restarts see current values. */
@@ -28,6 +31,8 @@ export function readPaymentsConfig(env: NodeJS.ProcessEnv = process.env): Paymen
     apiKey: (env.SEPAY_API_KEY ?? '').trim(),
     hmacSecret: (env.SEPAY_WEBHOOK_SECRET ?? '').trim(),
     hmacToleranceSeconds: 300,
+    apiToken: (env.SEPAY_API_TOKEN ?? '').trim(),
+    apiBase: (env.SEPAY_API_BASE ?? 'https://my.sepay.vn/userapi').trim().replace(/\/+$/, ''),
   };
 }
 

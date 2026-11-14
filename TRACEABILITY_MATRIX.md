@@ -199,3 +199,11 @@ SePay cross-cutting UC_2/5/10: chưa triển khai API/payment tables; phải duy
 
 
 | Customer Header account interaction —2026-11-14 user override | Figma visual reference3:3222; latest three-action behaviour from user | Shared CustomerHeader/AccountMenu(customer); existing /ho-so, /lich-hen-cua-toi; existing GET/PATCH me, avatar upload, GET me/bookings, POST auth/logout; DB/schema unchanged | UI-only E2E9/9 PASS with API doubles, Profile/avatar/name retention, six customer sizes and three admin roles; Production rollout pending approval |
+
+
+## Scoped verification — 2026-11-14
+| Requirement | Source/API/data | Verified evidence |
+|---|---|---|
+| Dashboard employee avatars / profile | admin-overview; GET employees; NhanVien.MaTaiKhoan→TaiKhoan.AnhDaiDien (existing006) | Profile/employee PG tests; Owner/Manager Chrome image URL + cross-tab/reload cases |
+| Private avatar access | GET uploads/avatars/:file; existing self-profile / Owner / Manager Q05 boundaries; existing private Blob adapter |401/404/permission revoke tests; private storage adapter tests; live Blob not verified |
+| UC_2 calendar UI08–22,15beds | User approved override; Figma haMG...1:49090; existing GET bookings unchanged |4viewports; VN5time cases, create/detail handlers, manual/refetch scroll; no Booking/DB changes |

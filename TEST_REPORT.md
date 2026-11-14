@@ -699,3 +699,38 @@ Figma mới (file haMGaiwDZ7MrKF2VfWGZBz) đọc trực tiếp qua MCP: UC_8.x (
 - `node scripts/e2e-local-employees-browser.mjs`: 34/34 PASS (chi tiết, thêm/sửa, phân quyền, khóa/mở khóa, toast + X + Thử lại, RBAC, 1024/390px).
 - `node scripts/e2e-local-customer-bookings-browser.mjs`: 33/33 PASS (empty state, lịch/giờ, đổi lịch, quá khứ, toast lỗi, fluid 8 viewport + zoom 125/150%).
 - Hồi quy: services 38, customer-states 35, customer 42, notifications 34, profile 105, auth 89, dashboard 21, calendar-past 22 — tất cả PASS. Jest backend 585 passed, 1 skipped. Lint không lỗi, build PASS.
+
+
+## 2026-11-14 — Dashboard staff avatars + bed-calendar UI (local verified)
+Scope confirmed by user: both avatar Dashboard and calendar UI; preserve Booking logic. Started from clean Git tree at e3b3afc (external work already saved; no reset/revert).
+
+Avatar root cause: EmployeesService joined the correct account but omitted AnhDaiDien; EmployeeItem had no avatarUrl; AdminOverview hardcoded admin-imgAdminAvatar.png for every employee. Entity metadata is not the runtime source (raw SQL); no entity/schema/migration change needed. API now maps each employee's own account filename to the existing /api/uploads/avatars/:file proxy. to_jsonb(t)->>'anhdaidien' safely yields null on the baseline without006; never returns account JSON or password hashes. Missing/invalid image falls back only for that employee. Existing staff list/card styling/count and Dashboard refresh interval remain unchanged.
+Private images: existing Blob storage stays private; no Blob SDK/token/env changes. Existing proxy now requires session and permits own avatar, or employee avatars for Owner/Manager with existing Q05. Employee-list RBAC decorators unchanged; customer images are not exposed via employee-view permission. Unauthorized/missing image404; anonymous401; no-store prevents stale authenticated bytes surviving in browser cache. New upload uses existing new random filename. Successful upload signals local + BroadcastChannel invalidation of dashboard-employees, without adding polling or sending profile data.
+Calendar: visible rows08:00..21:00 plus non-bookable22:00 marker; unchanged G1–G15/75px geometry. Positions use (minute-480)*56/60 with clipping to1320. Out-of-hours records are retained and listed separately; no data/API writes. One two-axis scrollport, sticky bed header and hour labels. On mount/date change: today scrolls to floored VN hour relative08, clamped to available scroll; other dates top. Hôm nay explicitly requests reposition even on same date. DOM date/request key prevents timer/refetch/manual-scroll resets. Existing30s clock supplies minute-precision current-time line only today08<=time<22; pointer-events:none. Booking create/edit/past restrictions and callbacks preserved.
+
+Verification executed:
+- npm.cmd run build -w backend PASS; npm.cmd run build -w frontend PASS (existing Zod annotation warnings only).
+- npm.cmd run typecheck -w backend and -w frontend PASS.
+- Targeted npx.cmd eslint for all changed TS/TSX/test files PASS; git diff --check PASS (line-ending warnings only).
+- npm.cmd run test -w backend -- --runTestsByPath src/profile/profile.pg.spec.ts src/employees/employees.pg.spec.ts src/uploads/image-storage.spec.ts --silent: 3 suites,41/41 PASS. Real PostgreSQL engine via isolated local PGlite, not Neon. Covers4-role Profile upload/persistence/validation/update, distinct account mapping, baseline without006, Owner/Manager Q05 image reads, revoked Q05, Staff/Customer cross-account denial, anonymous denial, replacement removes old reference, logout/login persistence, SQL/storage failures, existing private Blob adapter contract. Expected oversized-upload413 logs are part of validation, not failed tests. Storage adapter uses a fake Blob client; live Vercel Blob is UNVERIFIED.
+- E2E_BROWSER_CHANNEL=chrome; npx.cmd playwright test --config tests/dashboard-avatar-calendar.config.ts:12/12 PASS. Real isolated Chrome; API fixtures only. Owner/Manager own employee URLs, no-avatar fallback, three distinct images, cross-tab invalidation, reload. Calendar1366x768/1536x864/1920x1080/2560x1440:14hour rows+22marker,16headers incl G1–G15, two-hour appointment geometry, pinned labels/header, no document horizontal overflow, appointment detail and empty-slot create dialog correct time. Today/other-date/manual scroll, real counted refetch without reset, VN06:30/09:30/14:45/19:20/22:30, minute line and out-of-hours history. No page exceptions in responsive cases.
+- Initial browser fixture lacked required auth success:true; corrected fixture, not authentication code. Initial desktop assertions required nonzero scroll even when entire schedule fits; corrected expectations to browser scroll bounds. Final all12 cases PASS. No app CSS changes to manufacture scrollbars.
+- AST comparison against HEAD confirms openCreateModal, handleCreateSubmit, openEditModal unchanged. Git diff empty for backend/bookings, backend/payments, database, Header/Sidebar/layout components. No booking mutations sent by UI tests.
+- Figma MCP haMGaiwDZ7MrKF2VfWGZBz live metadata and design context/screenshot1:49090 inspected (calendar). Dedicated overview staff-card frame was not identified in this file's metadata; existing staff-card CSS/markup structure preserved. No pixel-perfect claim for that card.
+
+Screenshots (synthetic UI fixtures, not real employee photographs): test-results/dashboard-avatars-owner.png, dashboard-avatars-manager.png; calendar-1366.png, calendar-1536.png, calendar-1920.png, calendar-2560.png. Owner +1366 +2560 visually inspected. Existing fixed75px calendar column width is retained, so large desktops may have unused space to the right; no unrelated fluid-layout redesign.
+
+Application files changed:
+- backend/src/employees/employees.service.ts
+- backend/src/profile/profile.service.ts
+- backend/src/profile/profile.controller.ts
+- backend/src/uploads/avatar-url.ts (new)
+- frontend/src/lib/management-api.ts
+- frontend/src/lib/profile-api.ts
+- frontend/src/lib/avatar-events.ts (new)
+- frontend/src/pages/admin-overview.tsx
+- frontend/src/pages/admin-dashboard.tsx
+- frontend/src/styles.css (calendar selectors only)
+Tests: backend/src/profile/profile.pg.spec.ts, backend/src/employees/employees.pg.spec.ts, tests/dashboard-avatar-calendar.spec.ts + tests/dashboard-avatar-calendar.config.ts (new).
+
+Limitations/NEXT: authenticated Production employee/account/Blob data not accessed; actual saved avatars and absence of live401/403 remain UNVERIFIED on Production. No Production data/schema/config change, no migration006 change, no commit/push/deploy. No SePay/OTP/Zalo/n8n or business-logic changes. To reach Production requires separate approved deployment of reviewed isolated frontend+backend patch against verified source; never deploy unrelated mixed work. Then verify real Owner/Manager images and staff upload->Dashboard with existing authorized test accounts. SePay incident remains independent/open.

@@ -89,6 +89,7 @@ export const replyToReview = (id: string, content: string) =>
 
 // ================= UC_8 Employees & Permissions =================
 export interface EmployeeItem {
+  avatarUrl?: string | null;
   id: string;
   accountId: string | null;
   username: string;

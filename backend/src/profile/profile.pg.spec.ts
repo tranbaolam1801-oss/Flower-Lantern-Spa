@@ -10,6 +10,8 @@ import { DatabaseService } from '../database.service';
 import { setup } from '../setup';
 import { PgTestServer, startPgTestServer } from '../testing/pg-test-server';
 import { ImageExtension, ImageStorage } from '../uploads/image-storage';
+import { EmployeesController } from '../employees/employees.controller';
+import { EmployeesService } from '../employees/employees.service';
 import { ProfileController } from './profile.controller';
 import { AVATAR_STORAGE, ProfileService } from './profile.service';
 
@@ -56,7 +58,7 @@ describe('Profile API (all 4 roles) on real PostgreSQL with migration 006', () =
     process.env.RATE_LIMIT_ENABLED = 'false';
     pg = await startPgTestServer({ profile: true });
     const module = await Test.createTestingModule({
-      imports: [DatabaseModule, AuthModule], controllers: [ProfileController], providers: [ProfileService, { provide: AVATAR_STORAGE, useValue: storage }],
+      imports: [DatabaseModule, AuthModule], controllers: [ProfileController, EmployeesController], providers: [EmployeesService, ProfileService, { provide: AVATAR_STORAGE, useValue: storage }],
     }).compile();
     app = module.createNestApplication();
     setup(app);
@@ -66,7 +68,7 @@ describe('Profile API (all 4 roles) on real PostgreSQL with migration 006', () =
     const values = ROLES.map(([u, role, phone, id]) => `('${id}','${u}','${phone}','${hash}','${role}','Hoạt động')`).join(',');
     await pg.exec(`
       INSERT INTO dbo.TaiKhoan(MaTaiKhoan,TenDangNhap,SoDienThoai,MatKhauBam,VaiTro,TrangThai) VALUES ${values};
-      INSERT INTO dbo.TaiKhoanQuyen(MaTaiKhoan,MaQuyen) VALUES ('TK00000002','Q01'),('TK00000003','Q01');
+      INSERT INTO dbo.TaiKhoanQuyen(MaTaiKhoan,MaQuyen) VALUES ('TK00000002','Q01'),('TK00000002','Q05'),('TK00000003','Q01');
       INSERT INTO dbo.NhanVien(MaNhanVien,MaTaiKhoan,HoTen,SoDienThoai,Email,TrangThaiLamViec,TrangThaiHoSo) VALUES
         ('NV00000001','TK00000001','Chủ Spa','0900000001','owner@example.com','Đang làm việc','Hoạt động'),
         ('NV00000002','TK00000002','Quản Lý Một','0900000002',NULL,'Đang làm việc','Hoạt động'),
@@ -147,12 +149,47 @@ describe('Profile API (all 4 roles) on real PostgreSQL with migration 006', () =
     const file = res.body.avatarUrl.split('/').pop() as string;
     expect(storage.files.get(file)?.equals(PNG)).toBe(true);
     expect((await http().get('/api/me').set(as(u))).body.profile.avatarUrl).toBe(res.body.avatarUrl);
-    const served = await http().get(res.body.avatarUrl).expect(200);
+    const served = await http().get(res.body.avatarUrl).set(as(u)).expect(200);
     expect(served.headers['content-type']).toBe('image/png');
     expect(Buffer.from(served.body).equals(PNG)).toBe(true);
     // no image bytes / base64 in the database
     const col = await db.query<Record<string, string>[]>(`SELECT AnhDaiDien FROM dbo.TaiKhoan WHERE SoDienThoai=$1`, [ROLES.find((r) => r[0] === u)![2]]);
     expect(Object.values(col[0])[0]).toBe(file);
+  });
+
+  it('employee list maps each saved account avatar, and private image reads follow existing permissions', async () => {
+    const avatars: string[] = [];
+    for (const u of ['owner', 'manager', 'staff']) avatars.push((await http().get('/api/me').set(as(u))).body.profile.avatarUrl);
+    expect(new Set(avatars).size).toBe(3);
+    for (const role of ['owner', 'manager']) {
+      const list = await http().get('/api/employees').set(as(role)).expect(200);
+      for (const [index, u] of ['owner', 'manager', 'staff'].entries()) {
+        expect(list.body.items.find((e: { username: string }) => e.username === u).avatarUrl).toBe(avatars[index]);
+        const image = await http().get(avatars[index]).set(as(role)).expect(200);
+        expect(image.headers['cache-control']).toBe('private, no-store');
+      }
+      expect(JSON.stringify(list.body)).not.toMatch(/avatarFile|MatKhau|blob.vercel/);
+    }
+    await http().get(avatars[2]).expect(401);
+    await http().get(avatars[0]).set(as('staff')).expect(404);
+    await http().get(avatars[2]).set(as('customer')).expect(404);
+    await http().get('/api/employees').set(as('staff')).expect(403);
+    const customer = (await http().get('/api/me').set(as('customer'))).body.profile.avatarUrl;
+    await http().get(customer).set(as('owner')).expect(404); // Employee access does not include customers.
+    await pg.exec("DELETE FROM dbo.TaiKhoanQuyen WHERE MaTaiKhoan='TK00000002' AND MaQuyen='Q05'");
+    await http().get(avatars[2]).set(as('manager')).expect(404);
+    await pg.exec("INSERT INTO dbo.TaiKhoanQuyen VALUES ('TK00000002','Q05')");
+    const changed = await http().post('/api/me/avatar').set(as('staff')).set('Content-Type', 'image/png').send(PNG).expect(201);
+    const refreshed = await http().get('/api/employees').set(as('owner')).expect(200);
+    expect(refreshed.body.items.find((e: { username: string }) => e.username === 'staff').avatarUrl).toBe(changed.body.avatarUrl);
+    expect(changed.body.avatarUrl).not.toBe(avatars[2]);
+    await http().get(avatars[2]).set(as('owner')).expect(404);
+    await http().post('/api/auth/logout').set(as('staff')).expect(200);
+    await http().get(changed.body.avatarUrl).set(as('staff')).expect(401);
+    const login = await http().post('/api/auth/login').set('X-Spa-Request', '1').send({ phone: ROLES[2][2], password }).expect(200);
+    cookies.staff = (login.headers['set-cookie'] as unknown as string[])[0].split(';')[0];
+    expect((await http().get('/api/me').set(as('staff')).expect(200)).body.profile.avatarUrl).toBe(changed.body.avatarUrl);
+    await http().get(changed.body.avatarUrl).set(as('staff')).expect(200);
   });
 
   it('avatar validation: type, magic bytes, size; a failed upload keeps the old avatar', async () => {
@@ -194,9 +231,9 @@ describe('Profile API (all 4 roles) on real PostgreSQL with migration 006', () =
   });
 
   it('avatar route rejects malformed names and unknown files', async () => {
-    await http().get('/api/uploads/avatars/..%2F..%2Fetc%2Fpasswd').expect(404);
-    await http().get('/api/uploads/avatars/' + 'a'.repeat(32) + '.png').expect(404);
-    await http().get('/api/uploads/avatars/evil.svg').expect(404);
+    await http().get('/api/uploads/avatars/..%2F..%2Fetc%2Fpasswd').set(as('owner')).expect(404);
+    await http().get('/api/uploads/avatars/' + 'a'.repeat(32) + '.png').set(as('owner')).expect(404);
+    await http().get('/api/uploads/avatars/evil.svg').set(as('owner')).expect(404);
   });
 
   it('CSRF header is required for PATCH and avatar upload', async () => {

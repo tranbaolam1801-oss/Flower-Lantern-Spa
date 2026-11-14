@@ -66,6 +66,8 @@ export function AdminDashboard() {
   }, []);
   const cache = useQueryClient();
   const [date, setDate] = useState(today);
+  const [scrollRequest, setScrollRequest] = useState(0);
+  const nowMinute = Number(nowIso.slice(11, 13)) * 60 + Number(nowIso.slice(14, 16));
   const [selected, setSelected] = useState<CalendarItem | null>(null);
   const [payBookingId, setPayBookingId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
@@ -418,7 +420,7 @@ export function AdminDashboard() {
             }}
           />
         </label>
-        <Button type="button" size="sm" variant="outline" onClick={() => setDate(today())}>
+        <Button type="button" size="sm" variant="outline" onClick={() => { setDate(today()); setScrollRequest((value) => value + 1); }}>
           Hôm nay
         </Button>
         <div className="calendar-toolbar-right">
@@ -461,7 +463,27 @@ export function AdminDashboard() {
           </Button>
         </div>
       ) : (
-        <div className="bed-calendar" aria-label="Lịch theo giường">
+        <>
+        {query.data.items.some((item) => item.startMinute < 480 || item.endMinute > 1320) && (
+          <div className="calendar-outside-hours" role="note">
+            <strong>Lịch hẹn ngoài khung giờ 08:00–22:00 (giữ nguyên dữ liệu):</strong>
+            {query.data.items.filter((item) => item.startMinute < 480 || item.endMinute > 1320).map((item) => (
+              <button type="button" key={item.id} disabled={item.endsAt < nowIso} onClick={() => setSelected(item)}>
+                {item.bookingId} · {item.bedId} · {item.startsAt.slice(11, 16)}–{item.endsAt.slice(11, 16)} · {item.serviceName}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="bed-calendar" aria-label="Lịch theo giường"
+              ref={(element) => {
+                const key = `${date}:${scrollRequest}`;
+                if (element && element.dataset.positioned !== key) {
+                  const minute = date === today() ? Number(vietnamNowIso().slice(11, 13)) * 60 : 480;
+                  element.scrollTop = Math.max(0, Math.min(14, (minute - 480) / 60)) * 56;
+                  element.dataset.positioned = key;
+                }
+              }}
+        >
           <div className="calendar-grid" style={{ width: 84 + query.data.beds.length * 75 }}>
             <div className="calendar-grid-header">
               <span>Giờ</span>
@@ -469,18 +491,10 @@ export function AdminDashboard() {
                 <span key={b.id}>{b.id}</span>
               ))}
             </div>
-            <div
-              className="calendar-hours"
-              ref={(element) => {
-                if (element && element.dataset.positioned !== 'yes') {
-                  element.scrollTop = 8 * 56;
-                  element.dataset.positioned = 'yes';
-                }
-              }}
-            >
-              <div className="calendar-day" style={{ height: 24 * 56 }}>
-                {Array.from({ length: 24 }, (_, h) => (
-                  <div className="hour-row" key={h} style={{ top: h * 56 }}>
+            <div className="calendar-hours">
+              <div className="calendar-day" style={{ height: 14 * 56 + 24 }}>
+                {Array.from({ length: 14 }, (_, index) => index + 8).map((h) => (
+                  <div className="hour-row" key={h} style={{ top: (h - 8) * 56 }}>
                     <span>{`${h}`.padStart(2, '0')}:00</span>
                     {query.data.beds.map((b) =>
                       // A slot whose START is already in the past cannot start a booking: dimmed, inert, no hover, no tooltip, no create flow.
@@ -502,15 +516,16 @@ export function AdminDashboard() {
                     )}
                   </div>
                 ))}
+                <div className="calendar-end-hour" style={{ top: 14 * 56 }}>22:00</div>
                 {query.data.items
-                  .filter((item) => item.bedId)
+                  .filter((item) => item.bedId && item.endMinute > 480 && item.startMinute < 1320)
                   .map((item) => {
                     const index = query.data.beds.findIndex((b) => b.id === item.bedId);
                     if (index < 0) return null;
                     const geometry = {
                       left: 87 + index * 75,
-                      top: (Math.max(0, item.startMinute) * 56) / 60 + 2,
-                      height: Math.max(22, ((Math.min(1440, item.endMinute) - Math.max(0, item.startMinute)) * 56) / 60 - 4),
+                      top: ((Math.max(480, item.startMinute) - 480) * 56) / 60 + 2,
+                      height: Math.max(1, ((Math.min(1320, item.endMinute) - Math.max(480, item.startMinute)) * 56) / 60 - 4),
                     };
                     // Ended appointment (end < now): still visible as history, but dimmed and read-only (no click, no popup, no edit, no hover).
                     // In-progress and future appointments are unchanged.
@@ -529,14 +544,7 @@ export function AdminDashboard() {
                         key={item.id}
                         className="calendar-appointment"
                         data-status={item.status}
-                        style={{
-                          left: 87 + index * 75,
-                          top: (Math.max(0, item.startMinute) * 56) / 60 + 2,
-                          height: Math.max(
-                            22,
-                            ((Math.min(1440, item.endMinute) - Math.max(0, item.startMinute)) * 56) / 60 - 4,
-                          ),
-                        }}
+                        style={geometry}
                         title={`${item.bookingId}: ${item.startsAt} – ${item.endsAt} · ${item.status}`}
                       >
                         <strong>{item.serviceName}</strong>
@@ -548,6 +556,7 @@ export function AdminDashboard() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* Modal UC_2.1 Tạo lịch hẹn */}

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1794560140208,
+  "lastScanned": 1794677995991,
   "projectRoot": "c:\\Spa",
   "techStack": {
     "languages": [
@@ -66,7 +66,7 @@
       "path": "api",
       "purpose": "API routes",
       "fileCount": 1,
-      "lastAccessed": 1794560139932,
+      "lastAccessed": 1794677995646,
       "keyFiles": [
         "index.js"
       ]
@@ -75,7 +75,7 @@
       "path": "audit",
       "purpose": null,
       "fileCount": 3,
-      "lastAccessed": 1794560139953,
+      "lastAccessed": 1794677995648,
       "keyFiles": [
         "FIGMA_FRAME_INVENTORY.md",
         "handover-history.md",
@@ -86,7 +86,7 @@
       "path": "backend",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1794560139954,
+      "lastAccessed": 1794677995726,
       "keyFiles": [
         "jest.config.cjs",
         "package.json",
@@ -98,7 +98,7 @@
       "path": "database",
       "purpose": null,
       "fileCount": 11,
-      "lastAccessed": 1794560139956,
+      "lastAccessed": 1794677995727,
       "keyFiles": [
         "AUTH_SESSION_PROPOSAL.md",
         "AZURE_MIGRATION_APPROVAL_CHECKLIST.md",
@@ -111,7 +111,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 12,
-      "lastAccessed": 1794560139957,
+      "lastAccessed": 1794677995728,
       "keyFiles": [
         "50K141.04.3007.docx",
         "50K141.04.3007.fig",
@@ -123,8 +123,8 @@
     "docs-deploy": {
       "path": "docs-deploy",
       "purpose": null,
-      "fileCount": 13,
-      "lastAccessed": 1794560139958,
+      "fileCount": 14,
+      "lastAccessed": 1794677995729,
       "keyFiles": [
         "azure.env.example",
         "AZURE_BILLING_ELIGIBILITY_CHECK.md",
@@ -137,7 +137,7 @@
       "path": "frontend",
       "purpose": null,
       "fileCount": 7,
-      "lastAccessed": 1794560139959,
+      "lastAccessed": 1794677995730,
       "keyFiles": [
         "API_HANDOFF_TO_CODEX.md",
         "components.json",
@@ -150,7 +150,7 @@
       "path": "n8n",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1794560139960,
+      "lastAccessed": 1794677995731,
       "keyFiles": [
         "flower-lantern-notification-dispatch.json",
         "workflow.test.mjs"
@@ -159,47 +159,47 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 11,
-      "lastAccessed": 1794560139961,
+      "fileCount": 25,
+      "lastAccessed": 1794677995732,
       "keyFiles": [
         "audit-sources.ps1",
+        "diagnose-sepay-payment.mjs",
         "e2e-live-browser.cjs",
         "e2e-live-webhook.mjs",
-        "e2e-live.mjs",
-        "e2e-local-otp-browser.mjs"
+        "e2e-live.mjs"
       ]
     },
     "test-results": {
       "path": "test-results",
       "purpose": null,
-      "fileCount": 40,
-      "lastAccessed": 1794560139962,
+      "fileCount": 165,
+      "lastAccessed": 1794677995734,
       "keyFiles": [
         "admin-measure-after.json",
         "admin-measure-before.json",
+        "admin-mobile-check.cjs",
         "admin-viewport-check.cjs",
-        "booking-1440.png",
-        "customer-login-1440.png"
+        "auth-baseline.cjs"
       ]
     },
     "tests": {
       "path": "tests",
       "purpose": "Test files",
-      "fileCount": 5,
-      "lastAccessed": 1794560139963,
+      "fileCount": 9,
+      "lastAccessed": 1794677995735,
       "keyFiles": [
         "auth.spec.ts",
-        "foundation.spec.ts",
-        "responsive.ts",
-        "sessions.spec.ts",
-        "ui-coverage.spec.ts"
+        "customer-account-menu.spec.ts",
+        "customer-header.config.ts",
+        "dashboard-avatar-calendar.config.ts",
+        "dashboard-avatar-calendar.spec.ts"
       ]
     },
     "backend\\dist": {
       "path": "backend\\dist",
       "purpose": "Distribution/build output",
       "fileCount": 20,
-      "lastAccessed": 1794560139966,
+      "lastAccessed": 1794677995742,
       "keyFiles": [
         "app.module.js",
         "app.module.js.map",
@@ -210,7 +210,7 @@
       "path": "backend\\src",
       "purpose": "Source code",
       "fileCount": 15,
-      "lastAccessed": 1794560139967,
+      "lastAccessed": 1794677995743,
       "keyFiles": [
         "app.module.ts",
         "app.spec.ts",
@@ -221,7 +221,7 @@
       "path": "database\\migrations",
       "purpose": "Database migrations",
       "fileCount": 9,
-      "lastAccessed": 1794560139969,
+      "lastAccessed": 1794677995744,
       "keyFiles": [
         "001-srs-baseline.sql",
         "002-business-indexes.sql",
@@ -232,7 +232,7 @@
       "path": "frontend\\dist",
       "purpose": "Distribution/build output",
       "fileCount": 1,
-      "lastAccessed": 1794560139971,
+      "lastAccessed": 1794677995747,
       "keyFiles": [
         "index.html"
       ]
@@ -241,21 +241,21 @@
       "path": "frontend\\node_modules",
       "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1794560139972,
+      "lastAccessed": 1794677995748,
       "keyFiles": []
     },
     "frontend\\public": {
       "path": "frontend\\public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1794560139973,
+      "lastAccessed": 1794677995749,
       "keyFiles": []
     },
     "frontend\\src": {
       "path": "frontend\\src",
       "purpose": "Source code",
       "fileCount": 3,
-      "lastAccessed": 1794560139974,
+      "lastAccessed": 1794677995750,
       "keyFiles": [
         "main.tsx",
         "styles.css",

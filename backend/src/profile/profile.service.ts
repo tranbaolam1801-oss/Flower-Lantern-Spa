@@ -4,6 +4,7 @@ import { DatabaseService } from '../database.service';
 import { JwtPayload } from '../auth/auth.dto';
 import { CONTENT_TYPE_BY_EXTENSION, IMAGE_MIME_TYPES, ImageExtension, ImageStorage, MAX_IMAGE_BYTES, detectImageExtension } from '../uploads/image-storage';
 import { UpdateProfileDto } from './profile.dto';
+import { avatarUrl } from '../uploads/avatar-url';
 
 export const AVATAR_STORAGE = 'AVATAR_STORAGE';
 export const AVATAR_ERROR = 'Ảnh đại diện không hợp lệ! Chỉ hỗ trợ JPG, PNG, WebP tối đa 2MB.';
@@ -59,7 +60,7 @@ export class ProfileService {
       fullName: entity ? String(entity.fullName) : user.fullName,
       email: (entity?.email as string | null) ?? null, gender: (entity?.gender as string | null) ?? null,
       birthDate: (entity?.birthDate as string | null) ?? null, address: (entity?.address as string | null) ?? null,
-      avatarUrl: avatar ? `${AVATAR_URL_PREFIX}${avatar}` : null,
+      avatarUrl: avatarUrl(avatar),
       editable: {
         fullName: hasEntity, gender: hasEntity, birthDate: hasEntity, address: hasEntity,
         email: hasEntity && (!customer || caps.customerEmail), avatar: caps.avatar,
@@ -136,5 +137,15 @@ export class ProfileService {
     return { avatarUrl: `${AVATAR_URL_PREFIX}${fileName}` };
   }
 
-  readAvatar(file: string) { return this.storage.read(file); }
+  async readAvatar(file: string, user: JwtPayload) {
+    // Same access boundary as self-profile and the existing employee list (Q05).
+    const canViewEmployees = user.role === 'Chủ Spa' || (user.role === 'Quản lý' && user.permissions.includes('Q05'));
+    const rows = returnedRows<Row>(await this.database.query(
+      `SELECT 1 FROM dbo.TaiKhoan t WHERE to_jsonb(t)->>'anhdaidien' = $1
+       AND (t.MaTaiKhoan = $2 OR ($3::boolean AND EXISTS
+         (SELECT 1 FROM dbo.NhanVien n WHERE n.MaTaiKhoan = t.MaTaiKhoan))) LIMIT 1`,
+      [file, user.sub, canViewEmployees]));
+    if (!rows.length || !avatarUrl(file)) throw new NotFoundException();
+    return this.storage.read(file);
+  }
 }

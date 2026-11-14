@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { useAuth } from '../contexts/auth-context';
 import { getCalendar, searchAdminBookings, type CalendarItem } from '../lib/booking-api';
 import { listEmployees, listReviews } from '../lib/management-api';
+import { resolveApiUrl } from '../lib/api-client';
+import { subscribeAvatarUpdated } from '../lib/avatar-events';
 
 /** Asia/Ho_Chi_Minh wall clock as 'YYYY-MM-DDTHH:mm:ss' (same shape as the calendar's startsAt/endsAt, so values compare as strings). */
 function vietnamNowIso() {
@@ -44,6 +46,10 @@ function Card({ title, icon, action, children, wide = false, label }: { title: s
 const Note = ({ children, error = false }: { children: ReactNode; error?: boolean }) => <p className={`dash-note${error ? ' dash-note-error' : ''}`} role={error ? 'alert' : 'status'}>{children}</p>;
 
 export function AdminOverviewPage() {
+  const cache = useQueryClient();
+  useEffect(() => subscribeAvatarUpdated(() => {
+    void cache.invalidateQueries({ queryKey: ['dashboard-employees'] });
+  }), [cache]);
   const { user } = useAuth();
   const [nowIso, setNowIso] = useState(vietnamNowIso);
   useEffect(() => { const id = window.setInterval(() => setNowIso(vietnamNowIso()), 30_000); return () => window.clearInterval(id); }, []);
@@ -119,7 +125,8 @@ export function AdminOverviewPage() {
           : employees.isError ? <Note error>Không thể tải danh sách nhân viên. Vui lòng thử lại!</Note>
           : working.length === 0 ? <Note>Chưa có nhân viên ở trạng thái "Đang làm việc".</Note>
           : <ul className="dash-staff">{working.slice(0, 5).map((e) => <li key={e.id}>
-            <img src="/assets/admin-imgAdminAvatar.png" alt="" />
+            <img src={e.avatarUrl ? resolveApiUrl(e.avatarUrl) : '/assets/admin-imgAdminAvatar.png'} alt=""
+              onError={(event) => { const image = event.currentTarget; if (image.getAttribute('src') !== '/assets/admin-imgAdminAvatar.png') image.src = '/assets/admin-imgAdminAvatar.png'; }} />
             <strong>{e.fullName}</strong>
             <span>{e.role}</span>
           </li>)}</ul>}

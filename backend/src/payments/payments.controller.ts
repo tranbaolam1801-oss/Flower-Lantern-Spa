@@ -6,7 +6,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Permissions, Roles } from '../auth/roles.decorator';
 import { JwtPayload } from '../auth/auth.dto';
 import { PaymentsService } from './payments.service';
-import { CreateSepayIntentDto, MockWebhookDto, PaymentIdParam, RefundPaymentDto, UnreconciledQuery } from './payments.dto';
+import { CreateSepayIntentDto, MockWebhookDto, PaymentIdParam, ReconcileDto, RefundPaymentDto, UnreconciledQuery } from './payments.dto';
 
 type AuthedRequest = Request & { user: JwtPayload };
 
@@ -33,6 +33,10 @@ export class PaymentsController {
   /** Held transfers: webhook events that did not confirm a payment. No raw payload is returned. */
   @Get('unreconciled') @UseGuards(AuthGuard, RolesGuard) @Roles('Nhân viên', 'Quản lý') @Permissions('Q01')
   unreconciled(@Query() query: UnreconciledQuery) { return this.service.unreconciled(query); }
+
+  /** Pulls recent incoming transfers from the authenticated SePay API and runs each through the SAME validation + idempotency as the webhook. Recovers missed webhooks. */
+  @Post('reconcile') @HttpCode(200) @UseGuards(AuthGuard, RolesGuard) @Roles('Quản lý') @Permissions('Q01')
+  reconcile(@Body() dto: ReconcileDto) { return this.service.reconcileFromSepay(dto.hours ?? 24); }
 
   @Post(':id/refund') @HttpCode(200) @UseGuards(AuthGuard, RolesGuard) @Roles('Quản lý') @Permissions('Q01')
   refund(@Req() request: AuthedRequest, @Param() params: PaymentIdParam, @Body() dto: RefundPaymentDto) { return this.service.refund(params.id, dto, request.user.sub); }

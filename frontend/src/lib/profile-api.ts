@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL, apiFetch } from './api-client';
 import { useAuth } from '../contexts/auth-context';
+import { notifyAvatarUpdated } from './avatar-events';
 
 export interface ProfileData {
   id: string; role: string; status: string; phone: string; entityId: string | null;
@@ -29,6 +30,7 @@ export async function uploadAvatar(file: File): Promise<string> {
     const message = Array.isArray(body?.message) ? body?.message.join(' ') : body?.message;
     throw { status: response.status, message: message || 'Không thể lưu ảnh đại diện. Vui lòng thử lại!' };
   }
+  notifyAvatarUpdated();
   return body.avatarUrl;
 }
 
