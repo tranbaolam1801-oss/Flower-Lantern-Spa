@@ -637,3 +637,65 @@ npm.cmd run build -w frontend PASS (includes TypeScript noEmit, existing third-p
 Names intentionally retained: uppercase wordmark inside approved logo assets; historical/source documentation, asset names and technical identifiers; common noun “hoa đăng” in gallery alt text describes lanterns and is not a brand alias. Earlier direct guest homepage loading issue remains outside this text-only task and is not marked fixed. Browser checks used fixtures, not authenticated Production or physical phone tests.
 
 Next: review the28 local copy replacements. No deployment or additional feature work authorized by this request.
+
+
+## 2026-11-14 — Thông tin cá nhân (Chủ Spa / Quản lý / Nhân viên / Khách hàng)
+Executed (local, in-memory PostgreSQL = PGlite; nothing applied to Neon):
+- `NODE_OPTIONS=--experimental-vm-modules npx jest src/profile` (backend): 21/21 PASS (4 vai trò đọc/sửa hồ sơ, validation, whitelist chống đổi role/quyền/trạng thái/id/phone/password, không sửa tài khoản khác, email duy nhất, avatar JPG/PNG/WebP + magic bytes + 2MB + lỗi storage giữ avatar cũ, CSRF, trạng thái TRƯỚC migration 006).
+- `npm test` (backend, đủ bộ): 557 passed, 1 skipped, 41/42 suites (1 suite skipped có sẵn).
+- `npm run lint`: không lỗi. `npm run build`: PASS (frontend + backend).
+- `node scripts/e2e-local-profile-browser.mjs` (trình duyệt thật, api/index.js, migration 006 áp dụng trên PGlite): 71/71 PASS — avatar mở đúng trang, hồ sơ đúng tài khoản, Hủy không gọi API, validation giữ dữ liệu nhập, lỗi mạng giữ dữ liệu, lưu 1 request (double-click), lưu SQL, avatar preview → lưu → Header đổi ngay, refresh + đăng xuất/đăng nhập lại vẫn giữ, chặn chéo /ho-so ↔ /admin/ho-so, mobile 390 + tablet 820 không tràn ngang.
+- `node scripts/e2e-local-auth-browser.mjs`: 67/67 PASS sau khi cập nhật các kiểm tra Account Dropdown → link avatar (số kiểm tra giảm so với 94 vì dropdown không còn).
+- `node scripts/e2e-local-customer-browser.mjs`: 42/42 PASS. `node scripts/e2e-local-calendar-past-browser.mjs`: 22/22 PASS.
+Chưa chạy: kiểm thử trên Neon/Vercel thật (migration 006 chưa được phê duyệt/áp dụng).
+
+
+## 2026-11-14 — Thông báo nội bộ (chuông) + đồng bộ họ tên Header
+- Jest `src/inbox` 17/17 PASS (sự kiện/người nhận, savepoint cô lập, trước-005 vẫn chạy, dedupe, cách ly tài khoản, phân trang, đọc/đọc tất cả, migration 005 chạy lặp + rollback); Jest toàn bộ backend 579 passed, 1 skipped.
+- E2E trình duyệt thật: notifications 34/34, profile 105/105 (gồm đồng bộ họ tên Header), auth 88/88, customer-states 35/35, calendar-past 22/22, dashboard 21/21.
+- `npm run lint` không lỗi; `npm run build` PASS. Chưa chạy trên Neon/Vercel (005 chưa áp dụng).
+
+
+## 2026-11-14 — TEST WEB.docx: Quản lý dịch vụ + trang dịch vụ khách hàng
+- `node scripts/e2e-local-services-browser.mjs` (trình duyệt thật, api/index.js, PGlite): 38/38 PASS — lỗi dưới từng trường (Figma 3:6310/3:6446), toast thành công góc dưới phải sau khi backend xác nhận (thêm/cập nhật/xóa), trùng mã/tên 409, lỗi lưu (mạng/500/503), hộp thoại xóa đúng Figma (680px, nút 160x48), Hủy không gọi API, xóa bị chặn 409 thật, 1 request khi double-click, tìm kiếm rỗng/lỗi API, trang khách (icon đồng hồ, nút bên phải, kính lúp focus ô tìm), responsive 390/1024.
+- Hồi quy: auth 88/88, profile 105/105, notifications 34/34 (1 lần chớp do test, đã làm chắc test), customer-states 35/35, dashboard 21/21; lint không lỗi; build PASS. Không đổi backend nên không chạy lại jest.
+
+
+## SePay incident investigation — 2026-11-14 (local patch, Production not settled)
+
+User reports LH33987572 / FLSZAD2VKYC9C /480000VND at13:53 UTC+7 (06:53UTC). Read-only Vercel evidence for06:45–07:00UTC:579CDN requests, no webhook delivery to /api/payments/sepay/webhook; intent201 at06:52:48.645, payment TT12804217 polled23times (one200,22×304) on dpl_7QnpapSGZ1BnNojyiZxsWKwMtaHM. HTTP metadata does not prove the payment's exact booking/reference or current DB state. Production OpenAPI200 confirms POST webhook route; earlier startup route mapping is not delivery. Current deployment dpl_73csXKwG6C3S8Z6Rm9oUV8kLmah6 was created after transfer. SePay dashboard delivery/configuration and Neon payment/event rows remain UNVERIFIED. No live transfer/replay/Production write/deploy/config/secret change performed.
+
+Local verified patch: PaymentsService now acknowledges23505 as duplicate only if the provider event is actually recorded after rollback; otherwise503. Invalid-payload audit uses same guard. Fixed non-sensitive auth/processing/outcome log labels. Payment status private/no-store server header + frontend no-store fetch. QR hidden only on server-confirmed paid; static TestMode label removed, simulated flag alone shows mock notice. Expiry copy tells already-transferred users not to transfer again; expiry/held-event policy unchanged. No bank/gateway matching policy invented; original account validation preserved. Local issue is not claimed to be the cause of this particular missing delivery.
+
+Commands/results:
+- Baseline default-sandbox tests:86unit PASS/16PGlite connection failures; isolated localhost rerun16/16 PASS. No Neon connection used by tests.
+- New regression reproduced old false success acknowledgement (FAIL before fix). Final npm.cmd run test -w backend -- --runTestsByPath src/payments/payments.spec.ts src/payments/payments.pg.spec.ts --silent:108/108 PASS (89unit +19real PostgreSQL-engine PGlite). Covers APIKey/HMAC, reference/content, reported reference/amount in synthetic fixture, exact/under/over/wrong-account/outgoing, duplicates, late/expired, invalid payload, SQL rollback/unique failures, different booking unaffected, persistence/authorization/refunds. PGlite single-session adapter does not prove multi-connection concurrency.
+- New diagnose-sepay-payment.mjs CLI read-only integration PASS: BEGIN READ ONLY, parameterized SELECT, no settlement, accounts/URL omitted; local PGlite pool released before child CLI connection. Initial CLI test failed due to one-session adapter; corrected test setup, not app DB configuration. CLI --help and node --check PASS.
+- Chromium test-results/sepay-dialog-check.cjs PASS for SEPAY and MOCK using actual component in ignored harness: pending->503->paid, no client-only confirmation, QR removed, callback once, polling stops, request cache no-store, browser reload fetches paid. API doubles only; no real bank settlement or authenticated Production browser test claimed.
+- Backend build, frontend build (includes tsc), targeted ESLint across modified TS files and git diff --check PASS. Existing Zod dependency annotation/CRLF warnings only.
+
+Access controls: bulk Production env pull rejected by auto-review (secrets risk); raw log printing rejected (private payload risk). Neither executed, no bypass; later reads only allowlisted metadata. Env names/types/targets verified but sensitive values remain redacted, NOT evidence values are empty. Computer Use ended because Chrome URL could not be determined safely; UI interaction stopped. Local DB config unusable; no Production DB data assertion made. User cannot locate SePay delivery/Neon configuration yet; report includes exact UI steps to obtain HTTP status/response.
+
+Added read-only CLI scripts/diagnose-sepay-payment.mjs and runbook docs-deploy/SEPAY_WEBHOOK_INCIDENT_2026-11-14.md. Preserve all unrelated Claude/UI/auth/notification changes. NEXT: obtain SePay delivery evidence + approved local read-only Neon connection, run CLI; verify incoming transaction ID, bank/gateway/receiver/ref/amount/time/expiry and payment/event linkage. Only after verified evidence and separate user approval may Production settings/deployment/official replay/reconciliation occur. Existing held/expired event replays do not silently reprocess or bypass expiry. Do not ask for another transfer or execute manual SQL UPDATE.
+
+
+## Customer header account dropdown — 2026-11-14 (local only)
+
+Latest user instruction overrides prior customer avatar-direct-profile behaviour. Actual shared CustomerHeader -> AccountMenu(customer) previously rendered avatar Link /ho-so plus separate appointments/logout actions; mobile drawer duplicated appointments. No duplicate Header implementation was found among public/profile/booking/catalog consumers. Fixed the CUSTOMER branch into an avatar menu with exactly: Thông tin cá nhân / Lịch hẹn của tôi / Đăng xuất. Removed only the duplicated mobile-drawer appointments link. Reuses current profile query/avatar fallback and existing /ho-so, /lich-hen-cua-toi, logout flow; no new page/API/auth/RBAC or backend/data changes.
+
+Source files: frontend/src/components/account-menu.tsx, frontend/src/components/customer-header.tsx, frontend/src/styles.css. New tests: tests/customer-account-menu.spec.ts and tests/customer-header.config.ts. Added CSS scoped only to account-menu-customer; existing CSS prefix, ADMIN JSX branch and leave/logout function verified unchanged byte-for-byte against pre-task snapshots. Keyboard: Enter/Space, ArrowUp/Down, Home/End, Tab-out, Escape/focus return; second-click/outside/route-key changes close. aria-expanded/haspopup/controls/menu/menuitem IDs are wired; single customer account region, panel below icon and within viewport. Scope is this Header only, not the broad fluid-scaling attachment or other screens.
+
+Figma MCP live access verified using file vASTCkZ0az3MX98u1fvhTJ, design context + screenshot3:3222; reference saved under ignored test-results/customer-header-figma.png. Existing assets/brand/header structure retained; latest user specifies the three-item behaviour, not a new Figma layout. No pixel-perfect claim for a new menu frame.
+
+Executed: npm.cmd run build -w frontend PASS (includes TypeScript); targeted ESLint PASS; git diff --check PASS. E2E command: $env:E2E_BROWSER_CHANNEL='chrome'; npx.cmd playwright test --config tests/customer-header.config.ts ->9/9 PASS. Six CUSTOMER viewports1920x1080/1366x768/1024x768/768x1024/390x844/375x812: no direct account action links, three-item menu, bounds/occlusion, click-toggle/outside/Escape, keyboard arrows/Home/Tab, existing Profile route and current fixture identity, appointments, route-dismissal, refresh and one-call logout. Profile name/avatar update flows exercised with mocked PATCH/upload at1366. Three admin roles separately retain direct avatar Profile and logout-only role dropdown. All APIs intercepted, isolated temporary Chrome profile; no real login/customer data or Production writes. Dedicated config starts/reuses Vite only, never starts Backend. Initial bundled-browser launch failed; existing Chrome used without installing/changing security. Initial mobile test clicked content covered by the open menu; corrected outside target. Admin regression fixture moved to existing Profile to avoid unrelated dashboard API fixture requirements; no app changes made for these test setup issues.
+
+Screenshots: test-results/customer-menu-1366.png and customer-menu-375.png (local synthetic customer). Build entry /assets/index-TQ3IJEAm.js contains account-menu-customer, no account-text-link. Read-only Production check: deployment dpl_73csXKwG6C3S8Z6Rm9oUV8kLmah6 READY; Git metadata feat/postgres-vercel /3a8db9e91eba4ac70ee7cc3b39cb2a01ce4708f2; public entry /assets/index-CkK6LXNX.js still has old separate-link branch and lacks account-menu-customer. Local HEAD reports same SHA, but uncommitted fixes are not in the Production bundle. Git metadata alone does not prove a clean CLI source snapshot.
+
+NEXT: local Header change is reviewable, NOT deployed. After explicit approval only, isolate this Header patch against verified Production source; do not deploy the mixed working tree/dist including unrelated SePay/Claude work. Verify the new bundle + customer login/menu on Production after an approved deployment. No commit/push/deploy performed. Existing SePay incident remains open independently.
+
+
+## 2026-11-14 — TEST WEB (1).docx: UC8, đặt lịch, lịch hẹn của tôi, thông báo, fluid
+Figma mới (file haMGaiwDZ7MrKF2VfWGZBz) đọc trực tiếp qua MCP: UC_8.x (5:24495, 5:7224, 5:7905, 5:8882, 6:13745, 6:13858, 6:13971, 6:14082, 5:24613, 5:25211, 5:25451, 5:24853), UC_5.2 (1:11376, 1:11228), UC_5.3 (1:19366, 1:17952, 1:17576), UC_5.1 (1:6317).
+- `node scripts/e2e-local-employees-browser.mjs`: 34/34 PASS (chi tiết, thêm/sửa, phân quyền, khóa/mở khóa, toast + X + Thử lại, RBAC, 1024/390px).
+- `node scripts/e2e-local-customer-bookings-browser.mjs`: 33/33 PASS (empty state, lịch/giờ, đổi lịch, quá khứ, toast lỗi, fluid 8 viewport + zoom 125/150%).
+- Hồi quy: services 38, customer-states 35, customer 42, notifications 34, profile 105, auth 89, dashboard 21, calendar-past 22 — tất cả PASS. Jest backend 585 passed, 1 skipped. Lint không lỗi, build PASS.

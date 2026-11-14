@@ -27,7 +27,7 @@ export function AdminReportsPage() {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [dateError, setDateError] = useState('');
 
-  const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q06');
+  const allowed = user?.role === 'Chủ Spa' || (user?.role === 'Quản lý' && !!user.permissions.includes('Q06')); // mirrors backend @Roles('Quản lý') @Permissions('Q06')
 
   const svcQuery = useQuery({
     queryKey: ['report-services', range.from, range.to],

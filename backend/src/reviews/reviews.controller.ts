@@ -8,6 +8,7 @@ import { isUniqueViolation } from '../common/db-errors';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Permissions, Roles } from '../auth/roles.decorator';
+import { notifyReviewCreated } from '../inbox/inbox-notify';
 import { JwtPayload } from '../auth/auth.dto';
 
 const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
@@ -133,6 +134,7 @@ export class ReviewsController {
         FROM dbo.DanhGia WHERE MaDanhGia ~ '^DG[0-9]{8}$'`);
       await runner.query('INSERT INTO dbo.DanhGia(MaDanhGia,MaLichHen,MaKhachHang,MaDichVu,SoSao,NoiDungDanhGia) VALUES($1,$2,$3,$4,$5,$6)',
         [next[0].id, params.id, own[0].customer, svc[0].service, body.rating, body.comment ? body.comment : null]);
+      await notifyReviewCreated((sql, params) => runner.query(sql, params), next[0].id as string); // same transaction, savepoint-isolated
       return { result: 'ok', id: next[0].id as string };
     }).catch((error: unknown): { result: string; id: string | null } => {
       if (isUniqueViolation(error)) return { result: 'exists', id: null };

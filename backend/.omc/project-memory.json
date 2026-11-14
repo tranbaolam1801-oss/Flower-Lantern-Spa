@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1794627288562,
+  "projectRoot": "c:\\Spa\\backend",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@nestjs/core",
+        "version": "11.1.8",
+        "category": "backend"
+      },
+      {
+        "name": "jest",
+        "version": "30.2.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "tsc -p tsconfig.build.json && concurrently -k \"tsc -p tsconfig.build.json --watch --preserveWatchOutput\" \"node --watch dist/main.js\"",
+      "build": "tsc -p tsconfig.build.json",
+      "start": "node dist/main.js",
+      "typecheck": "tsc --noEmit",
+      "test": "node --experimental-vm-modules --no-warnings=ExperimentalWarning ../node_modules/jest/bin/jest.js --runInBand"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase/PascalCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 20,
+      "lastAccessed": 1794627288335,
+      "keyFiles": [
+        "app.module.js",
+        "app.module.js.map",
+        "bootstrap.js",
+        "bootstrap.js.map",
+        "catalog.controller.js"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 15,
+      "lastAccessed": 1794627288337,
+      "keyFiles": [
+        "app.module.ts",
+        "app.spec.ts",
+        "bootstrap.ts",
+        "catalog.controller.ts",
+        "catalog.pg.spec.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/profile/profile.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794627563868,
+      "type": "file"
+    },
+    {
+      "path": "src/customers/customer-read.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794631615638,
+      "type": "file"
+    },
+    {
+      "path": "src/inbox/inbox-notify.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794633503939,
+      "type": "file"
+    },
+    {
+      "path": "src/inbox/inbox.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794633522817,
+      "type": "file"
+    },
+    {
+      "path": "src/inbox/inbox.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794633525004,
+      "type": "file"
+    },
+    {
+      "path": "src/inbox/inbox.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794633527247,
+      "type": "file"
+    },
+    {
+      "path": "src/inbox/inbox.pg.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794633633304,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

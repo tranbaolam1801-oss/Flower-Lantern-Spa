@@ -78,7 +78,7 @@ export function SepayPaymentDialog({
       onClose={onClose}
     >
       <div className="spa-modal-header">
-        <h2 id="sepay-title">Thanh toán SePay QR (Test Mode)</h2>
+        <h2 id="sepay-title">Thanh toán SePay QR{current?.simulated ? ' (Mô phỏng)' : ''}</h2>
         <button type="button" className="spa-modal-close" onClick={onClose} aria-label="Đóng">
           ×
         </button>
@@ -95,13 +95,13 @@ export function SepayPaymentDialog({
           </div>
         ) : current ? (
           <div className="sepay-panel">
-            <div className={`sepay-qr-box ${pending ? '' : 'sepay-qr-inactive'}`}>
+            {status !== 'Đã thanh toán' ? <div className={`sepay-qr-box ${pending ? '' : 'sepay-qr-inactive'}`}>
               {current.qrUrl ? (
                 <img src={current.qrUrl} alt={`Mã QR thanh toán ${current.reference}`} />
               ) : (
                 <div className="sepay-qr-placeholder">QR SePay</div>
               )}
-            </div>
+            </div> : null}
             <div className="sepay-info">
               <p><strong>Mã lịch hẹn:</strong> {current.bookingId}</p>
               <p><strong>Số tiền cần thanh toán:</strong> <span className="sepay-amount">{formatVnd(current.amount)}</span></p>
@@ -129,11 +129,13 @@ export function SepayPaymentDialog({
               ) : null}
             </div>
             {status === 'Đã thanh toán' ? (
-              <p role="status" className="sepay-result paid">Thanh toán thành công. Backend đã nhận xác nhận từ SePay.</p>
+              <p role="status" className="sepay-result paid">
+                {current.simulated ? 'Thanh toán mô phỏng thành công, không phải giao dịch ngân hàng thật.' : 'Thanh toán thành công. Backend đã nhận xác nhận từ SePay.'}
+              </p>
             ) : null}
             {status === 'Hết hạn' ? (
               <div role="alert" className="sepay-result ended">
-                <p>Mã thanh toán đã hết hạn. Vui lòng không chuyển khoản vào mã này; tạo mã mới để tiếp tục.</p>
+                <p>Mã thanh toán đã hết hạn. Nếu đã chuyển tiền, không chuyển khoản lại; vui lòng liên hệ spa để đối soát. Chỉ tạo mã mới khi chưa thanh toán.</p>
                 <Button type="button" onClick={() => intentMutation.mutate()} disabled={intentMutation.isPending}>
                   Tạo mã mới
                 </Button>

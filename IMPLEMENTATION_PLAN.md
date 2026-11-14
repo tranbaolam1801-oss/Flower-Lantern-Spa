@@ -388,3 +388,16 @@ The final application must automatically adapt to desktop, laptop, tablet, and m
 - M4: đã có API đọc lịch giường và lịch của tôi; tạo/đổi/hủy, locking khoảng dịch vụ và concurrency booking vẫn chưa triển khai.
 - M6 sớm: `BrandLogo`, `CustomerHeader`, `ManagementSidebar`, tokens và responsive cho login/lịch quản lý/lịch khách. Nghiệm thu riêng bằng Playwright 9 viewport và screenshot desktop/mobile; không suy rộng thành UC1–10 hoàn tất.
 - Tiếp theo: áp dụng shared sidebar cho UC3.4 khi xây dựng màn hình và API tìm khách; tiếp tục giao dịch booking sau khi chốt Q01/Q03. Không đổi chín milestone gốc, không áp dụng 004 khi chưa duyệt lại.
+
+
+## SePay incident follow-up — 2026-11-14
+- [x] Read-only Vercel trace + deployed OpenAPI verification; local acknowledgement/observability/cache/QR safeguards and read-only diagnostic CLI tested.
+- [ ] Obtain exact SePay delivery HTTP status/response and URL/filter/auth evidence for13:53UTC+7.
+- [ ] Read-only Neon evidence for LH33987572/reference FLSZAD2VKYC9C; no status writes.
+- [ ] After evidence + separate approval only: isolate approved deployment/settings/replay or approved reconciliation decision. Expired/held events retain current policy. No new bank transfer.
+
+
+## Customer Header correction — latest user override2026-11-14
+- [x] CUSTOMER avatar toggles profile/appointments/logout dropdown; original routes/profile/auth flows retained; ADMIN branch unchanged.
+- [x] UI-only Playwright9/9, frontend build/typecheck/lint/diff and Production source/bundle comparison.
+- [ ] Only after separate approval: isolate Header patch from mixed local work and deploy to existing verified Production source; recheck authenticated live menu. No global fluid-scaling redesign in this scoped task.

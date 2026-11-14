@@ -150,6 +150,24 @@ describe('Customers with real PostgreSQL', () => {
       expect(names((await get('/api/customers?q=911000').expect(200)).body).sort()).toEqual(['LÊ THỊ BÌNH', 'Nguyễn Đức Anh']);
     });
 
+    it('matches on the customer code (full and fragment, case-insensitive)', async () => {
+      expect(names((await get('/api/customers?q=KH00000003').expect(200)).body)).toEqual(['Trần 100%_x']);
+      expect(names((await get('/api/customers?q=kh0000000').expect(200)).body)).toHaveLength(4);
+    });
+
+    it('a keyword with no match is 200 with an empty list (not an error)', async () => {
+      const res = await get('/api/customers?q=' + encodeURIComponent('khách hàng xyz')).expect(200);
+      expect(res.body).toMatchObject({ items: [], page: 1, hasNext: false });
+    });
+
+    it('invalid search input is a 400 with a Vietnamese message, never a 5xx', async () => {
+      const nul = await get('/api/customers?q=a%00b').expect(400);
+      expect(JSON.stringify(nul.body)).toContain('Từ khóa tìm kiếm không hợp lệ!');
+      await get('/api/customers?q=' + 'x'.repeat(101)).expect(400);
+      await get('/api/customers?page=0').expect(400);
+      await get('/api/customers?page=abc').expect(400);
+    });
+
     it('treats % and _ as literal text, never as LIKE wildcards', async () => {
       expect(names((await get('/api/customers').query({ q: '%' }).expect(200)).body)).toEqual(['Trần 100%_x']);
       expect(names((await get('/api/customers').query({ q: '_' }).expect(200)).body)).toEqual(['Trần 100%_x']);

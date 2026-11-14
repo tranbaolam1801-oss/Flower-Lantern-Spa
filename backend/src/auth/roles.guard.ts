@@ -31,8 +31,11 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Không có quyền truy cập.');
     }
 
-    // Chủ Spa luôn có toàn quyền
+    // Chủ Spa có toàn quyền trên chức năng quản trị. Ngoại lệ: API CHỈ dành cho Khách hàng (đặt/đổi/hủy lịch cá nhân, gửi đánh giá)
+    // là hành động thay mặt khách hàng nên Chủ Spa không được dùng (cô lập vai trò).
     if (user.role === 'Chủ Spa') {
+      const customerOnly = !!requiredRoles && requiredRoles.length > 0 && requiredRoles.every((role) => role === 'Khách hàng');
+      if (customerOnly) throw new ForbiddenException('Vai trò của bạn không có quyền thực hiện thao tác này.');
       return true;
     }
 

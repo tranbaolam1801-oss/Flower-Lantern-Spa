@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
@@ -27,7 +27,7 @@ export class PaymentsController {
   @Post('mock/webhook') @HttpCode(200) @UseGuards(AuthGuard, RolesGuard) @Roles('Quản lý')
   mock(@Body() dto: MockWebhookDto) { return this.service.mockSettle(dto); }
 
-  @Get(':id/status') @UseGuards(AuthGuard, RolesGuard) @Roles('Khách hàng', 'Nhân viên', 'Quản lý')
+  @Get(':id/status') @Header('Cache-Control', 'private, no-store') @UseGuards(AuthGuard, RolesGuard) @Roles('Khách hàng', 'Nhân viên', 'Quản lý')
   status(@Req() request: AuthedRequest, @Param() params: PaymentIdParam) { return this.service.status(request.user, params.id); }
 
   /** Held transfers: webhook events that did not confirm a payment. No raw payload is returned. */

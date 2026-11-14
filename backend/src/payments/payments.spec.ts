@@ -309,13 +309,28 @@ describe('webhook processing', () => {
     expect(db.events).toHaveLength(1);
     expect(db.booking.pay).toBe('Chưa thanh toán');
   });
-  it('unique-violation race on the event row is treated as a replay', async () => {
+  it('unique-violation race is a replay only after finding the durably recorded event', async () => {
     const { svc, db, dto } = await pending();
     const original = db.run.bind(db);
-    db.run = async (s, p) => { if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) throw Object.assign(new Error('dup'), { driverError: { code: '23505' } }); return original(s, p); };
+    db.run = async (s, p) => {
+      if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) {
+        // Model the other worker's committed event becoming visible after our rollback.
+        db.events.push({ provider: 'SEPAY', tx: '92704', outcome: 'CONFIRMED', paymentId: dto.paymentId });
+        throw Object.assign(new Error('dup'), { driverError: { code: '23505' } });
+      }
+      return original(s, p);
+    };
     expect(await hook(svc, dto.reference)).toEqual({ success: true });
     expect(db.payments[0].status).toBe('Chờ thanh toán');
     expect(db.rolledBack).toBe(1);
+  });
+  it('matches the reported reference and amount with a bank memo prefix/suffix (isolated fixture only)', async () => {
+    const { svc, db } = make();
+    db.total = 480000;
+    const dto = await svc.createIntent(customer(), 'LH33987572');
+    db.payments[0].reference = 'FLSZAD2VKYC9C';
+    await hook(svc, 'FLSZAD2VKYC9C', { code: null, content: 'BANK PREFIX FLSZAD2VKYC9C SUFFIX', transferAmount: 480000 });
+    expect(await svc.status(customer(), dto.paymentId)).toMatchObject({ bookingId: 'LH33987572', status: 'Đã thanh toán', amount: 480000 });
   });
   it.each([
     ['underpayment', { transferAmount: 499999 }, 'UNDERPAID'],
@@ -432,6 +447,27 @@ describe('webhook processing', () => {
     db.run = async (s, p) => { if (s.startsWith('UPDATE dbo.LichHen SET TrangThaiThanhToan')) throw new Error('boom'); return original(s, p); };
     await expect(hook(svc, dto.reference)).rejects.toThrow(ServiceUnavailableException);
     expect(db.rolledBack).toBe(1);
+  });
+  it('does not acknowledge a unique violation unless the provider event was actually recorded', async () => {
+    const { svc, db, dto } = await pending();
+    const original = db.run.bind(db);
+    db.run = async (s, p) => {
+      if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) throw Object.assign(new Error('test-only constraint failure'), { code: '23505' });
+      return original(s, p);
+    };
+    await expect(hook(svc, dto.reference)).rejects.toThrow(ServiceUnavailableException);
+    expect(db.events).toHaveLength(0);
+    expect(db.payments[0].status).toBe('Chờ thanh toán');
+  });
+  it('does not acknowledge an unrecorded invalid-payload audit when its INSERT fails', async () => {
+    const { svc, db } = make();
+    const original = db.run.bind(db);
+    db.run = async (s, p) => {
+      if (s.startsWith('INSERT INTO dbo.SePayWebhookEvent')) throw Object.assign(new Error('test-only constraint failure'), { code: '23505' });
+      return original(s, p);
+    };
+    await expect(svc.handleSepayWebhook(apiKeyReq(), { id: 1 })).rejects.toThrow(ServiceUnavailableException);
+    expect(db.events).toHaveLength(0);
   });
   it('mock settle marks events as MOCK and reports a simulation notice', async () => {
     const { svc, db, dto } = await pending();

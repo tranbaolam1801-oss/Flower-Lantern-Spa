@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 
 export const IMAGE_STORAGE = 'IMAGE_STORAGE';
@@ -20,6 +20,8 @@ export interface ImageStorage {
   save(bytes: Buffer, extension: ImageExtension): Promise<string>;
   /** Returns null when the name is malformed or the file does not exist. */
   read(fileName: string): Promise<Buffer | null>;
+  /** Best-effort removal (replaced avatar / orphan after a failed database write). Never throws. */
+  remove?(fileName: string): Promise<void>;
 }
 
 /** Detects the real type from magic bytes; the client-declared type and name are never trusted. */
@@ -50,12 +52,18 @@ export class LocalDiskImageStorage implements ImageStorage {
     if (!IMAGE_FILE_PATTERN.test(fileName)) return null;
     try { return await readFile(path.join(this.dir, fileName)); } catch { return null; }
   }
+
+  async remove(fileName: string) {
+    if (!IMAGE_FILE_PATTERN.test(fileName)) return;
+    try { await rm(path.join(this.dir, fileName), { force: true }); } catch { /* best effort */ }
+  }
 }
 
 /** Minimal subset of @vercel/blob used here (injectable for tests). */
 export interface BlobClient {
   put(pathname: string, body: Buffer, options: { access: 'private'; contentType: string; addRandomSuffix: false; allowOverwrite: false; cacheControlMaxAge: number }): Promise<unknown>;
   get(pathname: string, options: { access: 'private' }): Promise<{ statusCode: number; stream: ReadableStream<Uint8Array> | null } | null>;
+  del?(pathname: string): Promise<unknown>;
 }
 
 /**
@@ -94,6 +102,11 @@ export class VercelBlobImageStorage implements ImageStorage {
       return null;
     }
   }
+
+  async remove(fileName: string) {
+    if (!IMAGE_FILE_PATTERN.test(fileName) || !this.client.del) return;
+    try { await this.client.del(`${this.folder}/${fileName}`); } catch { /* best effort */ }
+  }
 }
 
 /** Storage that refuses to operate; used on Vercel when no Blob store is connected (fail closed, no data loss). */
@@ -107,12 +120,12 @@ export function blobConfigured(env: NodeJS.ProcessEnv = process.env) {
 }
 
 /** Vercel Blob when configured; local disk only off-Vercel; otherwise fail closed. */
-export function imageStorageFromEnv(env: NodeJS.ProcessEnv = process.env): ImageStorage {
+export function imageStorageFromEnv(env: NodeJS.ProcessEnv = process.env, folder = 'services'): ImageStorage {
   if (blobConfigured(env)) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const blob = require('@vercel/blob') as BlobClient;
-    return new VercelBlobImageStorage({ put: (p, b, o) => blob.put(p, b, o), get: (p, o) => blob.get(p, o) });
+    return new VercelBlobImageStorage({ put: (p, b, o) => blob.put(p, b, o), get: (p, o) => blob.get(p, o), del: (p) => (blob as unknown as { del(p: string): Promise<unknown> }).del(p) }, folder);
   }
   if (env.VERCEL === '1') return new UnconfiguredImageStorage();
-  return new LocalDiskImageStorage(uploadRoot(env));
+  return new LocalDiskImageStorage(uploadRoot(env), folder);
 }

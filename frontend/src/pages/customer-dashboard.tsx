@@ -12,6 +12,8 @@ import {
 import { CustomerHeader } from '../components/customer-header';
 import { PublicFooter } from '../components/public-footer';
 import { SepayPaymentDialog } from '../components/sepay-payment-dialog';
+import { NoticeToast, errorNotice, successNotice, type NoticeState } from '../components/notice-toast';
+import { DateField, TimeSlotGrid, slotState, toMinutes, fromMinutes } from '../components/slot-picker';
 
 const filters = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Hoàn thành', 'Đã hủy'];
 const day = (value: string) => value.slice(0, 10).split('-').reverse().join('/');
@@ -20,16 +22,6 @@ const minutesBetween = (a: string, b: string) => {
   const [bh, bm] = b.slice(0, 5).split(':').map(Number);
   return bh * 60 + bm - (ah * 60 + am);
 };
-const addMinutesToTime = (time: string, minutes: number) => {
-  const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-};
-const todayIso = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
-const TIME_SLOTS = Array.from({ length: 28 }, (_, i) => {
-  const totalMin = 8 * 60 + i * 30;
-  return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
-});
 
 export function CustomerDashboard() {
   const [filter, setFilter] = useState('Tất cả');
@@ -44,7 +36,8 @@ export function CustomerDashboard() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewFieldError, setReviewFieldError] = useState('');
-  const [toastMsg, setToastMsg] = useState('');
+  const [toast, setToast] = useState<NoticeState | null>(null);
+  const setToastMsg = (message: string) => setToast(successNotice(message));
 
   const rescheduleDialog = useRef<HTMLDialogElement>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
@@ -65,6 +58,14 @@ export function CustomerDashboard() {
       setRescheduleTarget(null);
       setToastMsg('Đổi lịch hẹn thành công!');
       await cache.invalidateQueries({ queryKey: ['my-bookings'] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { status?: number; message?: string } | undefined;
+      const status = e?.status;
+      // Figma UC_5.3 5b/5c/6a: the system toast sits top-right and the dialog stays open with the chosen date/time kept.
+      if (typeof status !== 'number' || status >= 500) setToast(errorNotice('Không thể đổi lịch hẹn. Vui lòng thử lại!'));
+      else if (status === 409) setToast(errorNotice(e?.message && /giường|khung giờ/i.test(e.message) ? e.message : 'Khung giờ này không còn chỗ trống. Vui lòng chọn thời gian khác!'));
+      else setToast(errorNotice('Thời gian đặt lịch không hợp lệ. Vui lòng chọn thời gian khác!'));
     },
   });
 
@@ -129,11 +130,7 @@ export function CustomerDashboard() {
         </div>
       </section>
       <main className="customer-bookings">
-        {toastMsg && (
-          <p role="status" className="spa-toast-success">
-            {toastMsg}
-          </p>
-        )}
+        {toast && <NoticeToast notice={toast} onClose={() => setToast(null)} />}
         <div className="booking-filters" role="group" aria-label="Lọc trạng thái lịch hẹn">
           {filters.map((label) => {
             const count =
@@ -164,11 +161,13 @@ export function CustomerDashboard() {
             <Button onClick={() => void query.refetch()}>↻ Thử lại</Button>
           </div>
         ) : items.length === 0 ? (
-          <div className="booking-state-card">
-            <span className="booking-state-icon" aria-hidden="true">📅</span>
+          <div className="booking-empty-card" data-testid="my-bookings-empty">
+            <span className="booking-empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
+            </span>
             <h2>Bạn chưa có lịch hẹn nào!</h2>
             <p>Hãy đặt lịch để trải nghiệm dịch vụ tại Flower Lantern Spa.</p>
-            <Link to="/dat-lich"><Button>Đặt lịch ngay</Button></Link>
+            <Link to="/dat-lich" className="booking-empty-cta">Đặt lịch ngay</Link>
           </div>
         ) : (
           <div className="booking-table-scroll">
@@ -272,96 +271,61 @@ export function CustomerDashboard() {
         )}
       </main>
 
-      {/* UC_5.3 Đổi lịch hẹn */}
-      <dialog ref={rescheduleDialog} className="spa-modal" aria-labelledby="reschedule-title">
-        <div className="spa-modal-header">
+      {/* UC_5.3 Đổi lịch hẹn — Figma 1:19366 / 1:18547 / 5a-5d */}
+      <dialog ref={rescheduleDialog} className="resch-dialog" aria-labelledby="reschedule-title">
+        <div className="resch-head">
           <div>
             <h2 id="reschedule-title">Đổi lịch hẹn</h2>
-            <p className="spa-modal-subtitle">Chọn ngày và giờ mới cho lịch hẹn của bạn.</p>
+            <p>Chọn ngày và giờ mới cho lịch hẹn của bạn.</p>
           </div>
-          <button type="button" className="spa-modal-close" onClick={() => rescheduleDialog.current?.close()}>×</button>
+          <button type="button" className="resch-close" aria-label="Đóng" onClick={() => rescheduleDialog.current?.close()}>×</button>
         </div>
         {rescheduleTarget && (
-          <div className="spa-modal-body">
-            <div className="booking-current-info-card">
+          <div className="resch-body">
+            <div className="resch-current">
               <div>
                 <strong>{rescheduleTarget.services[0]?.name ?? 'Dịch vụ'}</strong>
-                <span>
-                  {rescheduleTarget.services[0]?.packageName ? `${rescheduleTarget.services[0].packageName} · ` : ''}
-                  Mã lịch hẹn {rescheduleTarget.id}
-                </span>
+                <span>{rescheduleTarget.services[0]?.packageName ? `${rescheduleTarget.services[0].packageName} · ` : ''}Mã lịch hẹn {rescheduleTarget.id}</span>
               </div>
-              <div className="booking-current-info-card-date">
+              <div className="resch-current-date">
                 <span>Lịch hiện tại</span>
-                <strong>{day(rescheduleTarget.date)} · {rescheduleTarget.time}</strong>
+                <strong>{day(rescheduleTarget.date)} · {rescheduleTarget.time.slice(0, 5)}</strong>
               </div>
             </div>
-            <div className="booking-form-grid-2">
-              <label className={rescheduleFieldError ? 'spa-field spa-field-invalid' : 'spa-field'}>
-                <span>Ngày hẹn mới</span>
-                <input
-                  type="date"
-                  min={todayIso()}
-                  value={newDate}
-                  onChange={(e) => {
-                    setNewDate(e.target.value);
-                    setRescheduleFieldError('');
-                  }}
-                />
-              </label>
-              <label className="spa-field">
-                <span>Giờ hẹn mới (08:00 – 22:00)</span>
-                <select value={newTime} onChange={(e) => setNewTime(e.target.value)}>
-                  {TIME_SLOTS.map((slot) => (
-                    <option key={slot} value={slot}>{slot}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {rescheduleTotalDuration > 0 && (
-              <div className="booking-info-hint">
-                <span aria-hidden="true">ⓘ</span>
-                <span>
-                  Dịch vụ {rescheduleTotalDuration} phút · dự kiến kết thúc lúc{' '}
-                  {addMinutesToTime(newTime || rescheduleTarget.time, rescheduleTotalDuration)}
-                </span>
+            <div className="resch-pickers">
+              <div className="resch-col">
+                <span className="resch-label">Ngày hẹn mới</span>
+                <DateField value={newDate} currentDate={rescheduleTarget.date.slice(0, 10)} invalid={Boolean(rescheduleFieldError)}
+                  onChange={(iso) => { setNewDate(iso); setRescheduleFieldError(''); if (slotState(iso, newTime, rescheduleTotalDuration) !== 'ok') setNewTime(''); }} />
+                <p className="resch-hint"><span className="resch-dot" /> Lịch hiện tại: {day(rescheduleTarget.date)}</p>
               </div>
+              <div className="resch-col">
+                <span className="resch-label">Giờ hẹn mới (08:00 – 22:00)</span>
+                <TimeSlotGrid date={newDate} value={newTime} durationMin={rescheduleTotalDuration} invalid={Boolean(rescheduleFieldError)} label="Giờ hẹn mới"
+                  onChange={(slot) => { setNewTime(slot); setRescheduleFieldError(''); }} />
+              </div>
+            </div>
+            {rescheduleTotalDuration > 0 && newTime && (
+              <div className="resch-info"><span aria-hidden="true">ⓘ</span> Dịch vụ {rescheduleTotalDuration} phút · dự kiến kết thúc lúc {fromMinutes(toMinutes(newTime) + rescheduleTotalDuration)}</div>
             )}
-            <p className="spa-modal-demo-note">
-              Chỉ đổi ngày và giờ hẹn; dịch vụ, gói dịch vụ và thông tin khác giữ nguyên.
-            </p>
-            {rescheduleFieldError && (
-              <p role="alert" className="spa-form-error">⚠ {rescheduleFieldError}</p>
-            )}
-            {rescheduleMutation.isError && (
-              <p role="alert" className="spa-form-error">
-                {(rescheduleMutation.error as { message?: string })?.message ?? 'Đổi lịch hẹn không thành công. Vui lòng thử lại!'}
-              </p>
-            )}
+            <p className="resch-note">Chỉ đổi ngày và giờ hẹn; dịch vụ, gói dịch vụ và thông tin khác giữ nguyên.</p>
+            {rescheduleFieldError && <p role="alert" className="resch-error" data-testid="resch-error">⚠ {rescheduleFieldError}</p>}
           </div>
         )}
-        <div className="spa-modal-footer">
-          <Button type="button" variant="outline" onClick={() => rescheduleDialog.current?.close()}>
-            Hủy
-          </Button>
-          <Button
-            type="button"
-            disabled={rescheduleMutation.isPending}
-            onClick={() => {
-              if (
-                rescheduleTarget &&
-                newDate === rescheduleTarget.date.slice(0, 10) &&
-                newTime === rescheduleTarget.time.slice(0, 5)
-              ) {
-                setRescheduleFieldError('Bạn chưa thay đổi thời gian lịch hẹn!');
-                return;
-              }
-              setRescheduleFieldError('');
-              rescheduleMutation.mutate();
-            }}
-          >
+        <div className="resch-foot">
+          <button type="button" className="resch-cancel" onClick={() => rescheduleDialog.current?.close()}>Hủy</button>
+          <button type="button" className="resch-confirm" disabled={rescheduleMutation.isPending} onClick={() => {
+            if (!rescheduleTarget || rescheduleMutation.isPending) return;
+            if (!newDate || !newTime) return setRescheduleFieldError('Vui lòng chọn ngày và giờ hẹn mới!');
+            if (newDate === rescheduleTarget.date.slice(0, 10) && newTime === rescheduleTarget.time.slice(0, 5)) return setRescheduleFieldError('Bạn chưa thay đổi thời gian lịch hẹn!');
+            const state = slotState(newDate, newTime, rescheduleTotalDuration);
+            if (state === 'past') return setRescheduleFieldError('Không thể đặt lịch vào thời gian trong quá khứ!');
+            if (state === 'late') return setRescheduleFieldError('Thời gian đặt lịch không hợp lệ. Dịch vụ phải kết thúc trước 22:00!');
+            setRescheduleFieldError('');
+            rescheduleMutation.mutate();
+          }}>
             {rescheduleMutation.isPending ? 'Đang lưu…' : '✓ Xác nhận đổi lịch'}
-          </Button>
+          </button>
         </div>
       </dialog>
 

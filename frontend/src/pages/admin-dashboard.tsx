@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/auth-context';
 import { ManagementLayout } from '../components/management-layout';
@@ -18,6 +18,8 @@ import { formatVnd } from '../lib/api-client';
 import { isValidVnPhone } from '../lib/phone';
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+/** Current Vietnam wall-clock time as 'YYYY-MM-DDTHH:mm:ss' (same shape as the calendar's startsAt/endsAt), so values compare as plain strings. */
+const vietnamNowIso = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false, dateStyle: 'short', timeStyle: 'medium' }).format(new Date()).replace(' ', 'T');
 const formatCalendarDateLabel = (iso: string) => {
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
@@ -56,6 +58,12 @@ const TIME_SLOTS = Array.from({ length: 28 }, (_, i) => {
 
 export function AdminDashboard() {
   const { user } = useAuth();
+  // "Đã qua thời gian" is decided against the real current time (Asia/Ho_Chi_Minh), not only the date; refreshed every 30s so slots expire while the page stays open.
+  const [nowIso, setNowIso] = useState(vietnamNowIso);
+  useEffect(() => {
+    const timer = setInterval(() => setNowIso(vietnamNowIso()), 30000);
+    return () => clearInterval(timer);
+  }, []);
   const cache = useQueryClient();
   const [date, setDate] = useState(today);
   const [selected, setSelected] = useState<CalendarItem | null>(null);
@@ -474,19 +482,24 @@ export function AdminDashboard() {
                 {Array.from({ length: 24 }, (_, h) => (
                   <div className="hour-row" key={h} style={{ top: h * 56 }}>
                     <span>{`${h}`.padStart(2, '0')}:00</span>
-                    {query.data.beds.map((b) => (
-                      <div
-                        key={b.id}
-                        role="button"
-                        tabIndex={-1}
-                        title={`Tạo lịch giường ${b.id} lúc ${String(h).padStart(2, '0')}:00`}
-                        onClick={() => {
-                          if (h >= 8 && h < 22) {
-                            openCreateModal(b.id, `${String(h).padStart(2, '0')}:00`);
-                          }
-                        }}
-                      />
-                    ))}
+                    {query.data.beds.map((b) =>
+                      // A slot whose START is already in the past cannot start a booking: dimmed, inert, no hover, no tooltip, no create flow.
+                      `${date}T${String(h).padStart(2, '0')}:00:00` < nowIso ? (
+                        <div key={b.id} className="hour-cell-past" aria-disabled="true" />
+                      ) : (
+                        <div
+                          key={b.id}
+                          role="button"
+                          tabIndex={-1}
+                          title={`Tạo lịch giường ${b.id} lúc ${String(h).padStart(2, '0')}:00`}
+                          onClick={() => {
+                            if (h >= 8 && h < 22) {
+                              openCreateModal(b.id, `${String(h).padStart(2, '0')}:00`);
+                            }
+                          }}
+                        />
+                      ),
+                    )}
                   </div>
                 ))}
                 {query.data.items
@@ -494,6 +507,21 @@ export function AdminDashboard() {
                   .map((item) => {
                     const index = query.data.beds.findIndex((b) => b.id === item.bedId);
                     if (index < 0) return null;
+                    const geometry = {
+                      left: 87 + index * 75,
+                      top: (Math.max(0, item.startMinute) * 56) / 60 + 2,
+                      height: Math.max(22, ((Math.min(1440, item.endMinute) - Math.max(0, item.startMinute)) * 56) / 60 - 4),
+                    };
+                    // Ended appointment (end < now): still visible as history, but dimmed and read-only (no click, no popup, no edit, no hover).
+                    // In-progress and future appointments are unchanged.
+                    if (item.endsAt < nowIso) {
+                      return (
+                        <div key={item.id} className="calendar-appointment calendar-appointment-past" data-status={item.status} aria-disabled="true" style={geometry}>
+                          <strong>{item.serviceName}</strong>
+                          <span>{item.customerName}</span>
+                        </div>
+                      );
+                    }
                     return (
                       <button
                         type="button"

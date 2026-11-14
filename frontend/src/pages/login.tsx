@@ -72,7 +72,7 @@ export function Login() {
   };
 
   return (
-    <main className="login-page">
+    <main className="login-page login-page-signin">
       <img className="login-decoration" src="/assets/login-lotus.png" alt="" />
       <section className="login-column" aria-label="Đăng nhập Flower Lantern Spa">
         <div className="login-brand-slot"><BrandLogo/></div>

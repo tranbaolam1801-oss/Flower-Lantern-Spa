@@ -3,6 +3,7 @@ import { QueryRunner } from 'typeorm';
 import { DatabaseService } from '../database.service';
 import { returnedRows } from '../common/pg-result';
 import { syncBookingNotifications } from '../notifications/booking-notification-enqueue';
+import { notifyBookingByCustomer } from '../inbox/inbox-notify';
 
 export interface BedInterval {bedId:string;startsAt:string;endsAt:string}
 const conflict='Giường đã có lịch tại khung giờ này. Vui lòng chọn giường hoặc thời gian khác!';
@@ -49,6 +50,7 @@ export async function cancelUnderLocks(runner:QueryRunner,id:string,options:{own
   if(options.blockArrived&&status==='Đã đến')return 'arrived';
   await runner.query(`UPDATE dbo.LichHen SET TrangThaiLichHen='Đã hủy' WHERE MaLichHen=$1`,[id]);
   await syncBookingNotifications(runner,id,{status,startsAt:null}); // cancels pending jobs in the same transaction
+  if(options.ownerAccountId!==undefined)await notifyBookingByCustomer((sql,params)=>runner.query(sql,params),'cancelled',id); // customer-initiated only; same transaction
   return 'ok';
 }
 

@@ -190,3 +190,12 @@ SePay cross-cutting UC_2/5/10: chưa triển khai API/payment tables; phải duy
 | UC3.4: sidebar chung          | ManagementSidebar từ 1:49090; active theo permission, drawer responsive    | Đã dùng ở lịch quản lý; UC3.4 chưa triển khai, chưa nghiệm thu                                                            |
 | NFR responsive UC1–10         | 9 viewport; tokens @theme; Grid/Flex; native dialog; lịch cuộn nội bộ      | Playwright kiểm tra ba màn hiện có, resize/no page overflow/logo/dialog/Escape/focus; không đại diện các UC chưa xây dựng |
 | UC1 lockout/schema            | KhoaDangNhap; 16 entities; không migration 004                             | lockout.sql.integration.spec.ts, schema.sql.integration.spec.ts; số PASS thực tế trong<br /> TEST_REPORT                  |
+
+
+| 2026-11-14 incident scope | Existing linkage | Verified evidence / remaining limit |
+|---|---|---|
+| UC_2 SePay booking payment | POST payments/sepay/webhook; GET payments/:id/status; ThanhToan, SePayWebhookEvent, LichHen; SepayPaymentDialog |108isolated payment tests PASS;2mocked-browser scenarios PASS; unchanged assets/layout; missing live delivery + read-only DB evidence block incident closure. No Figma layout change. |
+| Read-only reconciliation evidence | scripts/diagnose-sepay-payment.mjs | PGlite CLI integration PASS; no UPDATE, settlement or replay command; runbook documents official replay only after approval. |
+
+
+| Customer Header account interaction —2026-11-14 user override | Figma visual reference3:3222; latest three-action behaviour from user | Shared CustomerHeader/AccountMenu(customer); existing /ho-so, /lich-hen-cua-toi; existing GET/PATCH me, avatar upload, GET me/bookings, POST auth/logout; DB/schema unchanged | UI-only E2E9/9 PASS with API doubles, Profile/avatar/name retention, six customer sizes and three admin roles; Production rollout pending approval |

@@ -91,7 +91,6 @@ export function HomePage() {
             <img src="/assets/lotus-decor.png" alt="Không gian hoa sen thanh tịnh tại Flower Lantern Spa" />
           </div>
           <div className="home-about-body">
-            <span className="home-section-tag">GIỚI THIỆU</span>
             <h2>Flower Lantern Spa</h2>
             <p>
               Flower Lantern Spa là spa chăm sóc sức khỏe và sắc đẹp tại Hội An, nơi kết hợp giữa các liệu pháp trị
@@ -125,8 +124,7 @@ export function HomePage() {
       <section className="home-section home-featured-services">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-section-tag">DỊCH VỤ NỔI BẬT</span>
-            <h2>Các liệu trình chăm sóc tại Flower Lantern Spa</h2>
+            <h2>Khám phá liệu trình chăm sóc</h2>
             <p>
               Đa dạng dịch vụ từ thư giãn, chăm sóc da đến các gói trị liệu chuyên sâu, được thiết kế phù hợp
               với nhu cầu của từng khách hàng.
@@ -161,7 +159,6 @@ export function HomePage() {
       <section className="home-section home-why">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-section-tag">VÌ SAO CHỌN Flower Lantern Spa?</span>
             <h2>Trải nghiệm khác biệt và trọn vẹn</h2>
           </div>
           <div className="home-why-grid">
@@ -180,7 +177,6 @@ export function HomePage() {
       <section className="home-section home-gallery">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-section-tag">KHÔNG GIAN SPA</span>
             <h2>Không gian thư giãn, đậm chất Hội An</h2>
             <p>
               Một không gian yên bình, tinh tế và ấm cúng, nơi bạn có thể tạm rời xa nhịp sống vội vã và tận
@@ -201,7 +197,6 @@ export function HomePage() {
       <section className="home-section home-reviews">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-section-tag">CẢM NHẬN KHÁCH HÀNG</span>
             <h2>Khách hàng nói gì về chúng tôi?</h2>
             <p>Sự hài lòng của bạn là nguồn cảm hứng để Flower Lantern Spa không ngừng hoàn thiện.</p>
           </div>
@@ -231,60 +226,34 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 8. Booking Call-to-Action (Must be GREEN per project approval) */}
-      <section className="home-section home-cta">
-        <div className="home-container home-cta-card">
-          <img src="/assets/lotus-decor.png" alt="" className="home-cta-decor" />
-          <div className="home-cta-text">
-            <h2>Đặt lịch ngay hôm nay</h2>
-            <p>
-              Dành tặng cho bản thân những phút giây thư giãn, phục hồi và chăm sóc toàn diện tại Flower Lantern Spa.
-            </p>
-          </div>
-          <Button type="button" className="home-cta-button" onClick={() => navigate('/dat-lich')}>
-            <img src="/assets/customer-imgGroup2.svg" alt="" />
-            Đặt lịch ngay
-          </Button>
-        </div>
-      </section>
-
       {/* 9. Contact Section */}
       <section id="lien-he" className="home-section home-contact">
         <div className="home-container">
-          <div className="home-section-header">
-            <span className="home-section-tag">LIÊN HỆ &amp; ĐỊA CHỈ</span>
-            <h2>Đến với Flower Lantern Spa</h2>
-            <p>Chúng tôi luôn sẵn sàng chào đón và mang đến cho bạn trải nghiệm chăm sóc tốt nhất!</p>
-          </div>
-          <div className="home-contact-grid">
-            <div className="home-contact-card">
-              <dl className="home-contact-list">
-                <div>
-                  <dt>Địa chỉ</dt>
-                  <dd><a className="contact-map-link" href={spaMapsUrl} target="_blank" rel="noopener noreferrer">102 Bà Triệu, Phường Hội An, Thành Phố Đà Nẵng</a></dd>
-                </div>
-                <div>
-                  <dt>Giờ mở cửa</dt>
-                  <dd>08:00 – 22:00 (Tất cả các ngày)</dd>
-                </div>
-                <div>
-                  <dt>Đặt lịch trực tuyến</dt>
-                  <dd>
-                    <Link to="/dat-lich" className="home-text-link">
-                      Đặt lịch tại hệ thống trực tuyến Flower Lantern Spa →
-                    </Link>
-                  </dd>
-                </div>
-              </dl>
+          <article className="home-contact-card home-contact-visit-card">
+            <div className="home-section-header">
+              <h2>Ghé thăm Flower Lantern Spa</h2>
+              <p>Một điểm dừng chân yên bình giữa lòng Hội An, nơi bạn tận hưởng những phút giây chăm sóc và phục hồi năng lượng.</p>
             </div>
-            <div className="home-contact-map-placeholder">
-              <img src="/assets/hero-hoian-bg.png" alt="Flower Lantern Spa — 102 Bà Triệu, Hội An" />
-              <a className="home-map-pin contact-map-link" href={spaMapsUrl} target="_blank" rel="noopener noreferrer">
-                <strong>Flower Lantern Spa</strong>
-                <span>102 Bà Triệu, Hội An · 08:00 – 22:00</span>
-              </a>
+            <div className="home-contact-visit-layout">
+              <img className="home-contact-visit-image" src="/assets/hero-hoian-bg.png" alt="Không gian Hội An" />
+              <div className="home-contact-visit-details">
+                <dl className="home-contact-list">
+                  <div>
+                    <dt>Địa chỉ</dt>
+                    <dd><a className="contact-map-link" href={spaMapsUrl} target="_blank" rel="noopener noreferrer">102 Bà Triệu, Phường Hội An, TP. Đà Nẵng</a></dd>
+                  </div>
+                  <div>
+                    <dt>Giờ mở cửa</dt>
+                    <dd>08:00 – 22:00</dd>
+                  </div>
+                </dl>
+                <div className="home-contact-actions">
+                  <Button asChild size="sm"><Link to="/dat-lich">Đặt lịch ngay</Link></Button>
+                  <Button asChild size="sm" variant="outline"><a href={spaMapsUrl} target="_blank" rel="noopener noreferrer">Xem đường đi</a></Button>
+                </div>
+              </div>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 

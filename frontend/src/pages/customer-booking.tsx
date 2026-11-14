@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DateField, TimeSlotGrid, slotState } from '../components/slot-picker';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { CustomerHeader } from '../components/customer-header';
@@ -16,17 +17,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type BookingFieldKey = 'fullName' | 'phone' | 'email' | 'service' | 'date' | 'time';
 
 // Tạo danh sách khung giờ mở cửa 08:00 – 21:30 (mỗi 30 phút); kết thúc phải <= 22:00
-function buildTimeSlots(): string[] {
-  const slots: string[] = [];
-  for (let h = 8; h <= 21; h++) {
-    slots.push(`${String(h).padStart(2, '0')}:00`);
-    slots.push(`${String(h).padStart(2, '0')}:30`);
-  }
-  return slots;
-}
-
-const TIME_SLOTS = buildTimeSlots();
-
 function todayIso() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
 }
@@ -43,7 +33,7 @@ export function CustomerBookingPage() {
   const [selectedServiceId, setSelectedServiceId] = useState(presetServiceId);
   const [selectedPackageId, setSelectedPackageId] = useState('');
   const [date, setDate] = useState(todayIso);
-  const [time, setTime] = useState('09:00');
+  const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
   const [guestCount, setGuestCount] = useState(1);
   const [guestNames, setGuestNames] = useState<string[]>(['']);
@@ -155,9 +145,8 @@ export function CustomerBookingPage() {
       return;
     }
 
-    const selectedDateTime = new Date(`${date}T${time}:00`);
-    const isPastDateTime = selectedDateTime.getTime() < Date.now();
-    if (isPastDateTime || exceedsClosingHour) {
+    // Asia/Ho_Chi_Minh wall clock (never the browser's zone): past slots and services ending after 22:00 are refused.
+    if (slotState(date, time, selectedPackage?.durationMinutes ?? 0) !== 'ok' || exceedsClosingHour) {
       setFieldErrors(new Set(['date', 'time']));
       setHeroAlert({
         title: 'Thời gian đặt lịch không hợp lệ.',
@@ -375,25 +364,19 @@ export function CustomerBookingPage() {
 
               <h2><span className="step-circle">3</span> Thời gian &amp; ghi chú</h2>
               <div className="booking-form-grid-2">
-                <label className={`spa-field${fieldErrors.has('date') ? ' spa-field-invalid' : ''}`}>
+                <div className={`spa-field${fieldErrors.has('date') ? ' spa-field-invalid' : ''}`}>
                   <span>Ngày hẹn <em>*</em></span>
-                  <input
-                    type="date"
-                    min={todayIso()}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    aria-invalid={fieldErrors.has('date')}
-                  />
-                </label>
+                  <DateField value={date} onChange={(iso) => { setDate(iso); if (slotState(iso, time, selectedPackage?.durationMinutes ?? 0) !== 'ok') setTime(''); }} invalid={fieldErrors.has('date')} />
+                </div>
 
-                <label className={`spa-field${fieldErrors.has('time') ? ' spa-field-invalid' : ''}`}>
+                <div className={`spa-field${fieldErrors.has('time') ? ' spa-field-invalid' : ''}`}>
                   <span>Giờ hẹn (08:00 – 22:00) <em>*</em></span>
-                  <select value={time} onChange={(e) => setTime(e.target.value)} aria-invalid={fieldErrors.has('time')}>
-                    {TIME_SLOTS.map((slot) => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
-                  </select>
-                </label>
+                  <div className="slot-panel">
+                    <p>Chọn giờ bắt đầu</p>
+                    <TimeSlotGrid date={date} value={time} onChange={setTime} durationMin={selectedPackage?.durationMinutes ?? 0} invalid={fieldErrors.has('time')} />
+                    <small>Dịch vụ phải kết thúc trước 22:00. Khung giờ đã qua hoặc không đủ thời lượng sẽ bị khóa.</small>
+                  </div>
+                </div>
               </div>
 
               <label className="spa-field">

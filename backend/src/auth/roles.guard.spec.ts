@@ -24,4 +24,17 @@ describe('RBAC matrix', () => {
     expect(guard.canActivate(context('Chủ Spa'))).toBe(true);
     expect(() => guard.canActivate(context('Quản trị', ['Q01']))).toThrow(ForbiddenException);
   });
+  describe('customer-only endpoints (Roles: Khách hàng)', () => {
+    beforeEach(() => reflector.getAllAndOverride.mockImplementation((key: string) => key === ROLES_KEY ? ['Khách hàng'] : undefined));
+    it('allows the customer', () => expect(guard.canActivate(context('Khách hàng'))).toBe(true));
+    it.each(['Chủ Spa', 'Quản lý', 'Nhân viên'])('denies %s (role isolation: staff and owner cannot act as a customer)', role => {
+      expect(() => guard.canActivate(context(role))).toThrow(ForbiddenException);
+    });
+  });
+  describe('endpoints shared by customer and staff roles', () => {
+    beforeEach(() => reflector.getAllAndOverride.mockImplementation((key: string) => key === ROLES_KEY ? ['Khách hàng', 'Nhân viên', 'Quản lý'] : undefined));
+    it('keeps the owner allowed (owner bypass still applies to management and shared endpoints)', () => {
+      expect(guard.canActivate(context('Chủ Spa'))).toBe(true);
+    });
+  });
 });

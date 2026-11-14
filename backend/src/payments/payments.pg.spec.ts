@@ -1,5 +1,8 @@
 import 'reflect-metadata';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { execFile } from 'node:child_process';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database.service';
 import { JwtPayload } from '../auth/auth.dto';
 import { PgTestServer, startPgTestServer } from '../testing/pg-test-server';
@@ -71,6 +74,24 @@ describe('PaymentsService on real PostgreSQL (PGlite)', () => {
     expect((await svc.status(customer(), dto.paymentId)).status).toBe('Hết hạn');
   });
 
+  it('the diagnostic CLI reads matching evidence without changing payments or bookings', async () => {
+    const dto = await svc.createIntent(customer(), 'LH00000001');
+    const script = join(__dirname, '..', '..', '..', 'scripts', 'diagnose-sepay-payment.mjs');
+    // PGlite's socket adapter has one session. Release the app pool before the CLI connects.
+    await db.onApplicationShutdown();
+    const { stdout } = await promisify(execFile)(process.execPath, [script, '--booking', 'LH00000001', '--reference', dto.reference, '--amount', '500000'], {
+      env: { ...process.env, SEPAY_DIAGNOSTIC_DATABASE_URL: pg.url }, timeout: 15000,
+    });
+    const report = JSON.parse(stdout);
+    expect(report).toMatchObject({ readOnly: true, settlementPerformed: false, verdict: 'REVIEW_REQUIRED', events: [] });
+    expect(report.payments).toHaveLength(1);
+    expect(report.payments[0]).toMatchObject({ id: dto.paymentId, requestedAmountMatches: true, storedAccountPresent: true });
+    expect(stdout).not.toContain('0123456789');
+    expect(stdout).not.toContain('postgres://');
+    expect((await svc.status(customer(), dto.paymentId)).status).toBe('Chờ thanh toán');
+    expect((await bookingPay()).p).toBe('Chưa thanh toán');
+  });
+
   it('customer cannot see another customer booking; cancelled, paid and unknown bookings are rejected', async () => {
     await expect(svc.createIntent(customer('TK00000002'), 'LH00000001')).rejects.toBeInstanceOf(NotFoundException);
     await expect(svc.createIntent(customer(), 'LH99999999')).rejects.toBeInstanceOf(NotFoundException);
@@ -90,6 +111,16 @@ describe('PaymentsService on real PostgreSQL (PGlite)', () => {
     const t = await rows<{ st: string; prov: string; tx: string }>(`SELECT TrangThaiGiaoDich AS st, NhaCungCap AS prov, MaGiaoDichNhaCungCap AS tx FROM dbo.ThanhToan`);
     expect(t).toEqual([{ st: 'Thành công', prov: 'SEPAY', tx: '92704' }]);
     expect((await svc.status(customer(), dto.paymentId)).status).toBe('Đã thanh toán');
+  });
+
+  it('settling one booking leaves a different customer booking untouched', async () => {
+    const dto = await svc.createIntent(customer(), 'LH00000001');
+    await pg.exec(`INSERT INTO dbo.LichHen(MaLichHen,MaKhachHang,HoTenNguoiDat,SoDienThoaiNguoiDat,NgayHen,GioHen,TrangThaiLichHen,TrangThaiThanhToan)
+      VALUES('LH00000002','KH00000002','Test other','0900000002','2030-01-10','11:00','Chưa đến','Chưa thanh toán');`);
+    await hook(dto.reference);
+    const other = await rows<{ pay: string; status: string }>(`SELECT TrangThaiThanhToan AS pay,TrangThaiLichHen AS status FROM dbo.LichHen WHERE MaLichHen='LH00000002'`);
+    expect(other).toEqual([{ pay: 'Chưa thanh toán', status: 'Chưa đến' }]);
+    expect((await bookingPay()).p).toBe('Đã thanh toán');
   });
 
   it('the same provider transaction id replayed (sequentially and concurrently) is not applied twice', async () => {
@@ -130,6 +161,21 @@ describe('PaymentsService on real PostgreSQL (PGlite)', () => {
     await hook(dto.reference, { id: 5 });
     await hook(dto.reference, { id: 6 });
     expect((await events()).map((e) => e.outcome)).toEqual(['UNKNOWN_REFERENCE', 'UNKNOWN_REFERENCE', 'EXPIRED', 'BOOKING_CANCELLED', 'CONFIRMED', 'DUPLICATE_PAYMENT']);
+  });
+
+  it('unrelated unique-index failure rolls back and returns 503, never a false duplicate acknowledgement', async () => {
+    const dto = await svc.createIntent(customer(), 'LH00000001');
+    await pg.exec(`INSERT INTO dbo.SePayWebhookEvent(NhaCungCap,MaGiaoDichNhaCungCap,KetQuaXuLy,DuLieuTho)
+      VALUES('SEPAY','111','UNKNOWN_REFERENCE','{}');
+      CREATE UNIQUE INDEX test_sepay_single_event ON dbo.SePayWebhookEvent ((true));`);
+    try {
+      await expect(hook(dto.reference)).rejects.toBeInstanceOf(ServiceUnavailableException);
+      expect((await events()).map(e => e.tx)).toEqual(['111']);
+      expect((await svc.status(customer(), dto.paymentId)).status).toBe('Chờ thanh toán');
+      expect((await bookingPay()).p).toBe('Chưa thanh toán');
+    } finally {
+      await pg.exec('DROP INDEX dbo.test_sepay_single_event');
+    }
   });
 
   it('invalid but authenticated payload is audited once as INVALID_PAYLOAD and acknowledged', async () => {

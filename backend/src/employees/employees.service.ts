@@ -1,3 +1,4 @@
+import { notifyAccountStatus, notifyPermissionChanged } from '../inbox/inbox-notify';
 import {
   BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable,
   NotFoundException, ServiceUnavailableException,
@@ -114,6 +115,7 @@ export class EmployeesService {
       if (target.status === DISABLED) throw new ConflictException('Tài khoản đã bị vô hiệu hóa!');
       await run('UPDATE dbo.TaiKhoan SET TrangThai = $2 WHERE MaTaiKhoan = $1', [target.accountId, dto.status]);
       if (dto.status === 'Đã khóa') await this.revokeSessions(run, target.accountId);
+      await notifyAccountStatus(run, { actorAccountId: actor.sub, targetAccountId: target.accountId, targetEmployeeId: id, locked: dto.status === 'Đã khóa' });
       return { message: dto.status === 'Đã khóa' ? 'Khóa tài khoản thành công!' : 'Mở khóa tài khoản thành công!' };
     });
   }
@@ -137,6 +139,7 @@ export class EmployeesService {
       const note = `Vai trò: ${target.role} -> ${dto.role}; Quyền: [${before.join(',')}] -> [${after.join(',')}]`.slice(0, 500);
       await run(`INSERT INTO dbo.LichSuPhanQuyen (MaLichSu, MaTaiKhoanThucHien, MaTaiKhoanDuocPhanQuyen, ThoiDiem, NoiDungThayDoi)
         VALUES ($1, $2, $3, dbo.vn_now(), $4)`, [historyId, actor.sub, target.accountId, note]);
+      await notifyPermissionChanged(run, { actorAccountId: actor.sub, targetAccountId: target.accountId, targetEmployeeId: id, historyId, summary: `Vai trò: ${target.role} → ${dto.role}; quyền: [${before.join(', ')}] → [${after.join(', ')}].` });
       return { message: 'Cập nhật phân quyền thành công!' };
     });
   }
@@ -177,10 +180,18 @@ export class EmployeesService {
     await run(`SELECT pg_advisory_xact_lock(hashtext('phone:' || $1))`, [v.phone]);
     const phone = await run(`SELECT 1 AS x FROM dbo.TaiKhoan WHERE SoDienThoai = $1::text AND MaTaiKhoan <> $2::text
       UNION ALL SELECT 1 FROM dbo.NhanVien WHERE SoDienThoai = $1::text AND MaNhanVien <> $3::text`, [v.phone, accountId, employeeId]);
-    if (phone.length) throw new ConflictException({ message: 'Số điện thoại đã tồn tại!', field: 'phone' });
+    if (phone.length) throw new ConflictException({ message: 'Số điện thoại đã tồn tại!', field: 'phone', conflictWith: await this.ownerOf(run, 'SoDienThoai', v.phone, employeeId) });
     await run(`SELECT pg_advisory_xact_lock(hashtext('email:' || lower($1)))`, [v.email]);
     const email = await run('SELECT 1 AS x FROM dbo.NhanVien WHERE lower(Email) = lower($1) AND MaNhanVien <> $2::text', [v.email, employeeId]);
-    if (email.length) throw new ConflictException({ message: 'Email đã tồn tại!', field: 'email' });
+    if (email.length) throw new ConflictException({ message: 'Email đã tồn tại!', field: 'email', conflictWith: await this.ownerOf(run, 'Email', v.email, employeeId) });
+  }
+
+  /** Employee code that already uses a phone/email (shown as "đã được sử dụng bởi nhân viên NV…"). Best effort: never blocks the 409. */
+  private async ownerOf(run: Run, column: 'SoDienThoai' | 'Email', value: string, selfId: string): Promise<string | undefined> {
+    try {
+      const rows = await run(`SELECT rtrim(MaNhanVien) AS id FROM dbo.NhanVien WHERE lower(${column}::text) = lower($1::text) AND MaNhanVien <> $2::text LIMIT 1`, [value, selfId]);
+      return rows[0]?.id ? String(rows[0].id).trim() : undefined;
+    } catch { return undefined; }
   }
 
   /** MAX+1 key generation, serialised by a transaction-scoped advisory lock on `dbo.<table>:id`. */

@@ -277,18 +277,6 @@
       "type": "file"
     },
     {
-      "path": "database/migrations/005-goi-dich-vu-status.PROPOSED.sql",
-      "accessCount": 2.6510685980115034,
-      "lastAccessed": 1794482142066,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/006-phan-hoi-ngay-phan-hoi.PROPOSED.sql",
-      "accessCount": 1.8264672320391715,
-      "lastAccessed": 1794482146855,
-      "type": "file"
-    },
-    {
       "path": "backend/src/config.ts",
       "accessCount": 4.645954919382917,
       "lastAccessed": 1794494449516,
@@ -304,36 +292,6 @@
       "path": "backend/src/customers/customer-write.spec.ts",
       "accessCount": 4.8658169102912705,
       "lastAccessed": 1794496760677,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/001-srs-baseline.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794482115427,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/002-business-indexes.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794482126222,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/003-auth-lockout.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794482131037,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/004-auth-sessions.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794482135800,
-      "type": "file"
-    },
-    {
-      "path": "database/migrations/007-sepay-payments.PROPOSED.sql",
-      "accessCount": 1,
-      "lastAccessed": 1794482151177,
       "type": "file"
     },
     {
@@ -434,8 +392,8 @@
     },
     {
       "path": "",
-      "accessCount": 1,
-      "lastAccessed": 1794494452359,
+      "accessCount": 1.3171289076396768,
+      "lastAccessed": 1794637604951,
       "type": "directory"
     },
     {
@@ -562,6 +520,48 @@
       "path": "docs-deploy/ZALO_N8N_PROVIDER_SETUP.md",
       "accessCount": 1,
       "lastAccessed": 1794505411917,
+      "type": "file"
+    },
+    {
+      "path": "scripts/e2e-local-auth-browser.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794626676921,
+      "type": "file"
+    },
+    {
+      "path": "scripts/e2e-local-calendar-past-browser.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1794627059064,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/profile/profile.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794627425749,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/profile/profile.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794627427572,
+      "type": "file"
+    },
+    {
+      "path": "backend/src/profile/profile.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1794627429322,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/admin-overview.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1794630097699,
+      "type": "file"
+    },
+    {
+      "path": "database/postgres/006-profile-avatar-email.rollback.sql",
+      "accessCount": 1,
+      "lastAccessed": 1794632301377,
       "type": "file"
     }
   ],

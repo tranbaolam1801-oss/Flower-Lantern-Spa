@@ -1,5 +1,5 @@
 import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { CustomerHeader } from '../components/customer-header';
@@ -113,6 +113,11 @@ export function ServicesCatalogPage() {
   const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState(initialCat);
   const [searchError, setSearchError] = useState('');
+  const searchInput = useRef<HTMLInputElement>(null);
+  // The header magnifier opens /dich-vu?focus=search: land with the search box ready to type in.
+  useEffect(() => {
+    if (searchParams.get('focus') === 'search') searchInput.current?.focus();
+  }, [searchParams]);
   const [showVisualFixture, setShowVisualFixture] = useState(previewParam);
 
   useEffect(() => {
@@ -177,6 +182,7 @@ export function ServicesCatalogPage() {
           >
             <img src="/assets/uc7-search.svg" alt="" />
             <input
+              ref={searchInput}
               type="search"
               aria-label="Nhập tên dịch vụ cần tìm"
               placeholder="Nhập tên dịch vụ cần tìm..."

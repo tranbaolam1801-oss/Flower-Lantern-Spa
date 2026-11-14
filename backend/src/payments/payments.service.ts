@@ -1,5 +1,5 @@
 import { createHash, randomInt } from 'node:crypto';
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { DatabaseService } from '../database.service';
 import { isUniqueViolation } from '../common/db-errors';
@@ -43,6 +43,7 @@ export class PaymentsService {
   sepay = new SepayProvider();
   mock = new MockPaymentProvider();
   private migrated = false;
+  private readonly logger = new Logger(PaymentsService.name);
 
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
@@ -86,19 +87,29 @@ export class PaymentsService {
   }
 
   async handleSepayWebhook(req: WebhookRequest, body: unknown) {
-    this.sepay.verifyWebhook(req);
-    await this.ensureSchema();
-    const raw = typeof req.rawBody === 'string' ? req.rawBody : req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body) ?? '';
-    let event: NormalizedPaymentEvent;
+    let authenticated = false;
     try {
-      event = this.sepay.parseWebhook(body);
-    } catch (error) {
-      if (!(error instanceof BadRequestException)) throw error;
-      await this.auditInvalid(body, raw);
+      this.sepay.verifyWebhook(req);
+      authenticated = true;
+      await this.ensureSchema();
+      const raw = typeof req.rawBody === 'string' ? req.rawBody : req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(body) ?? '';
+      let event: NormalizedPaymentEvent;
+      try {
+        event = this.sepay.parseWebhook(body);
+      } catch (error) {
+        if (!(error instanceof BadRequestException)) throw error;
+        await this.auditInvalid(body, raw);
+        this.logger.warn('SEPAY_WEBHOOK_OUTCOME INVALID_PAYLOAD');
+        return { success: true };
+      }
+      const outcome = await this.processEvent(event, raw);
+      // Vercel attaches request metadata. Never log body, account, amount, reference or auth headers.
+      this.logger.log(`SEPAY_WEBHOOK_OUTCOME ${outcome}`);
       return { success: true };
+    } catch (error) {
+      this.logger.warn(authenticated ? 'SEPAY_WEBHOOK_PROCESSING_FAILED' : 'SEPAY_WEBHOOK_AUTH_REJECTED');
+      throw error;
     }
-    await this.processEvent(event, raw);
-    return { success: true };
   }
 
   /** Authenticated but structurally invalid payload: keep evidence (idempotent per payload) and acknowledge so SePay does not retry forever. */
@@ -115,6 +126,9 @@ export class PaymentsService {
       });
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
+      if (!(await this.database.query<unknown[]>(EVENT_SEEN_SQL, ['SEPAY', key])).length) {
+        throw new ServiceUnavailableException('Không thể ghi nhận webhook. Vui lòng thử lại sau!');
+      }
     }
   }
 
@@ -196,7 +210,11 @@ export class PaymentsService {
         return outcome;
       });
     } catch (error) {
-      if (isUniqueViolation(error)) return 'DUPLICATE_EVENT';
+      if (isUniqueViolation(error)) {
+        // A different constraint may have failed. Acknowledge only a durably recorded event after rollback.
+        if ((await this.database.query<unknown[]>(EVENT_SEEN_SQL, [event.provider, event.providerTxId])).length) return 'DUPLICATE_EVENT';
+        throw new ServiceUnavailableException('Không thể ghi nhận webhook. Vui lòng thử lại sau!');
+      }
       throw error;
     }
   }

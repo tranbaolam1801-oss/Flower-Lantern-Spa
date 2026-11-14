@@ -67,7 +67,7 @@ export function CustomerHeader() {
           className="header-icon-btn"
           aria-label="Tìm kiếm dịch vụ"
           title="Tìm kiếm dịch vụ"
-          onClick={() => navigate('/dich-vu')}
+          onClick={() => navigate('/dich-vu?focus=search')}
         >
           <img src="/assets/customer-imgGroup.svg" alt="" />
         </button>
@@ -84,7 +84,7 @@ export function CustomerHeader() {
         >
           Menu
         </button>
-        {user ? (
+        {user?.role === 'Khách hàng' ? (
           <AccountMenu customer />
         ) : (
           <button
@@ -116,21 +116,12 @@ export function CustomerHeader() {
           <BrandLogo />
         </Link>
         <nav aria-label="Menu khách hàng">
-          {user && (
-            <Link
-              to="/lich-hen-cua-toi"
-              aria-current={location.pathname === '/lich-hen-cua-toi' ? 'page' : undefined}
-              onClick={() => drawer.current?.close()}
-            >
-              Lịch hẹn của tôi
-            </Link>
-          )}
           {links.map((item) => (
             <button key={item.label} type="button" onClick={() => handleNavClick(item.to)}>
               {item.label}
             </button>
           ))}
-          {!user && (
+          {user?.role !== 'Khách hàng' && (
             <Link to="/dang-nhap" onClick={() => drawer.current?.close()}>
               Đăng nhập
             </Link>

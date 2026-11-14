@@ -261,3 +261,11 @@ Do not stop after writing a plan. Implement the actual homepage and verify it.
 After finishing the homepage, continue the earliest incomplete original fullstack milestone.
 
 **FINAL REQUIREMENT: Visually resemble the supplied homepage reference while preserving the ORIGINAL FLOWER LANTERN SPA green booking buttons, approved English logo, Figma design system, and real booking functionality.**
+
+
+## 2026-11-14 — SePay missing-webhook incident
+Local patch verified (108payment tests,2browser scenarios, builds/lint PASS). Actual transfer LH33987572/FLSZAD2VKYC9C is NOT reconciled: no incoming webhook in inspected Production log window; Neon and SePay delivery evidence unavailable. See docs-deploy/SEPAY_WEBHOOK_INCIDENT_2026-11-14.md. No Production changes; remaining milestone acceptance is not promoted to complete.
+
+
+## Customer Header — 2026-11-14
+Local CUSTOMER dropdown3items verified;6responsive customer cases +3admin role cases PASS, frontend build PASS. Production bundle remains old; no deployment authorized or performed. Actual sources AccountMenu(customer) + CustomerHeader shared by public/customer routes. See latest TEST_REPORT/HANDOVER. Other milestones and SePay incident status unchanged.

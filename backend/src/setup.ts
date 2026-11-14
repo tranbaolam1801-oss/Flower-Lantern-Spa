@@ -29,6 +29,7 @@ export function setup(app: INestApplication) {
       'POST /api/payments/sepay/intent': rateLimitMiddleware(make(limits.intent), sessionKey),
       'POST /api/auth/login': rateLimitMiddleware(make(limits.login)),
       'POST /api/admin/services/image': rateLimitMiddleware(make(limits.upload), sessionKey),
+      'POST /api/me/avatar': rateLimitMiddleware(make(limits.upload), sessionKey),
       // Per-instance only (serverless); the OTP service enforces the real per-phone/per-IP limits in the database.
       'POST /api/auth/otp/request': rateLimitMiddleware(make(limits.otp)),
       'POST /api/auth/otp/verify': rateLimitMiddleware(make(limits.otp * 2)),
@@ -53,7 +54,7 @@ export function setup(app: INestApplication) {
   });
   // Raw image body for exactly one route; other routes keep the normal JSON parser.
   const rawImage = express.raw({ type: [...IMAGE_MIME_TYPES], limit: MAX_IMAGE_BYTES });
-  app.use((req: Request, res: Response, next: NextFunction) => (routeOf(req) === 'POST /api/admin/services/image' ? rawImage(req, res, next) : next()));
+  app.use((req: Request, res: Response, next: NextFunction) => (['POST /api/admin/services/image', 'POST /api/me/avatar'].includes(routeOf(req)) ? rawImage(req, res, next) : next()));
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
   app.enableCors({origin:process.env.FRONTEND_ORIGIN ?? 'http://127.0.0.1:5173',credentials:true});
 }

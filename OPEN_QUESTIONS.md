@@ -100,3 +100,10 @@ Nguồn: báo cáo agent `be-sepay`, `database/PAYMENT_SEPAY_PROPOSAL.md`. Mã h
 
 ## 2026-11-13 — Direct guest homepage loading (observed, outside badge scope)
 Local browser with auth/me401: direct homepage rendered0 service cards for30s, while catalog→homepage SPA navigation correctly rendered4. Suspected interaction with AuthProvider initial null-session non-auth query removal; requires separate investigation. No Auth changes made during category-label task.
+
+
+## SePay incident 2026-11-14 — still open
+1. No webhook request appears in Production CDN logs13:45–14:00UTC+7. Is SePay webhook On, correct POST URL/account/incoming/prefix filter, and does skip-without-code prevent FLS alphanumeric suffixes? Delivery HTTP status/response unavailable.
+2. Neon row for LH33987572/FLSZAD2VKYC9C is not verified because local connection is unusable. Need a locally configured read-only connection; never send URL/keys in chat.
+3. Production environment metadata is redacted: key presence is known, effective auth mode/key length/bank/account are not. Do not infer empty configuration from redacted values.
+4. If bank receipt predates expiry but replay arrives later, existing rules hold EXPIRED; any exception/reconciliation requires explicit verified-evidence approval. Existing held events remain idempotent. Bank is not snapshotted on this schema; verify gateway against original QR/SePay evidence rather than inventing mappings or adding schema.

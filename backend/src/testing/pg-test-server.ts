@@ -14,11 +14,17 @@ import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 
 export const SCHEMA_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '001-schema.sql');
+export const INBOX_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '005-in-app-notifications.sql');
+export const PROFILE_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '006-profile-avatar-email.sql');
 export const NOTIFICATIONS_SQL_PATH = join(__dirname, '..', '..', '..', 'database', 'postgres', '004-otp-notifications.sql');
 
 export interface PgTestServerOptions {
   /** Also applies migration 004 (OTP, phone verification, consent, notification jobs). Default false so the 19-table baseline tests are unchanged. */
   notifications?: boolean;
+  /** Also applies migration 005 (in-app notifications for management users). */
+  inbox?: boolean;
+  /** Also applies migration 006 (TaiKhoan.AnhDaiDien, KhachHang.Email). */
+  profile?: boolean;
 }
 
 export interface PgTestServer {
@@ -54,6 +60,8 @@ export async function startPgTestServer(options: PgTestServerOptions = {}): Prom
   const db = await PGlite.create();
   await db.exec(readFileSync(SCHEMA_SQL_PATH, 'utf8'));
   if (options.notifications) await db.exec(readFileSync(NOTIFICATIONS_SQL_PATH, 'utf8'));
+  if (options.inbox) await db.exec(readFileSync(INBOX_SQL_PATH, 'utf8'));
+  if (options.profile) await db.exec(readFileSync(PROFILE_SQL_PATH, 'utf8'));
   const port = await freePort();
   const server = new PGLiteSocketServer({ db, port, host: '127.0.0.1' });
   await server.start();
@@ -66,7 +74,7 @@ export async function startPgTestServer(options: PgTestServerOptions = {}): Prom
     db,
     exec: async (sql: string) => { await db.exec(sql); },
     reset: async () => {
-      const extra = options.notifications ? NOTIFICATION_TABLES : [];
+      const extra = [...(options.inbox ? ['ThongBaoNoiBo'] : []), ...(options.notifications ? NOTIFICATION_TABLES : [])];
       await db.exec([...extra, ...BUSINESS_TABLES].map((t) => `DELETE FROM dbo.${t};`).join('\n'));
     },
     stop: async () => {

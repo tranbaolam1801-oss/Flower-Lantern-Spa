@@ -194,4 +194,4 @@ export const createSepayIntent = (bookingId: string) =>
   });
 
 export const getPaymentStatus = (paymentId: string) =>
-  apiFetch<SepayPaymentIntent>(`payments/${encodeURIComponent(paymentId)}/status`);
+  apiFetch<SepayPaymentIntent>(`payments/${encodeURIComponent(paymentId)}/status`, { cache: 'no-store' });

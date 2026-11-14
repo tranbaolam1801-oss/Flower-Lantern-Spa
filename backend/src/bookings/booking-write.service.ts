@@ -6,6 +6,7 @@ import { returnedRows } from '../common/pg-result';
 import { BedInterval, BookingTransactionService, cancelUnderLocks } from './booking-transaction.service';
 import { ACTIVE_BEDS, ACTIVE_BED, CUSTOMER_EDITABLE_STATUSES, LOCKED_STATUSES, MESSAGES, addMinutes, canTransition, checkSlot, vietnamNow } from './booking-rules';
 import { captureBookingBefore, syncBookingNotifications } from '../notifications/booking-notification-enqueue';
+import { notifyBookingByCustomer } from '../inbox/inbox-notify';
 import { CreateAdminBookingDto, CreateCustomerBookingDto, SearchBookingsQuery, UpdateAdminBookingDto } from './booking-write.dto';
 
 interface Planned extends BedInterval { packageId: string; customerName: string; customerPhone?: string }
@@ -151,10 +152,14 @@ export class BookingWriteService {
     });
     const id = await this.reserveAuto(guests, false, undefined, (beds) => {
       const planned: Planned[] = guests.map((x, i) => ({ bedId: beds[i], startsAt: x.startsAt, endsAt: x.endsAt, packageId: x.g.packageId, customerName: x.g.customerName.trim(), customerPhone: x.g.customerPhone }));
-      return [planned, (runner) => this.insertBooking(runner, planned, {
-        customerId, name: dto.fullName.trim(), phone: dto.phone, email: dto.email ?? null, notes: dto.notes ?? null,
-        date: dto.date, status: 'Chờ xác nhận', pay: 'Chưa thanh toán',
-      })];
+      return [planned, async (runner) => {
+        const bookingId = await this.insertBooking(runner, planned, {
+          customerId, name: dto.fullName.trim(), phone: dto.phone, email: dto.email ?? null, notes: dto.notes ?? null,
+          date: dto.date, status: 'Chờ xác nhận', pay: 'Chưa thanh toán',
+        });
+        await notifyBookingByCustomer((sql, params) => runner.query(sql, params), 'created', bookingId); // same transaction, isolated by a savepoint
+        return bookingId;
+      }];
     });
     return { id, status: 'Chờ xác nhận', message: 'Đặt lịch hẹn thành công! Lịch hẹn đang chờ xác nhận.' };
   }
@@ -165,7 +170,7 @@ export class BookingWriteService {
     if (!CUSTOMER_EDITABLE_STATUSES.includes(booking.status)) throw new ConflictException('Lịch hẹn này không thể đổi!');
     const details = await this.details(id);
     if (!details.length) throw new BadRequestException(MESSAGES.guest);
-    await this.shift(id, booking.status, details, `${date}T${time}:00`, false, { status: booking.status, pay: booking.pay });
+    await this.shift(id, booking.status, details, `${date}T${time}:00`, false, { status: booking.status, pay: booking.pay }, true);
     return { id, message: 'Đổi lịch hẹn thành công!' };
   }
 
@@ -179,7 +184,7 @@ export class BookingWriteService {
     return { message: 'Hủy lịch hẹn thành công!' };
   }
 
-  private async shift(id: string, current: string, details: ExistingDetail[], newFirst: string, strict: boolean, patch: Patch) {
+  private async shift(id: string, current: string, details: ExistingDetail[], newFirst: string, strict: boolean, patch: Patch, byCustomer = false) {
     const first = details.map((d) => d.startsAt).sort()[0];
     const delta = (Date.parse(newFirst + 'Z') - Date.parse(first + 'Z')) / 60000;
     const guests = details.map((d) => {
@@ -196,6 +201,7 @@ export class BookingWriteService {
         }
         await this.updateBooking(runner, id, patch, newFirst.slice(0, 10), newFirst);
         await syncBookingNotifications(runner, id, before);
+        if (byCustomer) await notifyBookingByCustomer((sql, params) => runner.query(sql, params), 'rescheduled', id);
       }];
     });
   }

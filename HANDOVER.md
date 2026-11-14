@@ -2,6 +2,25 @@
 
 Cập nhật 2026-11-12 (phiên executor tiếp theo sau (i), Figma MCP trực tiếp). Root C:\Spa. Hướng dẫn AGENTS.md → HANDOVER.md → Prompt.md và nguồn liên quan.
 
+## Phiên 2026-11-14 — Thông tin cá nhân 4 vai trò (CHƯA commit/push/deploy; migration 006 CHƯA áp dụng Neon)
+- Avatar Header = link tới hồ sơ (Chủ Spa/Quản lý/Nhân viên: `/admin/ho-so`; Khách hàng: `/ho-so`), không còn dropdown; nút "Đăng xuất" cạnh avatar (khách giữ thêm "Lịch hẹn của tôi").
+- API mới `backend/src/profile/`: GET/PATCH `/api/me`, POST `/api/me/avatar` (raw body, route scoped trong setup.ts), GET `/api/uploads/avatars/:file`. Whitelist: fullName, email, gender, birthDate, address. Không đổi phone/role/quyền/trạng thái.
+- Avatar lưu object storage riêng folder `avatars/` (Vercel Blob private / đĩa cục bộ); DB chỉ lưu tên file.
+- Migration ĐỀ XUẤT `database/postgres/006-profile-avatar-email.sql` (TaiKhoan.AnhDaiDien, KhachHang.Email) — chờ phê duyệt. Trước khi áp dụng: API vẫn chạy, avatar + email khách báo "chưa hỗ trợ" (editable=false).
+- Cũng đã viết (chưa nối) `database/postgres/005-in-app-notifications.sql` (PROPOSED) + `pg-test-server` options `inbox`/`profile`; module `inbox` thông báo CHƯA code — việc kế tiếp của task thông báo.
+- Test: xem TEST_REPORT.md mục 2026-11-14.
+
+## Phiên 2026-11-14 (avatar) — MIGRATION 006 ĐÃ ÁP DỤNG LÊN NEON (được người dùng phê duyệt tường minh)
+- Đã chạy `scripts/pg-apply.mjs database/postgres/006-profile-avatar-email.sql --apply` trên Neon (project noisy-dust-74962059, branch main, DB neondb, endpoint trực tiếp). Trước: 0 cột; sau: có `TaiKhoan.AnhDaiDien` + `KhachHang.Email`; số dòng TaiKhoan=4, KhachHang=3 không đổi. Rollback: `006-profile-avatar-email.rollback.sql` (XÓA dữ liệu 2 cột — chỉ dùng khi cần; file ảnh trong Blob không bị xóa).
+- Code avatar/hồ sơ (backend/src/profile, frontend profile) CHƯA deploy: production Vercel vẫn chạy bản cũ cho tới khi được phê duyệt deploy. Biến cần trên Vercel: BLOB_READ_WRITE_TOKEN (đã có), DATABASE_URL, JWT_SECRET, FRONTEND_ORIGIN.
+- 005-in-app-notifications.sql vẫn CHƯA áp dụng.
+
+## Phiên 2026-11-14 (thông báo + đồng bộ họ tên) — migration 005 CHƯA áp dụng Neon
+- Header quản trị hiển thị HỌ TÊN (profile query -> auth user), không còn nhãn vai trò; tooltip + ellipsis cho tên dài. Nguyên nhân cũ: `account-menu.tsx` in `user.role`.
+- Thông báo nội bộ: `backend/src/inbox/` (inbox-notify.ts phát sự kiện trong CÙNG transaction + SAVEPOINT; inbox.service/controller), API `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/:id/read`, `PATCH /api/notifications/read-all` (Roles Nhân viên/Quản lý, owner bypass; khách 403). Frontend `components/notification-bell.tsx` + `lib/notifications-api.ts` (polling 30s, dừng khi tab ẩn).
+- Trước khi áp dụng 005, mọi thứ chạy bình thường, thông báo bị bỏ qua êm (list trả `available:false`). Rollback: `005-in-app-notifications.rollback.sql` (chỉ DROP ThongBaoNoiBo).
+- ÁP DỤNG 005 LÊN NEON: chờ phê duyệt: `MIGRATION_DATABASE_URL=<direct> ALLOW_DB_WRITE=yes node scripts/pg-apply.mjs database/postgres/005-in-app-notifications.sql --apply`.
+
 ## Phase 2 — Backend (2026-11-12, phiên tích hợp) — TRẠNG THÁI: MÃ ĐÃ VIẾT + UNIT TEST (mock) PASS; CHƯA CHẠY TRÊN SQL SERVER
 
 **Đã triển khai (chưa module nào được chạy với database thật; không có SQL ghi/migration/seed nào được thực thi):**
@@ -391,3 +410,36 @@ npm.cmd run build -w frontend PASS (includes TypeScript noEmit, existing third-p
 Names intentionally retained: uppercase wordmark inside approved logo assets; historical/source documentation, asset names and technical identifiers; common noun “hoa đăng” in gallery alt text describes lanterns and is not a brand alias. Earlier direct guest homepage loading issue remains outside this text-only task and is not marked fixed. Browser checks used fixtures, not authenticated Production or physical phone tests.
 
 Next: review the28 local copy replacements. No deployment or additional feature work authorized by this request.
+
+
+## SePay incident investigation — 2026-11-14 (local patch, Production not settled)
+
+User reports LH33987572 / FLSZAD2VKYC9C /480000VND at13:53 UTC+7 (06:53UTC). Read-only Vercel evidence for06:45–07:00UTC:579CDN requests, no webhook delivery to /api/payments/sepay/webhook; intent201 at06:52:48.645, payment TT12804217 polled23times (one200,22×304) on dpl_7QnpapSGZ1BnNojyiZxsWKwMtaHM. HTTP metadata does not prove the payment's exact booking/reference or current DB state. Production OpenAPI200 confirms POST webhook route; earlier startup route mapping is not delivery. Current deployment dpl_73csXKwG6C3S8Z6Rm9oUV8kLmah6 was created after transfer. SePay dashboard delivery/configuration and Neon payment/event rows remain UNVERIFIED. No live transfer/replay/Production write/deploy/config/secret change performed.
+
+Local verified patch: PaymentsService now acknowledges23505 as duplicate only if the provider event is actually recorded after rollback; otherwise503. Invalid-payload audit uses same guard. Fixed non-sensitive auth/processing/outcome log labels. Payment status private/no-store server header + frontend no-store fetch. QR hidden only on server-confirmed paid; static TestMode label removed, simulated flag alone shows mock notice. Expiry copy tells already-transferred users not to transfer again; expiry/held-event policy unchanged. No bank/gateway matching policy invented; original account validation preserved. Local issue is not claimed to be the cause of this particular missing delivery.
+
+Commands/results:
+- Baseline default-sandbox tests:86unit PASS/16PGlite connection failures; isolated localhost rerun16/16 PASS. No Neon connection used by tests.
+- New regression reproduced old false success acknowledgement (FAIL before fix). Final npm.cmd run test -w backend -- --runTestsByPath src/payments/payments.spec.ts src/payments/payments.pg.spec.ts --silent:108/108 PASS (89unit +19real PostgreSQL-engine PGlite). Covers APIKey/HMAC, reference/content, reported reference/amount in synthetic fixture, exact/under/over/wrong-account/outgoing, duplicates, late/expired, invalid payload, SQL rollback/unique failures, different booking unaffected, persistence/authorization/refunds. PGlite single-session adapter does not prove multi-connection concurrency.
+- New diagnose-sepay-payment.mjs CLI read-only integration PASS: BEGIN READ ONLY, parameterized SELECT, no settlement, accounts/URL omitted; local PGlite pool released before child CLI connection. Initial CLI test failed due to one-session adapter; corrected test setup, not app DB configuration. CLI --help and node --check PASS.
+- Chromium test-results/sepay-dialog-check.cjs PASS for SEPAY and MOCK using actual component in ignored harness: pending->503->paid, no client-only confirmation, QR removed, callback once, polling stops, request cache no-store, browser reload fetches paid. API doubles only; no real bank settlement or authenticated Production browser test claimed.
+- Backend build, frontend build (includes tsc), targeted ESLint across modified TS files and git diff --check PASS. Existing Zod dependency annotation/CRLF warnings only.
+
+Access controls: bulk Production env pull rejected by auto-review (secrets risk); raw log printing rejected (private payload risk). Neither executed, no bypass; later reads only allowlisted metadata. Env names/types/targets verified but sensitive values remain redacted, NOT evidence values are empty. Computer Use ended because Chrome URL could not be determined safely; UI interaction stopped. Local DB config unusable; no Production DB data assertion made. User cannot locate SePay delivery/Neon configuration yet; report includes exact UI steps to obtain HTTP status/response.
+
+Added read-only CLI scripts/diagnose-sepay-payment.mjs and runbook docs-deploy/SEPAY_WEBHOOK_INCIDENT_2026-11-14.md. Preserve all unrelated Claude/UI/auth/notification changes. NEXT: obtain SePay delivery evidence + approved local read-only Neon connection, run CLI; verify incoming transaction ID, bank/gateway/receiver/ref/amount/time/expiry and payment/event linkage. Only after verified evidence and separate user approval may Production settings/deployment/official replay/reconciliation occur. Existing held/expired event replays do not silently reprocess or bypass expiry. Do not ask for another transfer or execute manual SQL UPDATE.
+
+
+## Customer header account dropdown — 2026-11-14 (local only)
+
+Latest user instruction overrides prior customer avatar-direct-profile behaviour. Actual shared CustomerHeader -> AccountMenu(customer) previously rendered avatar Link /ho-so plus separate appointments/logout actions; mobile drawer duplicated appointments. No duplicate Header implementation was found among public/profile/booking/catalog consumers. Fixed the CUSTOMER branch into an avatar menu with exactly: Thông tin cá nhân / Lịch hẹn của tôi / Đăng xuất. Removed only the duplicated mobile-drawer appointments link. Reuses current profile query/avatar fallback and existing /ho-so, /lich-hen-cua-toi, logout flow; no new page/API/auth/RBAC or backend/data changes.
+
+Source files: frontend/src/components/account-menu.tsx, frontend/src/components/customer-header.tsx, frontend/src/styles.css. New tests: tests/customer-account-menu.spec.ts and tests/customer-header.config.ts. Added CSS scoped only to account-menu-customer; existing CSS prefix, ADMIN JSX branch and leave/logout function verified unchanged byte-for-byte against pre-task snapshots. Keyboard: Enter/Space, ArrowUp/Down, Home/End, Tab-out, Escape/focus return; second-click/outside/route-key changes close. aria-expanded/haspopup/controls/menu/menuitem IDs are wired; single customer account region, panel below icon and within viewport. Scope is this Header only, not the broad fluid-scaling attachment or other screens.
+
+Figma MCP live access verified using file vASTCkZ0az3MX98u1fvhTJ, design context + screenshot3:3222; reference saved under ignored test-results/customer-header-figma.png. Existing assets/brand/header structure retained; latest user specifies the three-item behaviour, not a new Figma layout. No pixel-perfect claim for a new menu frame.
+
+Executed: npm.cmd run build -w frontend PASS (includes TypeScript); targeted ESLint PASS; git diff --check PASS. E2E command: $env:E2E_BROWSER_CHANNEL='chrome'; npx.cmd playwright test --config tests/customer-header.config.ts ->9/9 PASS. Six CUSTOMER viewports1920x1080/1366x768/1024x768/768x1024/390x844/375x812: no direct account action links, three-item menu, bounds/occlusion, click-toggle/outside/Escape, keyboard arrows/Home/Tab, existing Profile route and current fixture identity, appointments, route-dismissal, refresh and one-call logout. Profile name/avatar update flows exercised with mocked PATCH/upload at1366. Three admin roles separately retain direct avatar Profile and logout-only role dropdown. All APIs intercepted, isolated temporary Chrome profile; no real login/customer data or Production writes. Dedicated config starts/reuses Vite only, never starts Backend. Initial bundled-browser launch failed; existing Chrome used without installing/changing security. Initial mobile test clicked content covered by the open menu; corrected outside target. Admin regression fixture moved to existing Profile to avoid unrelated dashboard API fixture requirements; no app changes made for these test setup issues.
+
+Screenshots: test-results/customer-menu-1366.png and customer-menu-375.png (local synthetic customer). Build entry /assets/index-TQ3IJEAm.js contains account-menu-customer, no account-text-link. Read-only Production check: deployment dpl_73csXKwG6C3S8Z6Rm9oUV8kLmah6 READY; Git metadata feat/postgres-vercel /3a8db9e91eba4ac70ee7cc3b39cb2a01ce4708f2; public entry /assets/index-CkK6LXNX.js still has old separate-link branch and lacks account-menu-customer. Local HEAD reports same SHA, but uncommitted fixes are not in the Production bundle. Git metadata alone does not prove a clean CLI source snapshot.
+
+NEXT: local Header change is reviewable, NOT deployed. After explicit approval only, isolate this Header patch against verified Production source; do not deploy the mixed working tree/dist including unrelated SePay/Claude work. Verify the new bundle + customer login/menu on Production after an approved deployment. No commit/push/deploy performed. Existing SePay incident remains open independently.

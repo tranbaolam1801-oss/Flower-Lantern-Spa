@@ -7,6 +7,8 @@ export interface HttpApiError {
   status: number;
   message: string;
   code?: string;
+  /** Employee code that already owns a duplicated phone/email (409). */
+  conflictWith?: string;
   fields?: Record<string, string>;
 }
 
@@ -26,22 +28,32 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/${path.replace(/^\/+/, '')}`, {
-    ...init,
-    headers,
-    credentials: 'include',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/${path.replace(/^\/+/, '')}`, {
+      ...init,
+      headers,
+      credentials: 'include',
+    });
+  } catch (cause) {
+    // fetch() rejects with the browser's raw text ("Failed to fetch") when offline / unreachable: never let that reach the UI.
+    // No HTTP status => callers treat it as a network failure (friendly message, retry allowed). Aborts keep their own type.
+    if ((cause as { name?: string } | null)?.name === 'AbortError') throw cause;
+    const networkError: Partial<HttpApiError> = { code: 'NETWORK_ERROR', message: 'Không thể kết nối hệ thống. Vui lòng thử lại sau!' };
+    throw networkError;
+  }
 
   if (response.status === 401) {
     window.dispatchEvent(new Event('spa-session-expired'));
   }
 
-  const body = await response.json().catch(() => null) as { message?: string | string[]; code?: string; fields?: Record<string, string>; field?: string } | null;
+  const body = await response.json().catch(() => null) as { message?: string | string[]; code?: string; fields?: Record<string, string>; field?: string; conflictWith?: string } | null;
   if (!response.ok) {
     const rawMsg = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
     const err: HttpApiError = {
       status: response.status,
       code: body?.code,
+      conflictWith: body?.conflictWith,
       // Some endpoints (employees 409) answer {message, field}; expose it in the same shape as {fields}.
       fields: body?.fields ?? (body?.field && rawMsg ? { [body.field]: String(rawMsg) } : undefined),
       message: rawMsg || defaultErrorMessage(response.status),

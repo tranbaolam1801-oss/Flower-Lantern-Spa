@@ -15,6 +15,23 @@ function splitLines(text: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
+/** Clock glyph (Figma UC6.1): replaces the word "Thời lượng". */
+function ClockIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg className="service-clock-icon" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function ProcedureIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="3.5" width="14" height="17" rx="2.5" /><path d="M9 9h6M9 13h6M9 17h3" />
+    </svg>
+  );
+}
+
 export function ServiceDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -81,7 +98,7 @@ export function ServiceDetailPage() {
                   {service.details || service.description || 'Liệu trình chăm sóc toàn diện tại Flower Lantern Spa.'}
                 </p>
                 <div className="service-meta-row">
-                  <span>Thời lượng: <strong>{durationLabel}</strong></span>
+                  <span className="service-duration" aria-label={`Thời lượng ${durationLabel}`}><ClockIcon /><strong>{durationLabel}</strong></span>
                   <span>Giá từ: <strong className="service-price-lg">{formatVnd(minPrice)}</strong></span>
                 </div>
 
@@ -95,7 +112,7 @@ export function ServiceDetailPage() {
                         <li key={pkg.id}>
                           <div>
                             <strong>{pkg.name}</strong>
-                            <small>Thời lượng {pkg.durationMinutes} phút</small>
+                            <small className="service-pkg-duration"><ClockIcon size={15} />Thời lượng {pkg.durationMinutes} phút</small>
                           </div>
                           <strong>{formatVnd(pkg.price)}</strong>
                         </li>
@@ -111,6 +128,7 @@ export function ServiceDetailPage() {
                     variant="outline"
                     onClick={() => document.getElementById('service-procedure')?.scrollIntoView({ behavior: 'smooth' })}
                   >
+                    <ProcedureIcon />
                     Xem liệu trình
                   </Button>
                   <Button
