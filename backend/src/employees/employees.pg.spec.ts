@@ -168,7 +168,10 @@ describe('employees on real PostgreSQL', () => {
     expect(await rows(`SELECT TrangThaiHoSo AS h, TrangThaiLamViec AS w FROM dbo.NhanVien`)).toEqual([{ h: 'Vô hiệu hóa', w: 'Ngừng làm việc' }]);
     expect((await rows<{ s: string }>(`SELECT TrangThai AS s FROM dbo.TaiKhoan WHERE MaTaiKhoan='TK00000002'`))[0].s).toBe('Vô hiệu hóa');
     expect((await svc.get('NV00000001')).accountStatus).toBe('Vô hiệu hóa');
-    await expect(svc.setAccountStatus(owner, 'NV00000001', { status: 'Hoạt động' })).rejects.toThrow(new ConflictException('Tài khoản đã bị vô hiệu hóa!'));
+    await expect(svc.setAccountStatus(owner, 'NV00000001', { status: 'Đã khóa' })).rejects.toThrow(new ConflictException('Tài khoản đã bị vô hiệu hóa!'));
+    await expect(svc.setAccountStatus(owner, 'NV00000001', { status: 'Hoạt động' })).resolves.toEqual({ message: 'Mở khóa tài khoản thành công!' });
+    expect((await svc.get('NV00000001')).accountStatus).toBe('Hoạt động');
+    expect(await rows(`SELECT TrangThaiHoSo AS h, TrangThaiLamViec AS w FROM dbo.NhanVien`)).toEqual([{ h: 'Hoạt động', w: 'Đang làm việc' }]);
 
     // the owner and oneself are protected; history is preserved (no DELETE of the employee row)
     await pg.exec(`INSERT INTO dbo.NhanVien(MaNhanVien,MaTaiKhoan,HoTen,SoDienThoai,Email,TrangThaiLamViec,TrangThaiHoSo) VALUES ('NV00000099','${OWNER_ID}','Owner','0900000000','o@x.vn','Đang làm việc','Hoạt động')`);

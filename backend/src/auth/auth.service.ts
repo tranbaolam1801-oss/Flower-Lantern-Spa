@@ -64,7 +64,7 @@ export class AuthService {
     if (lockout && lockout.locked) {
       throw new HttpException(
         {
-          message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 15 phút.',
+          message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 5 phút.',
           code: 'ACCOUNT_TEMPORARILY_LOCKED',
           unlockAt: lockout.ThoiDiemKhoaDen,
         },
@@ -270,7 +270,7 @@ export class AuthService {
   }
 
   private locked() {
-    return new ForbiddenException({ message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 15 phút.', code: 'ACCOUNT_TEMPORARILY_LOCKED' });
+    return new ForbiddenException({ message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 5 phút.', code: 'ACCOUNT_TEMPORARILY_LOCKED' });
   }
 
   /**
@@ -296,7 +296,7 @@ export class AuthService {
              ThoiDiemKhoaDen = CASE
                  WHEN ThoiDiemKhoaDen > dbo.vn_now() THEN ThoiDiemKhoaDen
                  WHEN (CASE WHEN ThoiDiemKhoaDen IS NOT NULL AND ThoiDiemKhoaDen <= dbo.vn_now() THEN 1 ELSE SoLanSai + 1 END) >= 5
-                 THEN dbo.vn_now() + make_interval(mins => 15)
+                 THEN dbo.vn_now() + make_interval(mins => 5)
                  ELSE NULL
              END
          WHERE SoDienThoai = $1

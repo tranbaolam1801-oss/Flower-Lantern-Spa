@@ -36,6 +36,7 @@ export function NotificationBell() {
   const userKey = user?.id;
 
   useDismissable({ id: 'notifications', open, onClose: () => setOpen(false), containerRef: root, onEscape: () => trigger.current?.focus() });
+  useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 3000); return () => clearTimeout(t); }, [notice]);
   useEffect(() => { setOpen(false); setNotice(''); }, [location.pathname, userKey]);
 
   const unread = useQuery({

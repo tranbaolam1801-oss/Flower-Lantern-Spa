@@ -91,10 +91,11 @@ try {
 
   // ---------- list: lock/unlock buttons only where they can work
   const hanhi = rowOf(page, 'NV00000004'); const ktv = rowOf(page, 'NV00000005'); const dis = rowOf(page, 'NV00000006');
-  check('List: "Khóa" on an active account, "Mở khóa" on a locked one, and NO lock/unlock button on a disabled account (was the unusable "Mở khóa")', (await hanhi.getByRole('button', { name: 'Khóa', exact: true }).count()) === 1 && (await ktv.getByRole('button', { name: 'Mở khóa' }).count()) === 1 && (await dis.getByRole('button', { name: /khóa/i }).count()) === 0, '');
+  check('List: EVERY row shows the same 5 actions (view, edit, delete, Phân quyền, Khóa/Mở khóa) in one line; unavailable ones are disabled (dimmed), never hidden', await (async () => { const rows = await page.locator('.customer-search-table tbody tr').count(); for (let i = 0; i < rows; i++) { const r = page.locator('.customer-search-table tbody tr').nth(i); if ((await r.locator('.emp-actions button').count()) !== 5) return false; const ys = await r.locator('.emp-actions button').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top))); if (Math.max(...ys) - Math.min(...ys) > 12) return false; } return true; })() && (await dis.getByRole('button', { name: 'Mở khóa' }).isEnabled()) && (await hanhi.locator('.emp-lock-btn').isEnabled()) && (await ktv.getByRole('button', { name: 'Mở khóa' }).isEnabled()) && (await page.locator('.customer-search-table tbody tr', { hasText: 'Chủ Spa Demo' }).locator('.emp-actions button:disabled').count()) === 4, '');
+  await page.screenshot({ path: path.join(empShots, 'list.png') });
 
   // ---------- detail (doc p.4 / Figma 5:7224)
-  await hanhi.locator('.figma-icon-view').click();
+  await hanhi.locator('.emp-icon-view').click();
   const drawer = page.locator('dialog.spa-drawer-right[open]'); await drawer.locator('.emp-identity-card').waitFor();
   const nameBox = await drawer.locator('.emp-identity-card > strong').boundingBox(); const stBox = await drawer.locator('.emp-identity-card .pill-status').boundingBox();
   const dtext = await drawer.innerText();
@@ -117,7 +118,7 @@ try {
   await form.getByRole('button', { name: 'Hủy' }).click();
 
   // ---------- update (doc p.5-6 / Figma 5:8562, 5:8882)
-  await hanhi.locator('.figma-icon-edit').click(); await form.waitFor();
+  await hanhi.locator('.emp-icon-edit').click(); await form.waitFor();
   const labels = await form.locator('.spa-field > span:first-child').allInnerTexts();
   const order = labels.map((l) => l.replace(/\s*\*/, '').trim()).filter((l) => ['Mã nhân viên', 'Tên đăng nhập', 'Họ tên', 'Số điện thoại', 'Email', 'Trạng thái', 'Giới tính', 'Ngày sinh', 'Địa chỉ', 'Ghi chú'].includes(l));
   check('Update form field order follows Figma: Mã NV | Tên đăng nhập, Họ tên | Số điện thoại, Email | Trạng thái, Giới tính | Ngày sinh, Địa chỉ, Ghi chú', order.join(',') === 'Mã nhân viên,Tên đăng nhập,Họ tên,Số điện thoại,Email,Trạng thái,Giới tính,Ngày sinh,Địa chỉ,Ghi chú', order.join(','));

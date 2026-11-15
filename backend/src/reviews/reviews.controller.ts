@@ -18,6 +18,7 @@ export class ReviewListQuery {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) @Transform(trim) q = '';
   @ApiPropertyOptional({ enum: ['Chưa phản hồi', 'Đã phản hồi'] }) @IsOptional() @IsIn(['', 'Chưa phản hồi', 'Đã phản hồi']) status = '';
   @ApiPropertyOptional({ default: 1 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000000) page = 1;
+  @ApiPropertyOptional({ default: PAGE_SIZE }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit?: number;
 }
 export class ReviewIdParam { @Matches(/^[A-Za-z0-9]{1,10}$/) id!: string }
 export class ReplyBody {
@@ -78,13 +79,21 @@ export class ReviewsController {
   @Get('reviews') @Roles('Nhân viên', 'Quản lý') @Permissions('Q03')
   async list(@Query() query: ReviewListQuery) {
     const page = query.page ?? 1;
-    const rows = await this.database.query<ReviewRow[]>(`${await this.reviewSelect()}
-      WHERE ($1::text='' OR strpos(lower(k.HoTen),lower($1::text))>0 OR strpos(k.SoDienThoai,$1::text)>0
+    const size = query.limit ?? PAGE_SIZE;
+    const filter = `WHERE ($1::text='' OR strpos(lower(k.HoTen),lower($1::text))>0 OR strpos(k.SoDienThoai,$1::text)>0
              OR strpos(lower(d.TenDichVu),lower($1::text))>0)
-        AND ($2::text='' OR ($2::text='Đã phản hồi' AND p.MaPhanHoi IS NOT NULL) OR ($2::text='Chưa phản hồi' AND p.MaPhanHoi IS NULL))
+        AND ($2::text='' OR ($2::text='Đã phản hồi' AND p.MaPhanHoi IS NOT NULL) OR ($2::text='Chưa phản hồi' AND p.MaPhanHoi IS NULL))`;
+    const params = [query.q ?? '', query.status ?? ''];
+    const rows = await this.database.query<ReviewRow[]>(`${await this.reviewSelect()}
+      ${filter}
       ORDER BY r.NgayDanhGia DESC,r.MaDanhGia DESC
-      OFFSET $3 ROWS FETCH NEXT ${PAGE_SIZE + 1} ROWS ONLY`, [query.q ?? '', query.status ?? '', (page - 1) * PAGE_SIZE]);
-    return { items: rows.slice(0, PAGE_SIZE).map(toReviewItem), page, hasNext: rows.length > PAGE_SIZE };
+      OFFSET $3 ROWS FETCH NEXT ${size + 1} ROWS ONLY`, [...params, (page - 1) * size]);
+    // Total of the SAME filter (search + status), so the pager can show every page and "last page" exactly.
+    const count = await this.database.query<{ n: number }[]>(`SELECT count(*)::int AS n
+      FROM dbo.DanhGia r JOIN dbo.KhachHang k ON k.MaKhachHang=r.MaKhachHang JOIN dbo.DichVu d ON d.MaDichVu=r.MaDichVu
+      LEFT JOIN dbo.PhanHoi p ON p.MaDanhGia=r.MaDanhGia ${filter}`, params);
+    const total = Number(count[0]?.n ?? 0);
+    return { items: rows.slice(0, size).map(toReviewItem), page, hasNext: rows.length > size, total, pageSize: size, totalPages: Math.max(1, Math.ceil(total / size)) };
   }
 
   @Get('reviews/:id') @Roles('Nhân viên', 'Quản lý') @Permissions('Q03')

@@ -1,3 +1,4 @@
+import { serviceFallbackImage } from '../lib/spa-images';
 import { Link } from 'react-router';
 import { resolveApiUrl } from '../lib/api-client';
 import type { PublicServiceItem } from '../lib/catalog-api';
@@ -28,7 +29,7 @@ export function ServiceCard({
   return (
     <article className="figma-service-card">
       <div className="figma-service-thumb">
-        <img src={resolveApiUrl(service.image) || '/assets/lotus-decor.png'} alt={service.name} />
+        <img src={resolveApiUrl(service.image) || serviceFallbackImage(service.name)} alt={service.name} />
       </div>
       <div className="figma-service-meta">
         <span className="figma-cat-badge" title={categoryLabel ? undefined : `Mã danh mục chưa khớp: ${service.categoryId || '(thiếu)'}`}>

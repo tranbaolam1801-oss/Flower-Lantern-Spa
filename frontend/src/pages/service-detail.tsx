@@ -1,3 +1,5 @@
+import { serviceFallbackImage } from '../lib/spa-images';
+import { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { resolveApiUrl } from '../lib/api-client';
 import { useQuery } from '@tanstack/react-query';
@@ -43,6 +45,11 @@ export function ServiceDetailPage() {
   });
 
   const service = query.data;
+  const notFound = query.isError && (query.error as { status?: number } | null)?.status === 404;
+  // Figma UC_6.2: an unknown service sends the visitor back to the catalogue with a pink "Không thành công" toast.
+  useEffect(() => {
+    if (notFound) navigate('/dich-vu', { replace: true, state: { serviceNotFound: true } });
+  }, [notFound, navigate]);
   const minPrice = service?.packages.length
     ? Math.min(...service.packages.map((p) => Number(p.price)))
     : null;
@@ -86,7 +93,7 @@ export function ServiceDetailPage() {
             <section className="service-detail-hero">
               <div className="service-detail-image">
                 <span className="service-detail-cat-pill">{service.categoryName || 'Dịch vụ'}</span>
-                <img src={resolveApiUrl(service.image) || '/assets/lotus-decor.png'} alt={service.name} />
+                <img src={resolveApiUrl(service.image) || serviceFallbackImage(service.name)} alt={service.name} />
               </div>
               <div className="service-detail-summary">
                 <div className="service-badges">

@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../lib/api-client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import type { CalendarItem } from '../lib/booking-api';
@@ -18,6 +18,11 @@ export function BookingCancel({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(''), 3000);
+    return () => clearTimeout(t);
+  }, [message]);
   const cache = useQueryClient();
 
   const mutation = useMutation({

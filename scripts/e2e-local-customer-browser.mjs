@@ -133,12 +133,13 @@ try {
   const { ctx, page, posts } = await newPage('owner');
   const base = await customerCount();
 
-  // 1) Hủy: đóng form, không gọi API, không có thông báo nào
+  // 1) Hủy: đóng form, không gọi API, chỉ có thông báo xanh dương "Đã hủy thao tác"
   await addButton(page).click(); await fillForm(page, 'Người Hủy', '0933000001');
   await page.getByRole('button', { name: 'Hủy', exact: true }).click();
   await page.waitForTimeout(300);
   check('Hủy closes the form', !(await page.locator('dialog.customer-form-modal').evaluate((d) => d.open)));
   check('Hủy: no request sent, no customer created, no success/error toast, no raw error text', posts.length === 0 && (await customerCount()) === base && (await toastCount(page, 'success')) === 0 && (await toastCount(page, 'error')) === 0 && !/Failed to fetch/i.test(await bodyText(page)), posts.join(','));
+  check('Hủy: shows info toast "Đã hủy thao tác" (Figma UC_3.2)', (await toastCount(page, 'info')) === 1);
 
   // 2) Lưu hợp lệ -> thành công chỉ sau khi API xác nhận
   await addButton(page).click(); await fillForm(page, 'Phạm Thị Mai', '0933000002');

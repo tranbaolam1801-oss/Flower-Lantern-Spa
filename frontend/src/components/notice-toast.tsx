@@ -15,8 +15,8 @@ export const errorNotice = (message: string, onRetry?: () => void): NoticeState 
  */
 export function NoticeToast({ notice, onClose, retrying = false }: { notice: NoticeState; onClose: () => void; retrying?: boolean }) {
   useEffect(() => {
-    if (notice.kind === 'error') return;
-    const timer = setTimeout(onClose, 6000);
+    if (notice.kind === 'error' && !!notice.onRetry) return;
+    const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [notice, onClose]);
   const error = notice.kind === 'error';

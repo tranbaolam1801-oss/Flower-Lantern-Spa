@@ -63,7 +63,7 @@ function saveFailureMessage(err: unknown): string {
 
 /** Figma UC_3.1 Toast (5:19160 success / 5:19187 error): fixed top-right, 510px, icon circle 36px, title, message, optional "Thử lại", close X. */
 function CustomerToast({ kind, title, message, onClose, onRetry, retrying }: {
-  kind: 'success' | 'error';
+  kind: 'success' | 'error' | 'info';
   title: string;
   message: string;
   onClose: () => void;
@@ -144,6 +144,12 @@ export function CustomerSearch() {
   const filterPanelId = useId();
   useDismissable({ id: 'customer-filter', open: filterOpen, onClose: () => setFilterOpen(false), containerRef: filterWrap, onEscape: () => filterButton.current?.focus() });
   const [notice, setNotice] = useState('');
+  const [cancelNotice, setCancelNotice] = useState(false);
+  useEffect(() => {
+    if (!cancelNotice) return;
+    const t = setTimeout(() => setCancelNotice(false), 3000);
+    return () => clearTimeout(t);
+  }, [cancelNotice]);
   // Xóa/Hủy khách hàng chưa có nghiệp vụ trong SRS: nút hiển thị theo Figma nhưng không thay đổi dữ liệu.
   const [unavailableNotice, setUnavailableNotice] = useState('');
 
@@ -183,7 +189,7 @@ export function CustomerSearch() {
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(''), 6000);
+    const timer = setTimeout(() => setNotice(''), 3000);
     return () => clearTimeout(timer);
   }, [notice]);
 
@@ -243,6 +249,7 @@ export function CustomerSearch() {
     setSaveFailure(null);
     setFormFieldError(null);
     setNotice('');
+    setCancelNotice(false);
     setUnavailableNotice('');
   };
 
@@ -252,6 +259,8 @@ export function CustomerSearch() {
     formDialog.current?.close();
     setSaveFailure(null);
     setFormFieldError(null);
+    setNotice('');
+    setCancelNotice(true);
   };
 
   const openCreate = () => {
@@ -318,6 +327,7 @@ export function CustomerSearch() {
     <ManagementLayout active="Q02">
       <section className="customer-search-card" aria-label="Quản lý khách hàng">
         <h1 className="sr-only">Quản lý khách hàng</h1>
+        {cancelNotice && <CustomerToast kind="info" title="Đã hủy thao tác" message="Đã hủy thao tác. Không lưu thay đổi." onClose={() => setCancelNotice(false)} />}
         {notice && <CustomerToast kind="success" title="Thành công" message={notice} onClose={() => setNotice('')} />}
         {unavailableNotice && (
           <p role="status" className="spa-toast-neutral">

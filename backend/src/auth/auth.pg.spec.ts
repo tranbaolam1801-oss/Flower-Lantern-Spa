@@ -15,7 +15,7 @@ import { PasswordService } from './password.service';
 
 jest.setTimeout(120_000);
 
-const LOCK_MESSAGE = 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 15 phút.';
+const LOCK_MESSAGE = 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 5 phút.';
 
 /** Real PostgreSQL (PGlite) + real Argon2id + real AuthModule over HTTP. No password is committed: it is random per run. */
 describe('Auth with real PostgreSQL and Argon2id', () => {
@@ -139,7 +139,7 @@ describe('Auth with real PostgreSQL and Argon2id', () => {
       expect(rows[0].n).toBe(1);
     });
 
-    it('5th failure locks for 15 minutes with the exact message; a correct password is refused and the lock is not extended', async () => {
+    it('5th failure locks for 5 minutes with the exact message; a correct password is refused and the lock is not extended', async () => {
       for (let i = 0; i < 4; i++) await login('wrong').expect(401);
       const locked = await login('wrong').expect(403);
       expect(locked.body).toMatchObject({ message: LOCK_MESSAGE, code: 'ACCOUNT_TEMPORARILY_LOCKED' });

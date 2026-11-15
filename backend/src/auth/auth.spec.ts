@@ -57,7 +57,7 @@ describe('Auth Module (Unit & Logic)', () => {
   });
 
   describe('AuthService Login & Lockout Rules', () => {
-    it('blocks login immediately when account is temporarily locked within 15 minutes', async () => {
+    it('blocks login immediately when account is temporarily locked within 5 minutes', async () => {
       const futureUnlock = new Date(Date.now() + 10 * 60 * 1000);
       mockDatabase.query.mockResolvedValueOnce([
         { SoLanSai: 5, ThoiDiemKhoaDen: futureUnlock, LanCuoiSai: new Date(), locked: true },
@@ -124,7 +124,7 @@ describe('Auth Module (Unit & Logic)', () => {
 
       await expect(
         authService.login({ phone: '0900000002', password: 'WrongPassword' }),
-      ).rejects.toThrow('Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 15 phút.');
+      ).rejects.toThrow('Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 5 phút.');
     });
 
     it('successfully logs in, clears lockout history, returns profile and signs JWT', async () => {

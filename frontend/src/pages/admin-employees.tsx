@@ -1,9 +1,10 @@
 import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/auth-context';
+import { useDismissable } from '../lib/use-dismissable';
 import { isValidVnPhone } from '../lib/phone';
 import { NoticeToast, cancelledNotice, errorNotice, successNotice, type NoticeState } from '../components/notice-toast';
 import {
@@ -32,6 +33,14 @@ const day = (value: string) => value.slice(0, 10).split('-').reverse().join('/')
 const workLabel = (status: string) => (status === 'Đang làm việc' ? 'Đang hoạt động' : status);
 const isNetworkOrServer = (err: unknown) => { const st = (err as { status?: unknown } | null)?.status; return typeof st !== 'number' || st >= 500; };
 const PHONE_INVALID = 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.';
+
+const svgProps = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const;
+const ViewIcon = () => <svg {...svgProps}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>;
+const PencilIcon = () => <svg {...svgProps}><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z" /></svg>;
+const TrashIcon = () => <svg {...svgProps}><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>;
+const FilterGlyph = () => <svg {...svgProps}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
+const PersonGlyph = () => <svg {...svgProps} width={24} height={24}><circle cx="12" cy="8" r="4" /><path d="M4.5 21c.7-4 3.5-6 7.5-6s6.8 2 7.5 6" /></svg>;
+const STATUS_OPTIONS = [['', 'Tất cả trạng thái'], ['Hoạt động', 'Hoạt động'], ['Đã khóa', 'Đã khóa'], ['Vô hiệu hóa', 'Vô hiệu hóa']] as const;
 
 export function AdminEmployeesPage() {
   const { user } = useAuth();
@@ -77,8 +86,11 @@ export function AdminEmployeesPage() {
   const lockDialog = useRef<HTMLDialogElement>(null);
 
   // UC_8.5 Tìm kiếm nhân viên (modal "Lọc" — khớp Figma 5:9761)
-  const searchDialog = useRef<HTMLDialogElement>(null);
-  const [searchDraft, setSearchDraft] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterWrap = useRef<HTMLDivElement>(null);
+  const filterButton = useRef<HTMLButtonElement>(null);
+  const filterPanelId = useId();
+  useDismissable({ id: 'employee-filter', open: filterOpen, onClose: () => setFilterOpen(false), containerRef: filterWrap, onEscape: () => filterButton.current?.focus() });
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -292,11 +304,11 @@ export function AdminEmployeesPage() {
 
   return (
     <ManagementLayout active="Q05">
-      <section className="customer-search-card employee-management" aria-label="Quản lý nhân viên">
+      <div className="employee-management emp-page" aria-label="Quản lý nhân viên">
         {toast && <NoticeToast notice={toast} onClose={() => setToast(null)} retrying={permMutation.isPending || lockMutation.isPending} />}
 
-        <div className="customer-search-toolbar">
-          <label className="customer-search-input">
+        <div className="emp-toolbar">
+          <label className="emp-search">
             <img src="/assets/customer-imgGroup.svg" alt="" />
             <input
               aria-label="Tìm theo họ tên, tên đăng nhập hoặc số điện thoại"
@@ -305,67 +317,27 @@ export function AdminEmployeesPage() {
               onChange={(e) => setText(e.target.value)}
             />
           </label>
-          <select
-            className="spa-select-toolbar"
-            aria-label="Lọc trạng thái nhân viên"
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-            }}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="Hoạt động">Hoạt động</option>
-            <option value="Đã khóa">Đã khóa</option>
-            <option value="Vô hiệu hóa">Vô hiệu hóa</option>
-          </select>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSearchDraft(text);
-              searchDialog.current?.showModal();
-            }}
-          >
-            Lọc
-          </Button>
-          <Button type="button" size="sm" onClick={openCreate}>
-            + Thêm mới
-          </Button>
+          <div className="emp-filter-wrap" ref={filterWrap}>
+            <button type="button" ref={filterButton} className="emp-toolbar-btn emp-filter-btn" aria-haspopup="dialog" aria-controls={filterPanelId} aria-expanded={filterOpen} onClick={() => setFilterOpen((o) => !o)}>
+              <FilterGlyph />
+              <span>{statusFilter ? `Trạng thái: ${statusFilter}` : 'Bộ lọc'}</span>
+            </button>
+            {filterOpen && (
+              <div className="customer-filter-popover emp-filter-popover" id={filterPanelId} role="dialog" aria-label="Lọc theo trạng thái tài khoản">
+                {STATUS_OPTIONS.map(([value, label]) => (
+                  <button key={value || 'all'} type="button" className={statusFilter === value ? 'active' : undefined} onClick={() => { setStatusFilter(value); setFilterOpen(false); }}>{label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="button" className="emp-toolbar-btn emp-add-btn" onClick={openCreate}>+ Thêm mới</button>
         </div>
 
-        {/* UC_8.5 Modal "Tìm kiếm nhân viên" — khớp Figma 5:9761 */}
-        <dialog ref={searchDialog} className="spa-modal spa-modal-tinted" aria-labelledby="emp-search-title">
-          <div className="spa-modal-header">
-            <h2 id="emp-search-title">Tìm kiếm nhân viên</h2>
-            <button type="button" className="spa-modal-close" onClick={() => searchDialog.current?.close()}>×</button>
-          </div>
-          <div className="spa-modal-body">
-            <label className="spa-field">
-              <span>Từ khóa (họ tên, tên đăng nhập hoặc số điện thoại)</span>
-              <input
-                value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
-                placeholder="Nhập từ khóa..."
-              />
-            </label>
-          </div>
-          <div className="spa-modal-footer">
-            <Button type="button" size="sm" variant="outline" onClick={() => searchDialog.current?.close()}>
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setText(searchDraft.trim());
-                searchDialog.current?.close();
-              }}
-            >
-              Lọc
-            </Button>
-          </div>
-        </dialog>
+        <section className="emp-card" aria-labelledby="emp-list-title">
+          <header className="emp-card-head">
+            <span className="emp-card-icon"><PersonGlyph /></span>
+            <h1 id="emp-list-title">Danh sách nhân viên</h1>
+          </header>
 
         {!allowed ? (
           <p role="alert">Bạn không có quyền quản lý nhân viên.</p>
@@ -380,7 +352,7 @@ export function AdminEmployeesPage() {
           </div>
         ) : (
           <>
-            <div className="customer-search-scroll">
+            <div className="customer-search-scroll emp-scroll">
               <table className="customer-search-table admin-employee-table">
                 <thead>
                   <tr>
@@ -407,62 +379,32 @@ export function AdminEmployeesPage() {
                         </span>
                       </td>
                       <td>
-                        <div className="figma-row-actions">
-                          <button
-                            type="button"
-                            className="figma-icon-btn figma-icon-view"
-                            aria-label={`Xem nhân viên ${emp.fullName}`}
-                            title="Xem chi tiết"
-                            onClick={() => { setDetailId(emp.id); detailDialog.current?.showModal(); }}
-                          >
-                            👁
-                          </button>
-                          {emp.role !== 'Chủ Spa' && (
-                            <>
-                              <button
-                                type="button"
-                                className="figma-icon-btn figma-icon-edit"
-                                aria-label={`Sửa nhân viên ${emp.fullName}`}
-                                title="Sửa thông tin"
-                                onClick={() => openEdit(emp)}
-                              >
-                                ✎
-                              </button>
-                              <button
-                                type="button"
-                                className="figma-icon-btn figma-icon-delete"
-                                aria-label={`Xóa nhân viên ${emp.fullName}`}
-                                title="Vô hiệu hóa"
-                                onClick={() => {
-                                  setDeleteTarget(emp);
-                                  deleteMutation.reset();
-                                  deleteDialog.current?.showModal();
-                                }}
-                              >
-                                🗑
-                              </button>
-                              {isOwner && (
-                                <Button type="button" size="sm" variant="outline" className="emp-action-btn" onClick={() => openPermissions(emp)}>
-                                  Phân quyền
-                                </Button>
-                              )}
-                              {(emp.accountStatus === 'Hoạt động' || emp.accountStatus === 'Đã khóa') && (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className={`emp-action-btn ${emp.accountStatus === 'Hoạt động' ? 'emp-lock-btn' : 'emp-unlock-btn'}`}
-                                  onClick={() => {
-                                    setStatusTarget(emp);
-                                    lockMutation.reset();
-                                    lockDialog.current?.showModal();
-                                  }}
-                                >
-                                  {emp.accountStatus === 'Hoạt động' ? 'Khóa' : 'Mở khóa'}
-                                </Button>
-                              )}
-                            </>
-                          )}
+                        <div className="figma-row-actions emp-actions">
+                          {(() => {
+                            const isOwnerRow = emp.role === 'Chủ Spa';
+                            const isSelf = Boolean(emp.accountId) && emp.accountId === user?.id;
+                            const lockable = emp.accountStatus === 'Hoạt động' || emp.accountStatus === 'Đã khóa' || (emp.accountStatus === 'Vô hiệu hóa' && !!emp.accountId);
+                            const canEdit = !isOwnerRow;
+                            const canDelete = !isOwnerRow && !isSelf && emp.accountStatus !== 'Vô hiệu hóa';
+                            // Chủ Spa: everyone. Quản lý (Q05): only Nhân viên rows (same rule as the backend).
+                            const canPerm = !isOwnerRow && !isSelf && (isOwner || emp.role !== 'Quản lý');
+                            const canLock = !isOwnerRow && !isSelf && lockable;
+                            const locked = emp.accountStatus !== 'Hoạt động';
+                            const why = (ok: boolean, text: string) => (ok ? text : `${text} (không khả dụng)`);
+                            return (
+                              <>
+                                <button type="button" className="emp-icon-btn emp-icon-view" aria-label={`Xem nhân viên ${emp.fullName}`} title="Xem chi tiết"
+                                  onClick={() => { setDetailId(emp.id); detailDialog.current?.showModal(); }}><ViewIcon /></button>
+                                <button type="button" className="emp-icon-btn emp-icon-edit" disabled={!canEdit} aria-label={`Sửa nhân viên ${emp.fullName}`} title={why(canEdit, 'Sửa thông tin')}
+                                  onClick={() => openEdit(emp)}><PencilIcon /></button>
+                                <button type="button" className="emp-icon-btn emp-icon-delete" disabled={!canDelete} aria-label={`Xóa nhân viên ${emp.fullName}`} title={why(canDelete, 'Vô hiệu hóa')}
+                                  onClick={() => { setDeleteTarget(emp); deleteMutation.reset(); deleteDialog.current?.showModal(); }}><TrashIcon /></button>
+                                <button type="button" className="emp-text-btn" disabled={!canPerm} title={why(canPerm, 'Phân quyền')} onClick={() => openPermissions(emp)}>Phân quyền</button>
+                                <button type="button" className="emp-text-btn emp-lock-btn" disabled={!canLock} title={why(canLock, locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản')}
+                                  onClick={() => { setStatusTarget(emp); lockMutation.reset(); lockDialog.current?.showModal(); }}>{locked ? 'Mở khóa' : 'Khóa'}</button>
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>
@@ -478,7 +420,8 @@ export function AdminEmployeesPage() {
             <ContinuousListEnd query={query}/>
           </>
         )}
-      </section>
+        </section>
+      </div>
 
       {/* UC_8.1 Chi tiết nhân viên */}
       <dialog ref={detailDialog} className="spa-drawer-right" aria-labelledby="emp-detail-title">
@@ -712,10 +655,10 @@ export function AdminEmployeesPage() {
               <span>Vai trò mới <em>*</em></span>
               <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'Quản lý' | 'Nhân viên')}>
                 <option value="Nhân viên">Nhân viên</option>
-                <option value="Quản lý">Quản lý</option>
+                {isOwner && <option value="Quản lý">Quản lý</option>}
               </select>
             </label>
-            <p className="emp-perm-hint">Vai trò có thể chọn: Nhân viên hoặc Quản lý.</p>
+            <p className="emp-perm-hint">{isOwner ? 'Vai trò có thể chọn: Nhân viên hoặc Quản lý.' : 'Quản lý chỉ có thể gán vai trò Nhân viên.'}</p>
             <div className="emp-perm-list">
               <strong>Quyền truy cập</strong>
               {ALL_PERMISSIONS.map((p) => (
@@ -723,6 +666,7 @@ export function AdminEmployeesPage() {
                   <input
                     type="checkbox"
                     checked={selectedPerms.includes(p.code)}
+                    disabled={!isOwner && !user?.permissions.includes(p.code)}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedPerms((prev) => [...prev, p.code]);
                       else setSelectedPerms((prev) => prev.filter((x) => x !== p.code));
@@ -732,7 +676,7 @@ export function AdminEmployeesPage() {
                 </label>
               ))}
             </div>
-            <p className="emp-perm-note">Chỉ Chủ Spa được thay đổi vai trò và quyền truy cập. Thay đổi chỉ có hiệu lực sau khi xác nhận lưu.</p>
+            <p className="emp-perm-note">{isOwner ? 'Chỉ Chủ Spa được thay đổi vai trò và quyền truy cập.' : 'Quản lý chỉ cấp được những quyền mà mình đang có.'} Thay đổi chỉ có hiệu lực sau khi xác nhận lưu.</p>
           </div>
         )}
         <div className="emp-perm-foot emp-perm-foot-split">
@@ -814,13 +758,13 @@ export function AdminEmployeesPage() {
               </div>
               <p className="emp-confirm-subject">{statusTarget.id} · {statusTarget.fullName} · {statusTarget.username} · {statusTarget.phone}</p>
               <div className="emp-confirm-transition">
-                <div><small>Trạng thái hiện tại</small><strong>{statusTarget.accountStatus}</strong></div>
+                <div><small>Trạng thái hiện tại</small><strong>{statusTarget.accountStatus === 'Hoạt động' ? 'Hoạt động' : 'Đã khóa'}</strong></div>
                 <img className="emp-confirm-arrow" src="/assets/uc8-arrow-right.svg" alt="" aria-hidden="true" />
                 <div><small>Trạng thái sau xác nhận</small><strong>{statusTarget.accountStatus === 'Hoạt động' ? 'Đã khóa' : 'Hoạt động'}</strong></div>
               </div>
               <p className="emp-confirm-note emp-lock-question">
-                Bạn chắc chắn muốn {statusTarget.accountStatus === 'Hoạt động' ? 'khóa' : 'mở khóa'} tài khoản nhân viên này?<br />
-                Hệ thống kiểm tra quyền thao tác và trạng thái hiện tại khi xác nhận.
+                Bạn chắc chắn muốn {statusTarget.accountStatus === 'Hoạt động' ? 'khóa' : 'mở khóa'} tài khoản nhân viên này?
+                {statusTarget.accountStatus !== 'Hoạt động' && <><br />Hệ thống kiểm tra quyền thao tác và trạng thái hiện tại khi xác nhận.</>}
               </p>
             </div>
             <div className="emp-perm-foot">

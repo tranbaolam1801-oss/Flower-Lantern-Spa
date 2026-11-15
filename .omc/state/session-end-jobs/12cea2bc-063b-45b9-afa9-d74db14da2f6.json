@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "jobId": "5d86ee83-0bf7-4e17-8441-0072974ac295",
+  "sessionId": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+  "scopeKey": "24f280f8b5aaaf4ab5e7fd5ae4cbe05527bdaf4d98a62ee5fa394123d87b0f6d",
+  "revision": 56,
+  "createdAt": "2026-11-15T03:50:44.007Z",
+  "updatedAt": "2026-11-15T03:51:24.051Z",
+  "producerGraceExpiresAt": "2026-11-15T03:51:14.010Z",
+  "bestEffortDeadlineAt": "2026-11-15T03:52:07.010Z",
+  "producers": {
+    "core": {
+      "state": "sealed",
+      "intentKey": "6fc663fc3d802c4ab038ae91ea6414ccd02e509fc875fbd2ee2c7aae31812752",
+      "payloadDigest": "6fc663fc3d802c4ab038ae91ea6414ccd02e509fc875fbd2ee2c7aae31812752",
+      "sealedAt": "2026-11-15T03:51:19.424Z",
+      "sealedBy": "recovery"
+    },
+    "wiki": {
+      "state": "no-op",
+      "sealedAt": "2026-11-15T03:50:44.063Z",
+      "sealedBy": "wiki-producer"
+    }
+  },
+  "actions": {
+    "foreground-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "85d58427b193c9b4a1187264ee6590b17a9a9cf670bbb1a8180a41e14dfffd56",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-11-15T03:51:15.774Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "3cfb1ba2-6e18-4067-8e86-bc6d751d874f",
+        "phase": "terminal",
+        "deadlineAt": "2026-11-15T03:51:24.013Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-11-15T03:51:19.402Z"
+    },
+    "wiki-capture": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 0,
+      "idempotencyKey": "d7c9bda91643e18f3b23c225c9479aee169fbb1ced81f8d5ef27f808d49c92f7",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "completedAt": "2026-11-15T03:50:44.063Z"
+    },
+    "team-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "23c6d39db4dafb8656c4c8def086b49e7bc492ed678c4148f45749d23a701d54",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-11-15T03:51:19.516Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "5357a104-6e07-4c5c-a1fd-866ebe529b18",
+        "phase": "terminal",
+        "deadlineAt": "2026-11-15T03:51:24.013Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-11-15T03:51:20.775Z"
+    },
+    "python-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "bff941e35481c45317382bd9237feab3d660b0e325117171f90281609c94458b",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-11-15T03:51:20.818Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "b1c443b3-740a-4d75-b716-2e0b56187c91",
+        "phase": "terminal",
+        "deadlineAt": "2026-11-15T03:51:24.013Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-11-15T03:51:21.891Z"
+    },
+    "reply-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "f6e66d3886ce4ca0a9cd11b26b38d16326e2c609f9fd451cf594c98b507cd427",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-11-15T03:51:21.926Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "f2c1ec7a-2253-4a62-8f67-7d188fa2197d",
+        "phase": "terminal",
+        "deadlineAt": "2026-11-15T03:51:24.013Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-11-15T03:51:23.256Z"
+    },
+    "callback": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "claimed",
+      "attempts": 1,
+      "idempotencyKey": "313c12b1369590c36f38e4cde26277bce5f9c2f8b874b1976470cdaa752bea30",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 2000,
+      "claimantNonce": "6b11d845-0205-426f-84ca-09738d1c0b48",
+      "claimedAt": "2026-11-15T03:51:23.304Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "7bd7cb3f-d332-438a-a0cd-a8667cce07c7",
+        "phase": "armed",
+        "deadlineAt": "2026-11-15T03:51:24.013Z"
+      }
+    },
+    "notification": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "pending",
+      "attempts": 0,
+      "idempotencyKey": "ff6648a3f5ce375b9bb376999a02d65820b8a0e4e553d4034bf6a329298767d1",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 2000
+    },
+    "openclaw": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "pending",
+      "attempts": 0,
+      "idempotencyKey": "09734341ba2eaa3534c39d8fbb08495d22f00cd778d106424cbc801086591cff",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {},
+        "metrics": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "ended_at": "2026-11-15T03:51:17.253Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        }
+      },
+      "budgetMs": 2000
+    },
+    "spawn-next": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "pending",
+      "attempts": 0,
+      "idempotencyKey": "b84a02a235eb8583a887261f08bdb7e1ab412ced57d03bd9a9389a766779a637",
+      "payload": {
+        "transcriptPath": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+        "cwd": "c:\\Spa",
+        "reason": "other",
+        "input": {
+          "session_id": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
+          "transcript_path": "C:\\Users\\tranb\\.claude\\projects\\c--Spa\\12cea2bc-063b-45b9-afa9-d74db14da2f6.jsonl",
+          "cwd": "c:\\Spa",
+          "scratchpad_dir": "C:\\Users\\tranb\\AppData\\Local\\Temp\\claude\\553574286ff99044\\12cea2bc-063b-45b9-afa9-d74db14da2f6\\scratchpad",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "initialTeamNames": [],
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000
+    }
+  },
+  "owner": {
+    "nonce": "6b11d845-0205-426f-84ca-09738d1c0b48",
+    "pid": 5812,
+    "processStartIdentity": "ticks:639303114440694904",
+    "claimedAt": "2026-11-15T03:51:15.644Z",
+    "heartbeatAt": "2026-11-15T03:51:24.051Z",
+    "leaseExpiresAt": "2026-11-15T03:51:24.013Z",
+    "runDeadlineAt": "2026-11-15T03:51:24.013Z",
+    "leaseGeneration": 28,
+    "claimedFromRevision": 4
+  },
+  "phase": "processing",
+  "recoverableFailure": {
+    "reason": "actions-settled",
+    "releasedAt": "2026-11-15T03:50:45.654Z",
+    "ownerNonce": "34749fc7-3f5d-427c-8389-1bc30d6e70f1"
+  }
+}

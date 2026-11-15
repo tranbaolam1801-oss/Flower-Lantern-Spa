@@ -70,12 +70,13 @@ export interface ReviewItem {
   } | null;
 }
 
-export const listReviews = (params: { q?: string; status?: string; page?: number } = {}) => {
+export const listReviews = (params: { q?: string; status?: string; page?: number; limit?: number } = {}) => {
   const qs = new URLSearchParams();
   if (params.q) qs.set('q', params.q);
   if (params.status) qs.set('status', params.status);
   if (params.page) qs.set('page', String(params.page));
-  return apiFetch<{ items: ReviewItem[]; page: number; hasNext: boolean }>(`reviews?${qs.toString()}`);
+  if (params.limit) qs.set('limit', String(params.limit));
+  return apiFetch<{ items: ReviewItem[]; page: number; hasNext: boolean; total?: number; pageSize?: number; totalPages?: number }>(`reviews?${qs.toString()}`);
 };
 
 export const getReviewDetail = (id: string) =>

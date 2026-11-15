@@ -18,6 +18,39 @@ function currentMonthRange(): { from: string; to: string } {
   return { from: `${y}-${m}-01`, to: `${y}-${m}-${d}` };
 }
 
+/** Figma UC_10.2: area/line chart with a VND y-axis, dotted points and sparse x labels (not bars). */
+function RevenueLine({ series }: { series: { label: string; amount: number }[] }) {
+  const W = 1000, H = 230, L = 74, R = 16, T = 28, B = 34;
+  const max = Math.max(...series.map((p) => p.amount), 1);
+  const step = Math.pow(10, Math.floor(Math.log10(max)));
+  const unit = [1, 2, 2.5, 5, 10].map((m) => m * step / 1).find((u) => max / u <= 5) ?? step * 10;
+  const top = Math.ceil(max / unit) * unit;
+  const ticks: number[] = [];
+  for (let v = 0; v <= top + 1e-9; v += unit) ticks.push(v);
+  const x = (i: number) => L + (series.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (series.length - 1));
+  const y = (v: number) => T + (H - T - B) * (1 - v / top);
+  const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p.amount).toFixed(1)}`);
+  const every = Math.max(1, Math.ceil(series.length / 7));
+  const num = (v: number) => v.toLocaleString('vi-VN');
+  return (
+    <svg className="reports-line" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Biểu đồ doanh thu">
+      <text x={L - 12} y={12} textAnchor="end" className="rl-axis">VND</text>
+      {ticks.map((v) => (
+        <g key={v}>
+          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="rl-grid" />
+          <text x={L - 12} y={y(v) + 4} textAnchor="end" className="rl-axis">{num(v)}</text>
+        </g>
+      ))}
+      <polygon points={`${x(0)},${y(0)} ${pts.join(' ')} ${x(series.length - 1)},${y(0)}`} className="rl-area" />
+      <polyline points={pts.join(' ')} className="rl-line" />
+      {series.map((p, i) => (
+        <circle key={p.label + i} cx={x(i)} cy={y(p.amount)} r={3.2} className="rl-dot"><title>{`${p.label}: ${formatVnd(p.amount)}`}</title></circle>
+      ))}
+      {series.map((p, i) => (i % every === 0 ? <text key={'l' + i} x={x(i)} y={H - 10} textAnchor="middle" className="rl-axis">{p.label}</text> : null))}
+    </svg>
+  );
+}
+
 export function AdminReportsPage() {
   const { user } = useAuth();
   const initial = currentMonthRange();
@@ -58,7 +91,6 @@ export function AdminReportsPage() {
   };
 
   const series = revQuery.data?.series ?? [];
-  const maxRevenue = Math.max(1, ...series.map((s) => s.amount));
 
   return (
     <ManagementLayout active="Q06">
@@ -121,7 +153,7 @@ export function AdminReportsPage() {
             {/* Revenue Chart */}
             <section className="admin-panel-card">
               <div className="reports-chart-head">
-                <h2>Doanh thu theo thời gian</h2>
+                <h2>Doanh thu theo {({ day: 'ngày', week: 'tuần', month: 'tháng', year: 'năm' } as const)[groupBy]}</h2>
                 <div className="reports-granularity" role="group" aria-label="Chu kỳ thống kê">
                   {(
                     [
@@ -153,18 +185,7 @@ export function AdminReportsPage() {
               ) : series.length === 0 ? (
                 <p className="customer-search-empty">Không có doanh thu trong khoảng thời gian đã chọn.</p>
               ) : (
-                <div className="reports-bars">
-                  {series.map((pt) => (
-                    <div key={pt.label} className="reports-bar-col">
-                      <div
-                        className="reports-bar-fill"
-                        style={{ height: `${Math.max(6, Math.round((pt.amount / maxRevenue) * 140))}px` }}
-                        title={`${pt.label}: ${formatVnd(pt.amount)}`}
-                      />
-                      <small>{pt.label}</small>
-                    </div>
-                  ))}
-                </div>
+                <RevenueLine series={series} />
               )}
             </section>
 

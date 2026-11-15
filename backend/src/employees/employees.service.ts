@@ -113,8 +113,10 @@ export class EmployeesService {
       const target = await this.loadTarget(run, id);
       this.assertProtected(actor, target);
       if (!target.accountId) throw new ConflictException('Nhân viên chưa có tài khoản!');
-      if (target.status === DISABLED) throw new ConflictException('Tài khoản đã bị vô hiệu hóa!');
+      // A disabled (soft-deleted) account can only be re-activated ("Mở khóa"); it can never be moved to "Đã khóa".
+      if (target.status === DISABLED && dto.status !== 'Hoạt động') throw new ConflictException('Tài khoản đã bị vô hiệu hóa!');
       await run('UPDATE dbo.TaiKhoan SET TrangThai = $2 WHERE MaTaiKhoan = $1', [target.accountId, dto.status]);
+      if (target.status === DISABLED) await run(`UPDATE dbo.NhanVien SET TrangThaiHoSo = 'Hoạt động', TrangThaiLamViec = 'Đang làm việc' WHERE MaNhanVien = $1`, [id]);
       if (dto.status === 'Đã khóa') await this.revokeSessions(run, target.accountId);
       await notifyAccountStatus(run, { actorAccountId: actor.sub, targetAccountId: target.accountId, targetEmployeeId: id, locked: dto.status === 'Đã khóa' });
       return { message: dto.status === 'Đã khóa' ? 'Khóa tài khoản thành công!' : 'Mở khóa tài khoản thành công!' };

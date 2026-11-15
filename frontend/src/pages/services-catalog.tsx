@@ -1,6 +1,6 @@
 import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useSearchParams } from 'react-router';
 
 import { CustomerHeader } from '../components/customer-header';
 import { PublicFooter } from '../components/public-footer';
@@ -104,6 +104,14 @@ const FIGMA_VISUAL_FIXTURE: PublicServiceItem[] = [
 
 export function ServicesCatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [notFoundToast, setNotFoundToast] = useState(() => (location.state as { serviceNotFound?: boolean } | null)?.serviceNotFound === true);
+  useEffect(() => {
+    if (!notFoundToast) return;
+    window.history.replaceState({}, '');
+    const t = setTimeout(() => setNotFoundToast(false), 3000);
+    return () => clearTimeout(t);
+  }, [notFoundToast]);
   const initialQ = searchParams.get('q') ?? '';
   // Keep links saved with the former UI-only codes working with the real catalog IDs.
   const initialCat = (searchParams.get('category') ?? '').replace(/^DM0([1-5])$/, 'DM0000000$1');
@@ -155,6 +163,15 @@ export function ServicesCatalogPage() {
   return (
     <div className="customer-shell uc7-catalog-page">
       <CustomerHeader />
+      {notFoundToast && (
+        <div role="alert" className="customer-toast customer-toast-error catalog-toast" data-testid="catalog-not-found-toast">
+          <span className="customer-toast-icon" aria-hidden="true"><img src="/assets/uc3-toast-error-x.svg" alt="" /></span>
+          <div className="customer-toast-body">
+            <p className="customer-toast-title">Không thành công</p>
+            <p className="customer-toast-message">Không tìm thấy thông tin dịch vụ!</p>
+          </div>
+        </div>
+      )}
 
       {/* Figma UC_7 / UC6 Hero Banner (1440x235 exact ratio) */}
       <section className="customer-hero-hoian uc7-catalog-hero">

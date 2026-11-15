@@ -42,7 +42,7 @@ export function Login() {
     onError: (err: ApiError) => {
       if (err.code === 'ACCOUNT_TEMPORARILY_LOCKED') {
         setError('root', {
-          message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 15 phút.',
+          message: 'Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau 5 phút.',
         });
       } else if (err.code === 'ACCOUNT_INACTIVE') {
         setError('root', {
@@ -147,7 +147,7 @@ export function Login() {
           )}
           {isTemporarilyLocked && (
             <p role="alert" className="login-lockout-badge">
-              Lần đăng nhập sai liên tiếp thứ 5 · Tạm khóa 15 phút
+              Lần đăng nhập sai liên tiếp thứ 5 · Tạm khóa 5 phút
             </p>
           )}
           <div className="login-actions">

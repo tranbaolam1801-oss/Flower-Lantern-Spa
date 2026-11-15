@@ -67,10 +67,14 @@ export function AdminDashboard() {
   const cache = useQueryClient();
   const [date, setDate] = useState(today);
   const [scrollRequest, setScrollRequest] = useState(0);
-  const nowMinute = Number(nowIso.slice(11, 13)) * 60 + Number(nowIso.slice(14, 16));
   const [selected, setSelected] = useState<CalendarItem | null>(null);
   const [payBookingId, setPayBookingId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(''), 3000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   // UC_2.1 Tạo lịch hẹn
   const createDialog = useRef<HTMLDialogElement>(null);
@@ -153,9 +157,9 @@ export function AdminDashboard() {
 
   const createMutation = useMutation({
     mutationFn: createAdminBooking,
-    onSuccess: async (res) => {
+    onSuccess: async () => {
       createDialog.current?.close();
-      setNotice([`Tạo lịch hẹn ${res.id} thành công!`, ...(res.warnings ?? [])].join(' '));
+      setNotice('Tạo lịch hẹn thành công!');
       await cache.invalidateQueries({ queryKey: ['bookings'] });
     },
     onError: (err: { message?: string; fields?: Record<string, string> }) => {
@@ -402,6 +406,9 @@ export function AdminDashboard() {
 
       {notice && (
         <p role="status" className="spa-toast-success calendar-toast-success">
+          <span className="calendar-toast-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 12.5 4 4 8-9" /></svg>
+          </span>
           {notice}
         </p>
       )}
@@ -435,7 +442,8 @@ export function AdminDashboard() {
           >
             Tìm lịch hẹn
           </Button>
-          <Button type="button" size="sm" onClick={() => openCreateModal()}>
+          {/* Hidden on request (function kept): bookings are still created by choosing an empty slot on the calendar. */}
+          <Button type="button" size="sm" hidden aria-hidden="true" tabIndex={-1} onClick={() => openCreateModal()}>
             + Tạo lịch hẹn
           </Button>
         </div>

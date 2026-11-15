@@ -295,45 +295,9 @@
       "type": "file"
     },
     {
-      "path": "backend/src/config.spec.ts",
-      "accessCount": 2.999841778518309,
-      "lastAccessed": 1794482488482,
-      "type": "file"
-    },
-    {
-      "path": "backend/src/auth/auth.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1794482851683,
-      "type": "file"
-    },
-    {
       "path": "backend/Dockerfile",
       "accessCount": 3.937789525529805,
       "lastAccessed": 1794486932454,
-      "type": "file"
-    },
-    {
-      "path": ".dockerignore",
-      "accessCount": 1,
-      "lastAccessed": 1794483015839,
-      "type": "file"
-    },
-    {
-      "path": "docs-deploy/azure.env.example",
-      "accessCount": 1,
-      "lastAccessed": 1794485715846,
-      "type": "file"
-    },
-    {
-      "path": "scripts/azure-deploy.sh",
-      "accessCount": 1,
-      "lastAccessed": 1794485750908,
-      "type": "file"
-    },
-    {
-      "path": "database/AZURE_MIGRATION_APPROVAL_CHECKLIST.md",
-      "accessCount": 1,
-      "lastAccessed": 1794485785177,
       "type": "file"
     },
     {
@@ -562,6 +526,42 @@
       "path": "database/postgres/006-profile-avatar-email.rollback.sql",
       "accessCount": 1,
       "lastAccessed": 1794632301377,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/styles.css",
+      "accessCount": 1.9992524267131708,
+      "lastAccessed": 1794715773833,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/admin-reviews.tsx",
+      "accessCount": 3.998206558977843,
+      "lastAccessed": 1794715886735,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/components/notice-toast.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1794715881379,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src",
+      "accessCount": 1,
+      "lastAccessed": 1794715887950,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/index.html",
+      "accessCount": 1.999666863503412,
+      "lastAccessed": 1794716355074,
+      "type": "file"
+    },
+    {
+      "path": "frontend/public/favicon-192.png",
+      "accessCount": 2.9736511731331667,
+      "lastAccessed": 1794718013325,
       "type": "file"
     }
   ],

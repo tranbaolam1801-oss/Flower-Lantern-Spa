@@ -33,10 +33,10 @@ const whyChooseItems = [
 ];
 
 const galleryItems = [
-  { src: '/assets/hero-hoian-bg.png', alt: 'Phố cổ Hội An và hoa đăng tại Flower Lantern Spa' },
-  { src: '/assets/lotus-decor.png', alt: 'Họa tiết hoa sen thanh khiết đặc trưng' },
-  { src: '/assets/login-lotus.png', alt: 'Không gian thư giãn với hương sen dịu nhẹ' },
-  { src: '/assets/admin-imgLotusDecoration.png', alt: 'Góc đón tiếp nhẹ nhàng tại Flower Lantern Spa' },
+  { src: '/assets/images/spa/gallery-lounge.jpg', alt: 'Khu ghế thư giãn chân tại Flower Lantern Spa Hội An' },
+  { src: '/assets/images/spa/gallery-storefront.jpg', alt: 'Cửa kính và lối vào Flower Lantern Spa Hội An' },
+  { src: '/assets/images/spa/gallery-interior.jpg', alt: 'Không gian bên trong Flower Lantern Spa với đèn lồng Hội An' },
+  { src: '/assets/images/spa/gallery-waiting-area.jpg', alt: 'Khu ghế chờ và thư giãn chân tại Flower Lantern Spa Hội An' },
 ];
 
 export function HomePage() {
@@ -88,7 +88,7 @@ export function HomePage() {
       <section id="gioi-thieu" className="home-section home-about">
         <div className="home-container home-about-grid">
           <div className="home-about-media">
-            <img src="/assets/lotus-decor.png" alt="Không gian hoa sen thanh tịnh tại Flower Lantern Spa" />
+            <img src="/assets/images/spa/about-interior.jpg" alt="Không gian thư giãn bên trong Flower Lantern Spa Hội An" loading="lazy" width="1280" height="853" />
           </div>
           <div className="home-about-body">
             <h2>Flower Lantern Spa</h2>
@@ -186,7 +186,7 @@ export function HomePage() {
           <div className="home-gallery-grid">
             {galleryItems.map((img) => (
               <figure key={img.src} className="home-gallery-item">
-                <img src={img.src} alt={img.alt} />
+                <img src={img.src} alt={img.alt} loading="lazy" />
               </figure>
             ))}
           </div>
@@ -235,7 +235,7 @@ export function HomePage() {
               <p>Một điểm dừng chân yên bình giữa lòng Hội An, nơi bạn tận hưởng những phút giây chăm sóc và phục hồi năng lượng.</p>
             </div>
             <div className="home-contact-visit-layout">
-              <img className="home-contact-visit-image" src="/assets/hero-hoian-bg.png" alt="Không gian Hội An" />
+              <img className="home-contact-visit-image" src="/assets/images/spa/contact-storefront.jpg" alt="Lối vào Flower Lantern Spa tại Hội An" loading="lazy" width="1280" height="720" />
               <div className="home-contact-visit-details">
                 <dl className="home-contact-list">
                   <div>

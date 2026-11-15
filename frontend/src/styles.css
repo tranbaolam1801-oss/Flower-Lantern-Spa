@@ -1236,3 +1236,91 @@ html{scroll-padding-top:90px}
   font-size: 13px;
   white-space: nowrap;
 }
+.home-contact-visit-image{object-position:center 30%}.home-gallery-item img{object-position:center 40%}
+.home-gallery-item img,.home-about-media img,.home-contact-visit-image{object-position:center}
+
+/* UC_8.6 01_DanhSachNhanVien (Figma): toolbar outside the card, card with icon + title, every row shows the same 5 actions (unavailable ones are dimmed, never hidden) */
+.emp-page{display:flex;flex-direction:column;gap:clamp(14px,1.4vw,22px)}
+.emp-toolbar{display:flex;align-items:center;gap:clamp(10px,1vw,16px)}
+.emp-search{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;height:50px;padding:0 16px;background:#fff;border:1px solid #e6eae4;border-radius:13px}.emp-search img{width:20px;height:20px}.emp-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:14px}.emp-search:focus-within{border-color:#648f57}
+.emp-filter-wrap{position:relative;flex:0 0 auto}.emp-toolbar-btn{height:50px;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}.emp-filter-btn{min-width:137px;padding:0 20px;background:#fff;border:1px solid #e6eae4;color:#153d2a}.emp-add-btn{min-width:212px;padding:0 24px;background:linear-gradient(#6d9a5e,#5a8a4b);color:#fff}
+.emp-filter-popover{min-width:200px}
+.emp-card{background:#fff;border:1px solid #e6eae4;border-radius:18px;padding:clamp(16px,1.6vw,24px);min-height:420px}
+.emp-card-head{display:flex;align-items:center;gap:14px;margin-bottom:clamp(14px,1.6vw,24px)}.emp-card-icon{width:48px;height:48px;border-radius:12px;background:#ecf4e9;color:#4f7f3f;display:grid;place-items:center}.emp-card-head h1{margin:0;font-size:clamp(22px,1.9vw,29px);font-weight:700;color:#153d2a}
+.emp-card .customer-search-scroll{overflow-x:auto}
+.emp-card .admin-employee-table thead tr{background:#ecf4e9}.emp-card .admin-employee-table th{background:#ecf4e9;font-size:14px;font-weight:700;color:#153d2a;text-align:left}.emp-card .admin-employee-table th:first-child{border-radius:10px 0 0 10px}.emp-card .admin-employee-table th:last-child{border-radius:0 10px 10px 0}
+.emp-card .admin-employee-table tbody tr:nth-child(even){background:#fafcfa}.emp-card .admin-employee-table td{border-bottom:1px solid #e6eae4}
+.emp-actions{display:flex;flex-wrap:nowrap;align-items:center;gap:clamp(6px,.5vw,8px);width:max-content}
+.emp-icon-btn{flex:0 0 auto;width:clamp(34px,2.4vw,40px);height:clamp(34px,2.4vw,40px);border-radius:10px;display:grid;place-items:center;border:0;cursor:pointer;transition:filter .15s}
+.emp-icon-view,.emp-icon-edit{background:#e6f1e1;color:#4f7f3f}.emp-icon-delete{background:#fcebf0;color:#c04c73}
+.emp-text-btn{flex:0 0 auto;height:clamp(34px,2.4vw,40px);padding:0 clamp(10px,.9vw,14px);border-radius:10px;background:#fff;border:1px solid #d7e6d1;color:#4f7f3f;font-size:clamp(12.5px,.9vw,14px);font-weight:600;white-space:nowrap;cursor:pointer}
+.emp-icon-btn:hover:not(:disabled),.emp-text-btn:hover:not(:disabled){filter:brightness(.96)}
+.emp-icon-btn:focus-visible,.emp-text-btn:focus-visible{outline:2px solid #648f57;outline-offset:2px}
+.emp-icon-btn:disabled,.emp-text-btn:disabled{opacity:.38;cursor:not-allowed;filter:none}
+@media(max-width:700px){.emp-toolbar{flex-wrap:wrap}.emp-search{flex-basis:100%}.emp-filter-btn,.emp-add-btn{flex:1 1 0;min-width:0}}
+
+/* Numbered pager (Figma UC_4 main screen) */
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}.pager-btn{min-width:36px;height:34px;padding:0 10px;border-radius:8px;background:#fff;border:1px solid var(--color-border,#e6eae4);color:#23342a;font-size:14px;cursor:pointer}.pager-btn:hover:not(:disabled):not(.is-current){background:#f1f8ee}.pager-btn.is-current{background:#648f57;border-color:#648f57;color:#fff;font-weight:700;cursor:default}.pager-btn:disabled{opacity:.45;cursor:not-allowed}.pager-arrow{font-size:18px;line-height:1}.pager-gap{min-width:28px;text-align:center;color:#667068}.pager-btn:focus-visible{outline:2px solid #648f57;outline-offset:2px}
+.calendar-toolbar-right button[hidden]{display:none!important}
+
+/* UC_4.1 detail + UC_4.2 reply modal (Figma 01_ChiTiet_DaPhanHoi, 01_MoModal_TuDanhSach) */
+.rv-card{background:#fff;border:1px solid #e6eae4;border-radius:18px;padding:clamp(16px,1.6vw,24px);display:flex;flex-direction:column;gap:16px}
+.rv-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.rv-card-title{display:flex;align-items:center;gap:12px;margin:0;font-size:clamp(17px,1.3vw,20px);font-weight:700;color:#153d2a}.rv-card-icon{width:30px;height:30px;border-radius:50%;background:#ecf4e9;color:#4f7f3f;display:grid;place-items:center}
+.rv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 clamp(20px,3vw,48px)}.rv-row{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(0,1.4fr);align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e6eae4;font-size:14px}.rv-label{display:flex;align-items:center;gap:10px;color:#667068;font-weight:400}.rv-label svg{color:#648f57}.rv-value{color:#23342a;font-weight:400;overflow-wrap:anywhere}
+.rv-value-stars{display:flex;align-items:center;gap:10px}.rv-stars{display:inline-flex;gap:2px;font-size:16px;letter-spacing:1px}.rv-stars .on{color:#e8789a}.rv-stars .off{color:#d6dbd4}.rv-score{font-size:13px;color:#445}
+.rv-quote{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.6;color:#23342a}.rv-quote p{margin:0;overflow-wrap:anywhere}.rv-quote-green{background:#eef5ea}.rv-quote-pink{background:#fdecef}.rv-quote-mark{font:700 22px/1 Georgia,serif;color:#e8789a}.rv-reply-by{margin:0;font-size:12.5px;color:#667068}
+.rv-reply-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:10px;background:#fff;border:1px solid #648f57;color:#4f7f3f;font-weight:600;cursor:pointer}
+@media(max-width:800px){.rv-grid{grid-template-columns:minmax(0,1fr)}}
+.rv-modal{margin:auto;border:0;border-radius:18px;padding:0;width:min(520px,calc(100vw - 24px));box-shadow:0 12px 40px rgb(21 61 42 / .18);background:#fff;color:#23342a}.rv-modal::backdrop{background:rgb(21 61 42 / .35)}
+.rv-modal-body{padding:24px 28px 8px;display:flex;flex-direction:column;gap:14px}.rv-modal-body h2{margin:0;font-size:20px;font-weight:700;color:#153d2a}
+.rv-modal-info{margin:0;display:flex;flex-direction:column;gap:8px}.rv-modal-info>div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;align-items:center;font-size:13.5px}.rv-modal-info dt{display:flex;align-items:center;gap:8px;color:#667068}.rv-modal-info dt svg{color:#648f57}.rv-modal-info dd{margin:0;font-weight:600}
+.rv-reply-field{display:flex;flex-direction:column;gap:6px}.rv-reply-field textarea{min-height:110px;padding:12px 14px;border:1px solid #cfe3c9;border-radius:12px;font-size:14px;resize:vertical;font-family:inherit}.rv-reply-field textarea:focus{outline:2px solid #648f57;outline-offset:1px}.rv-reply-field.is-invalid textarea{border-color:#c0284b}.rv-field-error{font-size:12.5px;color:#c0284b}.rv-save-error{margin:0;font-size:13px;color:#c0284b}
+.rv-modal-foot{display:flex;justify-content:flex-end;gap:12px;padding:12px 28px 24px}.rv-btn-outline,.rv-btn-primary{height:40px;border-radius:10px;padding:0 22px;font-size:14px;font-weight:700;cursor:pointer}.rv-btn-outline{background:#fff;border:1px solid #d7e6d1;color:#23342a}.rv-btn-primary{background:#648f57;color:#fff}.rv-btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.rv-save-error{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #f2b8c4;border-radius:10px;background:#fdeef2;font-size:13.5px}.rv-stars-gold .on{color:#f5a800}
+.rv-reply-field.is-invalid textarea{border-width:1.5px}.rv-modal-foot{padding-top:10px}
+.rv-row .pill-status{justify-self:start;width:max-content}.rv-stars{font-size:20px}.rv-modal .rv-stars{font-size:18px}
+/* UC_4.2 reply modal: match Figma weights/sizes (no heavy bold) */
+.rv-modal{width:min(720px,calc(100vw - 24px));border-radius:20px}
+.rv-modal-body{padding:28px 32px 8px;gap:18px}
+.rv-modal-body h2{font-size:24px;font-weight:700}
+.rv-modal-info{gap:12px}
+.rv-modal-info>div{grid-template-columns:160px minmax(0,1fr);font-size:17px}
+.rv-modal-info dt{font-weight:400;gap:12px}
+.rv-modal-info dt svg{width:22px;height:22px}
+.rv-modal-info dd{font-weight:500;color:#2a3a30}
+.rv-modal .rv-quote{background:#f1f6ee;padding:16px 20px;font-size:17px;font-weight:400;line-height:1.65;border-radius:12px}
+.rv-modal .rv-quote-mark{font:400 24px/1 Georgia,serif;color:#e8789a}
+.rv-modal .rv-stars{font-size:28px;letter-spacing:2px}.rv-modal .rv-stars .on{color:#f5ad00}.rv-modal .rv-stars .off{color:#c9ccd1}
+.rv-modal .rv-score{font-size:17px;font-weight:400;margin-left:14px;color:#2a3a30}
+.rv-reply-field textarea{min-height:170px;padding:16px 20px;font-size:17px;border-color:#d9e6d3;border-radius:14px}
+.rv-modal-foot{padding:14px 32px 28px}
+.rv-btn-outline,.rv-btn-primary{height:52px;border-radius:12px;padding:0 28px;font-size:17px;font-weight:600}
+.rv-btn-outline{border-color:#d9e6d3;color:#153d2a}
+.rv-btn-primary{background:#5f8d3f;min-width:214px}
+/* UC_4 list + detail: Figma weights (nothing bold in body rows), solid green reply button */
+.rv-list td,.rv-list td strong{font-weight:400}
+.rv-list th{font-weight:600}
+.rv-list .pill-status{font-weight:500}
+.rv-list .star-cell{color:#f5ad00}
+.rv-reply-btn{background:#648f57;border-color:#648f57;color:#fff;font-weight:600}
+.rv-reply-btn:hover{background:#557d49}
+.rv-value,.rv-value strong{font-weight:400}
+/* UC_4.2 success toast: small pill in the top bar, left of the bell (Figma 03_ThanhCong_ChiTiet) */
+.rv-toast{position:fixed;top:clamp(14px,1.6vw,26px);right:clamp(210px,24vw,380px);z-index:60;display:inline-flex;align-items:center;gap:8px;margin:0;padding:9px 16px;border-radius:10px;background:#eaf5e6;border:1px solid #cfe3c9;color:#2e6b3a;font-size:13px;font-weight:400;box-shadow:0 2px 8px rgb(21 61 42 / .06)}
+.rv-toast svg{color:#4f9a4a;flex:none}
+/* UC_2.1 success toast (Figma): white pill, green outline, filled check circle, short bold text, top-left */
+.calendar-toast-success{display:flex;align-items:center;gap:10px;top:14px;left:14px;width:auto;min-width:min(300px,calc(100vw - 28px));padding:10px 16px;border:1.5px solid #4f8a5b;border-radius:12px;background:#fff;color:#153d2a;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgb(21 61 42 / .1)}
+.calendar-toast-check{display:inline-grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:#4f8a5b}
+/* UC6.2: compact pink "Không thành công" toast over the catalogue hero (no close / retry) */
+.catalog-toast{top:118px;right:clamp(16px,4vw,60px);width:min(400px,calc(100vw - 32px));padding:16px 18px;align-items:center}
+.catalog-toast .customer-toast-title{font-size:14px}.catalog-toast .customer-toast-message{font-size:12.5px;margin:0}
+/* UC_10.2 revenue: line/area chart like Figma */
+.reports-line{display:block;width:100%;height:auto;max-height:300px}
+.reports-line .rl-axis{font-size:11px;fill:#667068;font-family:inherit}
+.reports-line .rl-grid{stroke:#e3ece0;stroke-width:1}
+.reports-line .rl-area{fill:#648f57;fill-opacity:.12}
+.reports-line .rl-line{fill:none;stroke:#648f57;stroke-width:1.6;stroke-linejoin:round}
+.reports-line .rl-dot{fill:#648f57}
+.reports-granularity button{font-size:12px;padding:5px 12px;border-color:transparent;background:transparent;color:#667068}
+.reports-granularity{background:#f1f4ee;border-radius:10px;padding:3px;gap:2px}
+.reports-granularity button[aria-pressed="true"]{border-radius:8px;background:#648f57;color:#fff}

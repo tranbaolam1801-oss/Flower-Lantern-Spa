@@ -45,7 +45,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Đăng nhập hệ thống (UC_1)' })
   @ApiResponse({ status: 200, description: 'Đăng nhập thành công, thiết lập HttpOnly cookie.' })
   @ApiResponse({ status: 401, description: 'Số điện thoại hoặc mật khẩu không đúng.' })
-  @ApiResponse({ status: 403, description: 'Tài khoản bị khóa hoặc tạm khóa 15 phút.' })
+  @ApiResponse({ status: 403, description: 'Tài khoản bị khóa hoặc tạm khóa 5 phút.' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,

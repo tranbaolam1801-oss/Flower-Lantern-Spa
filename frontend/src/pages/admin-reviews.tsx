@@ -1,6 +1,6 @@
-import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
+import { Pagination } from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/auth-context';
@@ -10,6 +10,22 @@ import {
   replyToReview,
   type ReviewItem,
 } from '../lib/management-api';
+
+const REVIEWS_PER_PAGE = 5; // Figma UC_4 shows 5 rows per page
+
+const ico = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const;
+const IUser = () => <svg {...ico}><circle cx="12" cy="8" r="4" /><path d="M4.5 21c.7-4 3.5-6 7.5-6s6.8 2 7.5 6" /></svg>;
+const IStar = () => <svg {...ico}><path d="m12 4 2.4 5 5.4.7-4 3.8 1 5.4L12 16.3 7.2 19l1-5.4-4-3.8 5.4-.7z" /></svg>;
+const IBox = () => <svg {...ico}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12 12v9M4 7.5 12 12l8-4.5" /></svg>;
+const ICal = () => <svg {...ico}><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>;
+const IMsg = () => <svg {...ico}><path d="M20 4H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h3v4l5-4h8a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1Z" /></svg>;
+const IReply = () => <svg {...ico}><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 6 6v3" /></svg>;
+const IServ = () => <svg {...ico}><path d="M12 21v-8" /><path d="M12 13c-3 0-5-2-5-5 3 0 5 2 5 5Zm0 0c3 0 5-2 5-5-3 0-5 2-5 5Z" /></svg>;
+/** Figma stars: filled in the rating colour, the rest grey. */
+/** ISO / 'YYYY-MM-DD HH:mm' -> dd/mm/yyyy HH:mm (Figma). Instants without a zone are treated as already local. */
+const fmtDateTime = (v: string) => { const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(v ?? ''); return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : v; };
+const Stars = ({ n }: { n: number }) => <span className="rv-stars" aria-label={`${n} trên 5 sao`}>{[1, 2, 3, 4, 5].map((i) => <span key={i} className={i <= n ? 'on' : 'off'}>★</span>)}</span>;
+const Quote = ({ children, tone = 'green' }: { children: React.ReactNode; tone?: 'green' | 'pink' }) => <div className={`rv-quote rv-quote-${tone}`}><span className="rv-quote-mark" aria-hidden="true">“</span><p>{children}</p></div>;
 
 function EyeIcon() {
   return (
@@ -52,10 +68,13 @@ export function AdminReviewsPage() {
   }, [text]);
 
   const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q03');
-  const query = useContinuousList({
-    queryKey: ['admin-reviews', q, status],
-    queryFn: (page) => listReviews({ q, status, page }),
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [q, status]); // a new search/filter always starts at page 1
+  const query = useQuery({
+    queryKey: ['admin-reviews', q, status, page],
+    queryFn: () => listReviews({ q, status, page, limit: REVIEWS_PER_PAGE }),
     enabled: !!allowed,
+    placeholderData: keepPreviousData,
   });
 
   const detailQuery = useQuery({
@@ -63,6 +82,12 @@ export function AdminReviewsPage() {
     queryFn: () => getReviewDetail(detailId!),
     enabled: !!detailId,
   });
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(''), 3000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   const replyMutation = useMutation({
     mutationFn: () => replyToReview(replyTarget!.id, replyContent.trim()),
@@ -102,7 +127,12 @@ export function AdminReviewsPage() {
     <ManagementLayout active="Q03">
       <div className="figma-admin-stack" aria-label="Quản lý đánh giá và phản hồi">
         <h1 className="sr-only">Quản lý đánh giá &amp; phản hồi</h1>
-        {notice && <p role="status" className="spa-toast-success">{notice}</p>}
+        {notice && (
+          <p role="status" className="rv-toast">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m8 12.5 2.8 2.8L16 9.6" /></svg>
+            {notice}
+          </p>
+        )}
 
         {!allowed ? (
           <p role="alert" className="admin-panel-card">Bạn không có quyền quản lý đánh giá và phản hồi.</p>
@@ -133,49 +163,35 @@ export function AdminReviewsPage() {
               </div>
             ) : detailQuery.data ? (
               <>
-                <section className="admin-panel-card">
-                  <h2 className="figma-card-title">Thông tin đánh giá</h2>
-                  <div className="review-meta-grid">
-                    <div><span>Khách hàng</span><strong>{detailQuery.data.customerName}</strong></div>
-                    <div>
-                      <span>Số sao</span>
-                      <strong className="star-cell">
-                        {'★'.repeat(detailQuery.data.rating)}{'☆'.repeat(Math.max(0, 5 - detailQuery.data.rating))} ({detailQuery.data.rating}/5)
-                      </strong>
-                    </div>
-                    <div><span>Dịch vụ</span><strong>{detailQuery.data.serviceName}</strong></div>
-                    <div><span>Gói dịch vụ</span><strong>{detailQuery.data.packageName || '—'}</strong></div>
-                    <div><span>Ngày đánh giá</span><strong>{detailQuery.data.createdAt}</strong></div>
-                    <div>
-                      <span>Trạng thái phản hồi</span>
-                      <span className={`pill-status ${detailQuery.data.status === 'Đã phản hồi' ? 'pill-ok' : 'pill-warn'}`}>
-                        {detailQuery.data.status}
-                      </span>
-                    </div>
+                <section className="rv-card" aria-labelledby="rv-info-title">
+                  <h2 id="rv-info-title" className="rv-card-title"><span className="rv-card-icon"><IMsg /></span>Thông tin đánh giá</h2>
+                  <div className="rv-grid">
+                    <div className="rv-row"><span className="rv-label"><IUser />Khách hàng</span><strong className="rv-value">{detailQuery.data.customerName}</strong></div>
+                    <div className="rv-row"><span className="rv-label"><IStar />Số sao</span><span className="rv-value rv-value-stars"><Stars n={detailQuery.data.rating} /><span className="rv-score">{detailQuery.data.rating}/5</span></span></div>
+                    <div className="rv-row"><span className="rv-label"><IServ />Dịch vụ</span><span className="rv-value">{detailQuery.data.serviceName}</span></div>
+                    <div className="rv-row"><span className="rv-label"><IBox />Gói dịch vụ</span><span className="rv-value">{detailQuery.data.packageName || '—'}</span></div>
+                    <div className="rv-row"><span className="rv-label"><ICal />Ngày đánh giá</span><span className="rv-value">{fmtDateTime(detailQuery.data.createdAt)}</span></div>
+                    <div className="rv-row"><span className="rv-label"><IMsg />Trạng thái phản hồi</span>
+                      <span className={`pill-status ${detailQuery.data.status === 'Đã phản hồi' ? 'pill-ok' : 'pill-warn'}`}>{detailQuery.data.status}</span></div>
                   </div>
                 </section>
 
-                <section className="admin-panel-card">
-                  <h2 className="figma-card-title">Nội dung đánh giá</h2>
-                  <blockquote className="review-quote">
-                    {detailQuery.data.comment || 'Không có bình luận.'}
-                  </blockquote>
+                <section className="rv-card" aria-labelledby="rv-comment-title">
+                  <h2 id="rv-comment-title" className="rv-card-title"><span className="rv-card-icon"><IMsg /></span>Nội dung đánh giá</h2>
+                  <Quote>{detailQuery.data.comment || 'Không có bình luận.'}</Quote>
                 </section>
 
-                <section className="admin-panel-card">
-                  <div className="review-reply-head">
-                    <h2 className="figma-card-title" style={{ margin: 0 }}>Nội dung phản hồi</h2>
+                <section className="rv-card" aria-labelledby="rv-reply-title">
+                  <div className="rv-card-head">
+                    <h2 id="rv-reply-title" className="rv-card-title"><span className="rv-card-icon"><IReply /></span>Nội dung phản hồi</h2>
                     {!detailQuery.data.reply && (
-                      <Button type="button" size="sm" onClick={() => openReply(detailQuery.data)}>
-                        ↩ Phản hồi
-                      </Button>
+                      <button type="button" className="rv-reply-btn" onClick={() => openReply(detailQuery.data)}><IReply />Phản hồi</button>
                     )}
                   </div>
                   {detailQuery.data.reply ? (
-                    <div className="review-reply-box">
-                      <p>{detailQuery.data.reply.content}</p>
-                      <small>Phản hồi bởi {detailQuery.data.reply.staffName} · {detailQuery.data.reply.repliedAt}</small>
-                    </div>
+                    <>
+                      <Quote tone="pink">{detailQuery.data.reply.content}</Quote>
+                    </>
                   ) : (
                     <p className="review-no-reply">Chưa có phản hồi cho đánh giá này.</p>
                   )}
@@ -227,7 +243,7 @@ export function AdminReviewsPage() {
               ) : (
                 <>
                   <div className="customer-search-scroll">
-                    <table className="customer-search-table figma-admin-table">
+                    <table className="customer-search-table figma-admin-table rv-list">
                       <thead>
                         <tr>
                           <th>Mã đánh giá</th>
@@ -280,7 +296,7 @@ export function AdminReviewsPage() {
                       Không tìm thấy đánh giá phù hợp!
                     </p>
                   )}
-                  <ContinuousListEnd query={query}/>
+                  <Pagination page={query.data?.page ?? page} totalPages={query.data?.totalPages ?? 1} busy={query.isFetching} onChange={(next) => { setPage(next); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
                 </>
               )}
             </section>
@@ -289,45 +305,36 @@ export function AdminReviewsPage() {
       </div>
 
       {/* UC_4.2 Modal Phản hồi đánh giá khớp Figma 1:947 */}
-      <dialog ref={replyDialog} className="spa-modal spa-modal-tinted" aria-labelledby="reply-modal-title">
-        <div className="spa-modal-header">
-          <h2 id="reply-modal-title">Phản hồi đánh giá</h2>
-          <button type="button" className="spa-modal-close" onClick={() => replyDialog.current?.close()}>×</button>
-        </div>
+      <dialog ref={replyDialog} className="rv-modal" aria-labelledby="reply-modal-title">
         <form onSubmit={submitReply} noValidate>
-          <div className="spa-modal-body">
+          <div className="rv-modal-body">
+            <h2 id="reply-modal-title">Phản hồi đánh giá</h2>
             {replyTarget && (
               <>
-                <dl className="detail-kv-list">
-                  <div><dt>Khách hàng</dt><dd>{replyTarget.customerName}</dd></div>
-                  <div><dt>Dịch vụ</dt><dd>{replyTarget.serviceName}</dd></div>
-                  <div><dt>Số sao</dt><dd className="star-cell">{'★'.repeat(replyTarget.rating)} ({replyTarget.rating}/5)</dd></div>
+                <dl className="rv-modal-info">
+                  <div><dt><IUser />Khách hàng</dt><dd>{replyTarget.customerName}</dd></div>
+                  <div><dt><IServ />Dịch vụ</dt><dd>{replyTarget.serviceName}</dd></div>
+                  <div><dt><IStar />Số sao</dt><dd className="rv-value-stars rv-stars-gold"><Stars n={replyTarget.rating} /><span className="rv-score">{replyTarget.rating}/5</span></dd></div>
                 </dl>
-                <blockquote className="review-quote">
-                  {replyTarget.comment || 'Không có nội dung bình luận.'}
-                </blockquote>
+                <Quote>{replyTarget.comment || 'Không có nội dung bình luận.'}</Quote>
               </>
             )}
-            <label className={`spa-field${replyFieldError ? ' spa-field-invalid' : ''}`}>
-              <span>Nội dung phản hồi <em>*</em></span>
+            <label className={`rv-reply-field${replyFieldError ? ' is-invalid' : ''}`}>
+              <span className="sr-only">Nội dung phản hồi</span>
               <textarea
-                rows={4}
+                rows={5}
                 value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
+                onChange={(e) => { setReplyContent(e.target.value); if (replyFieldError) setReplyFieldError(''); }}
                 placeholder="Nhập nội dung phản hồi..."
                 aria-invalid={!!replyFieldError}
               />
-              {replyFieldError && <p role="alert" className="spa-field-error-text">{replyFieldError}</p>}
+              {replyFieldError && <small role="alert" className="rv-field-error">{replyFieldError}</small>}
             </label>
-            {replyError && <p role="alert" className="spa-form-error">⚠ {replyError}</p>}
+            {replyError && <p role="alert" className="rv-save-error"><svg {...ico} width={18} height={18}><path d="M12 3 2 20h20Z" /><path d="M12 10v5M12 18h.01" /></svg>{replyError}</p>}
           </div>
-          <div className="spa-modal-footer">
-            <Button type="button" size="sm" variant="outline" onClick={() => replyDialog.current?.close()}>
-              Hủy
-            </Button>
-            <Button type="submit" size="sm" disabled={replyMutation.isPending}>
-              {replyMutation.isPending ? 'Đang gửi…' : 'Gửi phản hồi'}
-            </Button>
+          <div className="rv-modal-foot">
+            <button type="button" className="rv-btn-outline" onClick={() => replyDialog.current?.close()}>Hủy</button>
+            <button type="submit" className="rv-btn-primary" disabled={replyMutation.isPending}>{replyMutation.isPending ? 'Đang gửi…' : 'Gửi phản hồi'}</button>
           </div>
         </form>
       </dialog>
