@@ -3,9 +3,9 @@
   "jobId": "5d86ee83-0bf7-4e17-8441-0072974ac295",
   "sessionId": "12cea2bc-063b-45b9-afa9-d74db14da2f6",
   "scopeKey": "24f280f8b5aaaf4ab5e7fd5ae4cbe05527bdaf4d98a62ee5fa394123d87b0f6d",
-  "revision": 56,
+  "revision": 66,
   "createdAt": "2026-11-15T03:50:44.007Z",
-  "updatedAt": "2026-11-15T03:51:24.051Z",
+  "updatedAt": "2026-11-15T09:41:38.541Z",
   "producerGraceExpiresAt": "2026-11-15T03:51:14.010Z",
   "bestEffortDeadlineAt": "2026-11-15T03:52:07.010Z",
   "producers": {
@@ -202,7 +202,7 @@
     "callback": {
       "class": "best-effort",
       "phase": "deferred-best-effort",
-      "status": "claimed",
+      "status": "expired",
       "attempts": 1,
       "idempotencyKey": "313c12b1369590c36f38e4cde26277bce5f9c2f8b874b1976470cdaa752bea30",
       "payload": {
@@ -229,19 +229,19 @@
         }
       },
       "budgetMs": 2000,
-      "claimantNonce": "6b11d845-0205-426f-84ca-09738d1c0b48",
       "claimedAt": "2026-11-15T03:51:23.304Z",
       "runner": {
         "attempt": 1,
         "runnerNonce": "7bd7cb3f-d332-438a-a0cd-a8667cce07c7",
-        "phase": "armed",
+        "phase": "terminal",
         "deadlineAt": "2026-11-15T03:51:24.013Z"
-      }
+      },
+      "lastOutcomeCode": "delivery-uncertain-owner-reaped"
     },
     "notification": {
       "class": "best-effort",
       "phase": "deferred-best-effort",
-      "status": "pending",
+      "status": "expired",
       "attempts": 0,
       "idempotencyKey": "ff6648a3f5ce375b9bb376999a02d65820b8a0e4e553d4034bf6a329298767d1",
       "payload": {
@@ -267,12 +267,13 @@
           "modes_used": []
         }
       },
-      "budgetMs": 2000
+      "budgetMs": 2000,
+      "lastOutcomeCode": "deadline-expired"
     },
     "openclaw": {
       "class": "best-effort",
       "phase": "deferred-best-effort",
-      "status": "pending",
+      "status": "expired",
       "attempts": 0,
       "idempotencyKey": "09734341ba2eaa3534c39d8fbb08495d22f00cd778d106424cbc801086591cff",
       "payload": {
@@ -298,12 +299,13 @@
           "modes_used": []
         }
       },
-      "budgetMs": 2000
+      "budgetMs": 2000,
+      "lastOutcomeCode": "deadline-expired"
     },
     "spawn-next": {
       "class": "best-effort",
       "phase": "deferred-best-effort",
-      "status": "pending",
+      "status": "expired",
       "attempts": 0,
       "idempotencyKey": "b84a02a235eb8583a887261f08bdb7e1ab412ced57d03bd9a9389a766779a637",
       "payload": {
@@ -321,24 +323,20 @@
         "initialTeamNames": [],
         "openClawRouting": {}
       },
-      "budgetMs": 2000
+      "budgetMs": 2000,
+      "lastOutcomeCode": "deadline-expired"
     }
   },
-  "owner": {
-    "nonce": "6b11d845-0205-426f-84ca-09738d1c0b48",
-    "pid": 5812,
-    "processStartIdentity": "ticks:639303114440694904",
-    "claimedAt": "2026-11-15T03:51:15.644Z",
-    "heartbeatAt": "2026-11-15T03:51:24.051Z",
-    "leaseExpiresAt": "2026-11-15T03:51:24.013Z",
-    "runDeadlineAt": "2026-11-15T03:51:24.013Z",
-    "leaseGeneration": 28,
-    "claimedFromRevision": 4
-  },
-  "phase": "processing",
+  "owner": null,
+  "phase": "complete",
   "recoverableFailure": {
     "reason": "actions-settled",
-    "releasedAt": "2026-11-15T03:50:45.654Z",
-    "ownerNonce": "34749fc7-3f5d-427c-8389-1bc30d6e70f1"
+    "releasedAt": "2026-11-15T09:41:38.514Z",
+    "ownerNonce": "26abef9d-43c7-43e5-a6eb-5dfdb4158c87"
+  },
+  "completion": {
+    "completedAt": "2026-11-15T09:41:38.514Z",
+    "terminalDigest": "da515cc71a80d776aade7b66babb2faf445407a0f04462c3527426b11559a6b7",
+    "terminalRevision": 65
   }
 }

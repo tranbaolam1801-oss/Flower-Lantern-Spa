@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMeApi, logoutApi, type AuthUser, type ApiError } from '../lib/auth-api';
+import { activityApi, getMeApi, logoutApi, type AuthUser, type ApiError } from '../lib/auth-api';
 
 interface AuthState {
   user: AuthUser | null;
@@ -65,6 +65,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   },[client,session.data]);
 
+  // Idle timeout: 5 hours without any real interaction -> signed out. The server enforces it too (the session row
+  // expires 5h after the last heartbeat); this timer also covers tabs that stay open and storage shared by several tabs.
+  const userId = session.data?.id;
+  const loadingRef = useRef(true);
+  loadingRef.current = session.isPending;
+  const logoutRef = useRef<() => Promise<void>>(async () => undefined);
+  useEffect(() => {
+    const KEY = 'spa:last-activity';
+    if (!userId) { if (!loadingRef.current) localStorage.removeItem(KEY); return; }
+    const IDLE_MS = 5 * 60 * 60 * 1000;
+    const HEARTBEAT_MS = 4 * 60 * 1000;
+    const stored = Number(localStorage.getItem(KEY) ?? 0);
+    if (stored && Date.now() - stored > IDLE_MS) { void logoutRef.current(); localStorage.removeItem(KEY); return; }
+    let lastSeen = Date.now();
+    let lastBeat = Date.now();
+    localStorage.setItem(KEY, String(lastSeen));
+    const mark = () => {
+      const now = Date.now();
+      if (now - lastSeen < 5000) return; // throttle
+      lastSeen = now;
+      localStorage.setItem(KEY, String(now));
+    };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'] as const;
+    events.forEach((e) => window.addEventListener(e, mark, { passive: true, capture: true }));
+    const timer = window.setInterval(() => {
+      const latest = Math.max(lastSeen, Number(localStorage.getItem(KEY) ?? 0));
+      if (Date.now() - latest > IDLE_MS) { localStorage.removeItem(KEY); void logoutRef.current(); return; }
+      if (latest > lastBeat && Date.now() - lastBeat >= HEARTBEAT_MS) { lastBeat = Date.now(); void activityApi().catch(() => undefined); }
+    }, 60000);
+    return () => { events.forEach((e) => window.removeEventListener(e, mark, { capture: true })); window.clearInterval(timer); };
+  }, [userId]);
+
   const logout = useCallback(async () => {
     await logoutApi();
     await client.cancelQueries();
@@ -73,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     channel.current?.postMessage('refresh');
   }, [client]);
 
+  logoutRef.current = logout;
   return (
     <AuthContext.Provider value={{ user: session.data ?? null, loading: session.isPending,
       error: session.error && !session.data ? (session.error.message || 'Không thể kiểm tra phiên đăng nhập. Vui lòng thử lại!') : null,

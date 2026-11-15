@@ -29,7 +29,7 @@ export class BookingReadController {
     const items = await this.database.query(`SELECT RTRIM(c.MaChiTiet) AS id,RTRIM(l.MaLichHen) AS "bookingId",
       RTRIM(c.MaGiuong) AS "bedId",c.TenKhach AS "customerName",RTRIM(c.SoDienThoai) AS "customerPhone",d.TenDichVu AS "serviceName",g.TenGoi AS "packageName",RTRIM(g.MaGoi) AS "packageId",
       l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS "paymentStatus",
-      l.HoTenNguoiDat AS "bookerName",RTRIM(l.SoDienThoaiNguoiDat) AS "bookerPhone",l.EmailNguoiDat AS "bookerEmail",l.GhiChu AS notes,
+      l.HoTenNguoiDat AS "bookerName",RTRIM(l.SoDienThoaiNguoiDat) AS "bookerPhone",l.EmailNguoiDat AS "bookerEmail",l.GhiChu AS notes,l.NguonDatLich AS source,
       to_char(c.ThoiDiemBatDau,'YYYY-MM-DD"T"HH24:MI:SS') AS "startsAt",to_char(c.ThoiDiemKetThuc,'YYYY-MM-DD"T"HH24:MI:SS') AS "endsAt",
       floor(extract(epoch FROM (c.ThoiDiemBatDau-$1::date::timestamp))/60)::int AS "startMinute",
       floor(extract(epoch FROM (c.ThoiDiemKetThuc-$1::date::timestamp))/60)::int AS "endMinute"

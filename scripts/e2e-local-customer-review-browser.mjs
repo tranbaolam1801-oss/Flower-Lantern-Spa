@@ -131,6 +131,10 @@ try {
   check('Thử lại: saved with 4 stars + comment; success toast "Gửi đánh giá thành công!"; row now disabled', saved?.s === 4 && saved.n.includes('yên tĩnh') && (await page.locator('[data-testid="review-toast-success"]').innerText()).includes('Gửi đánh giá thành công!') && (await row('LH00000103').locator('.review-pill').isDisabled()));
   await page.screenshot({ path: path.join(shots2, 'success.png') });
 
+  await row('LH00000105').getByRole('button', { name: 'Hủy lịch' }).click();
+  await page.locator('dialog.booking-cancel-confirm-dialog[open]').waitFor();
+  await page.screenshot({ path: path.join(shots2, 'cancel-confirm.png') });
+  await page.locator('dialog.booking-cancel-confirm-dialog').getByRole('button', { name: 'Hủy', exact: true }).click();
   await page.unroute('**/api/me/bookings/*/review');
   const cookie = (await ctx.cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
   const r = await fetch(`${origin}/api/me/bookings/LH00000103/review`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-spa-request': '1', cookie }, body: JSON.stringify({ rating: 5, comment: '' }) });

@@ -174,6 +174,7 @@ export function ServicesCatalogPage() {
       )}
 
       {/* Figma UC_7 / UC6 Hero Banner (1440x235 exact ratio) */}
+      <div className="catalog-hero-pin">
       <section className="customer-hero-hoian uc7-catalog-hero">
         <img className="uc7-hero-artwork uc7-hero-left" src="/assets/uc7-hero-left.png" alt="" />
         <img className="uc7-hero-artwork uc7-hero-right" src="/assets/uc7-hero-right.png" alt="" />
@@ -187,6 +188,7 @@ export function ServicesCatalogPage() {
           </span>
         </div>
       </section>
+      </div>
 
       <main className="catalog-main">
         <div className="catalog-sticky-controls">

@@ -90,6 +90,11 @@ export async function logoutApi(): Promise<void> {
   },15000);
 }
 
+/** POST /api/auth/activity — người dùng còn thao tác: gia hạn phiên thêm 5 giờ (thất bại im lặng). */
+export async function activityApi(): Promise<void> {
+  await authRequest('activity', { method: 'POST', headers: { 'X-Spa-Request': '1' }, credentials: 'include' }, 15000);
+}
+
 /** Trả về route mặc định sau đăng nhập dựa trên vai trò */
 export function getDefaultRoute(role: AuthUser['role']): string {
   switch (role) {

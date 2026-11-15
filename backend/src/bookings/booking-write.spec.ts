@@ -60,7 +60,7 @@ describe('BookingWriteService', () => {
   it('status-only update is one optimistic parameterized statement', async () => {
     const { service, database } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'Chưa thanh toán', date: '2026-11-20' }], () => [{ MaLichHen: 'L1' }]]);
     await service.updateAdmin('L1', { status: 'Đã xác nhận' });
-    expect(database.query.mock.calls[1][1]).toEqual(['L1', 'Chờ xác nhận', 'Đã xác nhận', 'Chưa thanh toán', 0, null, 'Chưa thanh toán', null, null, 0, null]);
+    expect(database.query.mock.calls[1][1]).toEqual(['L1', 'Chờ xác nhận', 'Đã xác nhận', 'Chưa thanh toán', 0, null, 'Chưa thanh toán', null, null, 0, null, 0, null]);
   });
   it('status-only update reports stale concurrent change', async () => {
     const { service } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'p', date: 'd' }], () => []]);
@@ -79,7 +79,7 @@ describe('BookingWriteService', () => {
   it('manual payment status change is allowed when no payment transactions exist', async () => {
     const { service, database } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'Chưa thanh toán', date: 'd' }], () => [], () => [{ MaLichHen: 'L1' }]]);
     await service.updateAdmin('L1', { paymentStatus: 'Đã thanh toán' });
-    expect(database.query.mock.calls[2][1]).toEqual(['L1', 'Chờ xác nhận', 'Chờ xác nhận', 'Đã thanh toán', 0, null, 'Chưa thanh toán', null, null, 0, null]);
+    expect(database.query.mock.calls[2][1]).toEqual(['L1', 'Chờ xác nhận', 'Chờ xác nhận', 'Đã thanh toán', 0, null, 'Chưa thanh toán', null, null, 0, null, 0, null]);
   });
   it('admin create rejects past start and unknown package before locking', async () => {
     const guest = { customerName: 'B', bedId: 'G1', packageId: 'P1', startsAt: '2026-11-12T09:00:00' };
@@ -172,7 +172,7 @@ describe('authorization metadata', () => {
   it('booker-only update is one guarded statement carrying the booker values', async () => {
     const { service, database } = setup([() => [{ id: 'L1', status: 'Chờ xác nhận', pay: 'Chưa thanh toán', date: 'd' }], () => [{ MaLichHen: 'L1' }]]);
     await service.updateAdmin('L1', { bookerName: ' Mai ', bookerPhone: '0912345678', bookerEmail: '' });
-    expect(database.query.mock.calls[1][1]).toEqual(['L1', 'Chờ xác nhận', 'Chờ xác nhận', 'Chưa thanh toán', 0, null, 'Chưa thanh toán', 'Mai', '0912345678', 1, null]);
+    expect(database.query.mock.calls[1][1]).toEqual(['L1', 'Chờ xác nhận', 'Chờ xác nhận', 'Chưa thanh toán', 0, null, 'Chưa thanh toán', 'Mai', '0912345678', 1, null, 0, null]);
   });
   it('booker edits are still rejected for completed or cancelled bookings', async () => {
     for (const status of ['Hoàn thành', 'Đã hủy']) {
@@ -194,19 +194,20 @@ describe('authorization metadata', () => {
     const [sql, params] = database.query.mock.calls[0];
     expect(String(sql)).toContain('LIMIT 200');
     expect(String(sql)).not.toContain('Mai');
-    expect(params).toEqual(['2026-11-12', 'Chưa đến', '%lan%', '%Mai~%%', '%0912345%', '%a@b%', '%LH1%', '%Da%', '2026-11-01', '2026-11-30']);
-    expect(out.warnings).toHaveLength(1);
+    expect(params).toEqual(['2026-11-12', 'Chưa đến', '%lan%', '%Mai~%%', '%0912345%', '%a@b%', '%LH1%', '%Da%', '2026-11-01', '2026-11-30', 'Zalo']);
+    expect(out.warnings).toEqual([]);
   });
   it('search with no filters passes nulls and no warnings', async () => {
     const { service, database } = setup([() => []]);
     const out = await service.search({});
-    expect(database.query.mock.calls[0][1]).toEqual([null, null, null, null, null, null, null, null, null, null]);
+    expect(database.query.mock.calls[0][1]).toEqual([null, null, null, null, null, null, null, null, null, null, null]);
     expect(out.warnings).toEqual([]);
   });
-  it('create returns honest warnings when prepaid amount or source cannot be stored', async () => {
+  it('create stores the source and only warns that the prepaid amount cannot be stored', async () => {
     const { service } = setup([() => [{ id: 'P1', duration: 60 }]]);
     const out = await service.createAdmin({ bookerName: 'A', bookerPhone: '0900000001', date: '2026-11-20', prepaidAmount: 100000, source: 'Zalo', guests: [{ customerName: 'B', bedId: 'G1', packageId: 'P1', startsAt: '2026-11-20T09:00:00' }] });
-    expect(out.warnings).toHaveLength(2);
+    expect(out.warnings).toHaveLength(1);
+    expect(out.warnings[0]).toContain('trả trước');
     const none = await setup([() => [{ id: 'P1', duration: 60 }]]).service.createAdmin({ bookerName: 'A', bookerPhone: '0900000001', date: '2026-11-20', guests: [{ customerName: 'B', bedId: 'G1', packageId: 'P1', startsAt: '2026-11-20T09:00:00' }] });
     expect(none.warnings).toEqual([]);
   });

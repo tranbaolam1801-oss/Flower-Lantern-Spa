@@ -145,8 +145,8 @@ describe('Auth with real PostgreSQL and Argon2id', () => {
       expect(locked.body).toMatchObject({ message: LOCK_MESSAGE, code: 'ACCOUNT_TEMPORARILY_LOCKED' });
       const before = await lockRow();
       expect(before.n).toBe(5);
-      expect(Number(before.remaining)).toBeGreaterThan(880);
-      expect(Number(before.remaining)).toBeLessThanOrEqual(900);
+      expect(Number(before.remaining)).toBeGreaterThan(280);
+      expect(Number(before.remaining)).toBeLessThanOrEqual(300);
 
       const whileLocked = await login().expect(403);
       expect(whileLocked.body).toMatchObject({ message: LOCK_MESSAGE, code: 'ACCOUNT_TEMPORARILY_LOCKED' });
@@ -162,7 +162,7 @@ describe('Auth with real PostgreSQL and Argon2id', () => {
       expect(results.filter((r) => r.status === 403)).toHaveLength(8);
       const row = await lockRow();
       expect(row.n).toBe(5);
-      expect(Number(row.remaining)).toBeGreaterThan(880);
+      expect(Number(row.remaining)).toBeGreaterThan(280);
     });
 
     it('after the lock expires a correct login succeeds and resets the counter', async () => {
@@ -211,16 +211,16 @@ describe('Auth with real PostgreSQL and Argon2id', () => {
     const payloadOf = async (cookie: string) =>
       new JwtTokenService().verifyAsync<JwtPayload>(cookie.slice('access_token='.length));
 
-    it('login stores a session (uuid jti, ~7 day expiry); logout revokes only that device and is idempotent', async () => {
+    it('login stores a session (uuid jti, 5-hour idle expiry); logout revokes only that device and is idempotent', async () => {
       const a = cookieOf(await login().expect(200));
       const b = cookieOf(await login().expect(200));
       const rows = await db.query<{ id: string; days: number }[]>(
-        `SELECT MaPhien::text AS id, extract(epoch FROM (HetHanLuc - dbo.utc_now())) / 86400 AS days
+        `SELECT MaPhien::text AS id, extract(epoch FROM (HetHanLuc - dbo.utc_now())) / 3600 AS days
          FROM dbo.PhienDangNhap WHERE MaTaiKhoan=$1`, ['TK00000001']);
       expect(rows).toHaveLength(2);
       expect(rows.map((r) => r.id)).toContain((await payloadOf(a)).jti);
-      expect(Number(rows[0].days)).toBeGreaterThan(6.9);
-      expect(Number(rows[0].days)).toBeLessThanOrEqual(7);
+      expect(Number(rows[0].days)).toBeGreaterThan(4.9);
+      expect(Number(rows[0].days)).toBeLessThanOrEqual(5);
 
       for (let i = 0; i < 2; i++) {
         await request(app.getHttpServer()).post('/api/auth/logout').set('X-Spa-Request', '1').set('Cookie', a).expect(200);
@@ -229,6 +229,22 @@ describe('Auth with real PostgreSQL and Argon2id', () => {
       await me(b).expect(200);
       const revoked = await db.query<{ n: number }[]>(`SELECT count(*) AS n FROM dbo.PhienDangNhap WHERE ThuHoiLuc IS NOT NULL`);
       expect(revoked[0].n).toBe(1);
+    });
+
+    it('idle timeout: a session idle for 5 hours is rejected; /auth/activity extends it, polling does not', async () => {
+      const cookie = cookieOf(await login().expect(200));
+      const remaining = async () => Number((await db.query<{ h: number }[]>(`SELECT extract(epoch FROM (HetHanLuc - dbo.utc_now())) / 3600 AS h FROM dbo.PhienDangNhap`))[0].h);
+      // 4h of idleness so far: still valid, and a plain /me (polling) does NOT push the expiry out
+      await db.query(`UPDATE dbo.PhienDangNhap SET HetHanLuc = dbo.utc_now() + make_interval(hours => 1)`);
+      await me(cookie).expect(200);
+      expect(await remaining()).toBeLessThan(1.01);
+      // a real user action (heartbeat) restarts the 5 hours
+      await request(app.getHttpServer()).post('/api/auth/activity').set('X-Spa-Request', '1').set('Cookie', cookie).expect(200);
+      expect(await remaining()).toBeGreaterThan(4.9);
+      // 5 idle hours elapsed -> the session is gone and the heartbeat can not revive it
+      await db.query(`UPDATE dbo.PhienDangNhap SET TaoLuc = dbo.utc_now() - make_interval(hours => 6), HetHanLuc = dbo.utc_now() - make_interval(mins => 1)`);
+      await me(cookie).expect(401);
+      await request(app.getHttpServer()).post('/api/auth/activity').set('X-Spa-Request', '1').set('Cookie', cookie).expect(401);
     });
 
     it('rejects database-expired sessions, unknown jti, missing jti and a jti belonging to another account', async () => {

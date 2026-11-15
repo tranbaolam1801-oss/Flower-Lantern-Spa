@@ -14,6 +14,7 @@ export interface CalendarItem {
   bookerPhone?: string;
   bookerEmail?: string | null;
   notes?: string | null;
+  source?: string | null;
   status: string;
   paymentStatus: string;
   startsAt: string;
@@ -75,12 +76,18 @@ export interface UpdateAdminBookingPayload {
   bookerPhone?: string;
   /** '' clears the e-mail. */
   bookerEmail?: string;
+  /** Booking source; '' clears it. */
+  source?: string;
   status?: string;
   paymentStatus?: string;
   /** '' clears the notes; undefined keeps them. */
   notes?: string;
   date?: string;
   guests?: BookingGuestInput[];
+  /** Rename / re-phone one guest without changing bed, time or package. */
+  guestDetailId?: string;
+  guestName?: string;
+  guestPhone?: string;
 }
 
 export interface CreateCustomerBookingPayload {

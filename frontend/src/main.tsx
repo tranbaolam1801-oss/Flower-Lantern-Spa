@@ -30,6 +30,8 @@ const ProfilePage = lazy(() => import('./pages/profile').then((m) => ({ default:
 const RegisterPage = lazy(() => import('./pages/register').then((m) => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/forgot-password').then((m) => ({ default: m.ForgotPasswordPage })));
 
+const AdminBookingSearchPage = lazy(() => import('./pages/admin-booking-search').then((m) => ({ default: m.AdminBookingSearchPage })));
+
 const queryClient =new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function Protected({ customer = false, children }: { customer?: boolean; children?: React.ReactNode }) {
@@ -80,6 +82,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/quen-mat-khau" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
             <Route path="/admin/tong-quan" element={<Protected><AdminOverviewPage /></Protected>} />
             <Route path="/admin/lich-hen" element={<Protected />} />
+            <Route path="/admin/lich-hen/ket-qua" element={<Protected><AdminBookingSearchPage /></Protected>} />
             <Route path="/admin/khach-hang" element={<Protected><CustomerSearch /></Protected>} />
             <Route path="/admin/danh-gia" element={<Protected><AdminReviewsPage /></Protected>} />
             <Route path="/admin/nhan-vien" element={<Protected><AdminEmployeesPage /></Protected>} />

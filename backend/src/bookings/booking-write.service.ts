@@ -12,7 +12,7 @@ import { CreateAdminBookingDto, CreateCustomerBookingDto, SearchBookingsQuery, U
 interface Planned extends BedInterval { packageId: string; customerName: string; customerPhone?: string }
 interface ExistingDetail { id: string; bedId: string | null; packageId: string; startsAt: string; duration: number }
 interface BookingRow { id: string; status: string; pay: string; date: string }
-interface Patch { status: string; pay: string; notes?: string | null; readPay?: string; name?: string; phone?: string; email?: string | null }
+interface Patch { status: string; pay: string; notes?: string | null; readPay?: string; name?: string; phone?: string; email?: string | null; source?: string | null }
 interface AutoGuest { startsAt: string; endsAt: string; preferred?: string | null }
 
 const stale = 'Lịch hẹn vừa được cập nhật. Vui lòng tải lại và thử lại!';
@@ -35,7 +35,7 @@ export class BookingWriteService {
       RTRIM(c.MaGiuong) AS "bedId",c.TenKhach AS "customerName",COALESCE(c.SoDienThoai,l.SoDienThoaiNguoiDat) AS "customerPhone",
       d.TenDichVu AS "serviceName",g.TenGoi AS "packageName",RTRIM(g.MaGoi) AS "packageId",
       l.TrangThaiLichHen AS status,l.TrangThaiThanhToan AS "paymentStatus",
-      l.HoTenNguoiDat AS "bookerName",RTRIM(l.SoDienThoaiNguoiDat) AS "bookerPhone",l.EmailNguoiDat AS "bookerEmail",l.GhiChu AS notes,
+      l.HoTenNguoiDat AS "bookerName",RTRIM(l.SoDienThoaiNguoiDat) AS "bookerPhone",l.EmailNguoiDat AS "bookerEmail",l.GhiChu AS notes,l.NguonDatLich AS source,
       to_char(c.ThoiDiemBatDau,'YYYY-MM-DD"T"HH24:MI:SS') AS "startsAt",to_char(c.ThoiDiemKetThuc,'YYYY-MM-DD"T"HH24:MI:SS') AS "endsAt",
       floor(extract(epoch FROM (c.ThoiDiemBatDau-c.ThoiDiemBatDau::date::timestamp))/60)::int AS "startMinute",
       floor(extract(epoch FROM (c.ThoiDiemKetThuc-c.ThoiDiemBatDau::date::timestamp))/60)::int AS "endMinute"
@@ -51,10 +51,9 @@ export class BookingWriteService {
       AND ($7::text IS NULL OR l.MaLichHen ILIKE $7::text ESCAPE '~')
       AND ($8::text IS NULL OR d.TenDichVu ILIKE $8::text ESCAPE '~' OR g.TenGoi ILIKE $8::text ESCAPE '~')
       AND ($9::date IS NULL OR l.NgayHen>=$9::date) AND ($10::date IS NULL OR l.NgayHen<=$10::date)
-      ORDER BY c.ThoiDiemBatDau,c.MaChiTiet LIMIT 200`, [query.date ?? null, query.status ?? null, like(query.q), like(query.name), like(digits), like(query.email), like(query.code), like(query.service), query.dateFrom ?? null, query.dateTo ?? null]);
-    // Booking source is not persisted (no LichHen column), so the "Nguồn" filter cannot be applied; say so instead of silently ignoring it.
-    const warnings = query.source?.trim() ? ['Nguồn đặt lịch chưa được lưu trữ nên bộ lọc "Nguồn" chưa được áp dụng.'] : [];
-    return { items, warnings };
+      AND ($11::text IS NULL OR l.NguonDatLich=$11::text)
+      ORDER BY c.ThoiDiemBatDau,c.MaChiTiet LIMIT 200`, [query.date ?? null, query.status ?? null, like(query.q), like(query.name), like(digits), like(query.email), like(query.code), like(query.service), query.dateFrom ?? null, query.dateTo ?? null, query.source?.trim() || null]);
+    return { items, warnings: [] as string[] };
   }
 
   async createAdmin(dto: CreateAdminBookingDto) {
@@ -69,14 +68,13 @@ export class BookingWriteService {
       const customer = returnedRows<{ id: string }>(await runner.query('SELECT RTRIM(MaKhachHang) AS id FROM dbo.KhachHang WHERE SoDienThoai=$1 LIMIT 1', [dto.bookerPhone]));
       const bookingId = await this.insertBooking(runner, planned, {
         customerId: customer[0]?.id ?? null, name: dto.bookerName.trim(), phone: dto.bookerPhone, email: dto.bookerEmail ?? null,
-        notes: dto.notes ?? null, date: dto.date, status: dto.status ?? 'Chưa đến', pay: dto.paymentStatus ?? 'Chưa thanh toán',
+        notes: dto.notes ?? null, source: dto.source ?? null, date: dto.date, status: dto.status ?? 'Chưa đến', pay: dto.paymentStatus ?? 'Chưa thanh toán',
       });
       await syncBookingNotifications(runner, bookingId, null); // notification jobs commit atomically with the booking
       return bookingId;
     });
     const warnings: string[] = [];
     if (dto.prepaidAmount) warnings.push('Số tiền thanh toán trả trước chưa được lưu (hệ thống chưa có nơi ghi nhận). Vui lòng ghi nhận qua giao dịch thanh toán.');
-    if (dto.source) warnings.push('Nguồn đặt lịch chưa được lưu (hệ thống chưa có nơi ghi nhận).');
     return { id, message: 'Tạo lịch hẹn thành công!', warnings };
   }
 
@@ -94,19 +92,27 @@ export class BookingWriteService {
       notes: dto.notes === undefined ? undefined : dto.notes.trim() === '' ? null : dto.notes,
       name: dto.bookerName?.trim() || undefined, phone: dto.bookerPhone,
       email: dto.bookerEmail === undefined ? undefined : dto.bookerEmail.trim() === '' ? null : dto.bookerEmail.trim(),
+      source: dto.source === undefined ? undefined : dto.source.trim() === '' ? null : dto.source.trim(),
     };
     if (!dto.date && !dto.guests) {
       // Single optimistic statement: the row lock taken by UPDATE plus the status/payment guards replace UPDLOCK.
       const sql = `UPDATE dbo.LichHen SET TrangThaiLichHen=$3::text,TrangThaiThanhToan=$4::text,
         GhiChu=CASE WHEN $5::int=1 THEN $6::text ELSE GhiChu END,
         HoTenNguoiDat=COALESCE($8::text,HoTenNguoiDat),SoDienThoaiNguoiDat=COALESCE($9::text,SoDienThoaiNguoiDat),
-        EmailNguoiDat=CASE WHEN $10::int=1 THEN $11::text ELSE EmailNguoiDat END
+        EmailNguoiDat=CASE WHEN $10::int=1 THEN $11::text ELSE EmailNguoiDat END,
+        NguonDatLich=CASE WHEN $12::int=1 THEN $13::text ELSE NguonDatLich END
         WHERE MaLichHen=$1 AND TrangThaiLichHen=$2::text AND TrangThaiThanhToan=$7::text RETURNING MaLichHen`;
-      const params = [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null];
+      const params = [id, booking.status, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, booking.pay, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null, patch.source === undefined ? 0 : 1, patch.source ?? null];
       // Status/recipient changes enqueue or cancel notification jobs in the same transaction; other edits keep the single statement.
-      const rows = patch.status !== booking.status || patch.name !== undefined || patch.phone !== undefined
+      const guestEdit = dto.guestDetailId !== undefined && (dto.guestName !== undefined || dto.guestPhone !== undefined);
+      const rows = patch.status !== booking.status || patch.name !== undefined || patch.phone !== undefined || guestEdit
         ? await this.database.transaction(async (runner) => {
           const changed = returnedRows(await runner.query(sql, params));
+          if (changed.length && guestEdit) {
+            await runner.query(`UPDATE dbo.KhachSuDungDichVu SET TenKhach=COALESCE($3::text,TenKhach),
+              SoDienThoai=CASE WHEN $4::int=1 THEN NULLIF($5::text,'') ELSE SoDienThoai END WHERE MaChiTiet=$1 AND MaLichHen=$2`,
+            [dto.guestDetailId, id, dto.guestName?.trim() ?? null, dto.guestPhone === undefined ? 0 : 1, dto.guestPhone ?? null]);
+          }
           if (changed.length) await syncBookingNotifications(runner, id, { status: booking.status, startsAt: null });
           return changed;
         })
@@ -154,7 +160,7 @@ export class BookingWriteService {
       const planned: Planned[] = guests.map((x, i) => ({ bedId: beds[i], startsAt: x.startsAt, endsAt: x.endsAt, packageId: x.g.packageId, customerName: x.g.customerName.trim(), customerPhone: x.g.customerPhone }));
       return [planned, async (runner) => {
         const bookingId = await this.insertBooking(runner, planned, {
-          customerId, name: dto.fullName.trim(), phone: dto.phone, email: dto.email ?? null, notes: dto.notes ?? null,
+          customerId, name: dto.fullName.trim(), phone: dto.phone, email: dto.email ?? null, notes: dto.notes ?? null, source: 'Website',
           date: dto.date, status: 'Chờ xác nhận', pay: 'Chưa thanh toán',
         });
         await notifyBookingByCustomer((sql, params) => runner.query(sql, params), 'created', bookingId); // same transaction, isolated by a savepoint
@@ -279,8 +285,8 @@ export class BookingWriteService {
   private async updateBooking(runner: QueryRunner, id: string, patch: Patch, date: string, firstStart: string) {
     await runner.query(`UPDATE dbo.LichHen SET NgayHen=$2::date,GioHen=$3::timestamp::time(0),TrangThaiLichHen=$4::text,TrangThaiThanhToan=$5::text,
       GhiChu=CASE WHEN $6::int=1 THEN $7::text ELSE GhiChu END,HoTenNguoiDat=COALESCE($8::text,HoTenNguoiDat),SoDienThoaiNguoiDat=COALESCE($9::text,SoDienThoaiNguoiDat),
-      EmailNguoiDat=CASE WHEN $10::int=1 THEN $11::text ELSE EmailNguoiDat END WHERE MaLichHen=$1`,
-    [id, date, firstStart, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null]);
+      EmailNguoiDat=CASE WHEN $10::int=1 THEN $11::text ELSE EmailNguoiDat END,NguonDatLich=CASE WHEN $12::int=1 THEN $13::text ELSE NguonDatLich END WHERE MaLichHen=$1`,
+    [id, date, firstStart, patch.status, patch.pay, patch.notes === undefined ? 0 : 1, patch.notes ?? null, patch.name ?? null, patch.phone ?? null, patch.email === undefined ? 0 : 1, patch.email ?? null, patch.source === undefined ? 0 : 1, patch.source ?? null]);
   }
 
   private async newId(runner: QueryRunner, prefix: string, table: string, column: string) {
@@ -297,11 +303,11 @@ export class BookingWriteService {
       VALUES($1,$2,$3,$4,$5,$6,$7::timestamp,$8::timestamp)`, [id, bookingId, p.packageId, p.bedId, p.customerName, p.customerPhone ?? null, p.startsAt, p.endsAt]);
   }
 
-  private async insertBooking(runner: QueryRunner, planned: Planned[], b: { customerId: string | null; name: string; phone: string; email: string | null; notes: string | null; date: string; status: string; pay: string }) {
+  private async insertBooking(runner: QueryRunner, planned: Planned[], b: { customerId: string | null; name: string; phone: string; email: string | null; notes: string | null; source?: string | null; date: string; status: string; pay: string }) {
     const id = await this.newId(runner, 'LH', 'LichHen', 'MaLichHen');
     const first = planned.map((p) => p.startsAt).sort()[0];
-    await runner.query(`INSERT INTO dbo.LichHen(MaLichHen,MaKhachHang,HoTenNguoiDat,SoDienThoaiNguoiDat,EmailNguoiDat,GhiChu,NgayHen,GioHen,TrangThaiLichHen,TrangThaiThanhToan)
-      VALUES($1,$2,$3,$4,$5,$6,$7::date,$8::timestamp::time(0),$9,$10)`, [id, b.customerId, b.name, b.phone, b.email, b.notes, b.date, first, b.status, b.pay]);
+    await runner.query(`INSERT INTO dbo.LichHen(MaLichHen,MaKhachHang,HoTenNguoiDat,SoDienThoaiNguoiDat,EmailNguoiDat,GhiChu,NgayHen,GioHen,TrangThaiLichHen,TrangThaiThanhToan,NguonDatLich)
+      VALUES($1,$2,$3,$4,$5,$6,$7::date,$8::timestamp::time(0),$9,$10,$11)`, [id, b.customerId, b.name, b.phone, b.email, b.notes, b.date, first, b.status, b.pay, b.source ?? null]);
     for (const p of planned) await this.insertDetail(runner, id, p);
     return id;
   }

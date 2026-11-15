@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/auth-context';
 import { ManagementLayout } from '../components/management-layout';
@@ -6,10 +7,8 @@ import { Button } from '../components/ui/button';
 import {
   createAdminBooking,
   getCalendar,
-  searchAdminBookings,
   updateAdminBooking,
   type CalendarItem,
-  type SearchBookingsParams,
 } from '../lib/booking-api';
 import { getPublicServiceDetail, getPublicServices } from '../lib/catalog-api';
 import { BookingCancel } from '../components/booking-cancel';
@@ -40,9 +39,6 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
 };
 const STATUS_LABELS: Record<string, string> = { 'Đã xác nhận': '✓ Đã xác nhận (Duyệt lịch)', 'Đã đến': 'Đang thực hiện' };
 const SEARCH_STATUSES = ['Chờ xác nhận', 'Đã xác nhận', 'Chưa đến', 'Đã đến', 'Hoàn thành', 'Đã hủy'];
-const SEARCH_LABELS: Record<string, string> = {
-  name: 'Tên', phone: 'SĐT', email: 'Email', code: 'Mã lịch', service: 'Dịch vụ', status: 'Trạng thái', source: 'Nguồn', dateFrom: 'Từ ngày', dateTo: 'Đến ngày',
-};
 const SEARCH_SOURCES = ['Trực tiếp', 'Facebook', 'Zalo', 'Website', 'Khác'];
 const EMPTY_SEARCH = { name: '', phone: '', email: '', code: '', service: '', status: '', source: '', dateFrom: '', dateTo: '' };
 // Server messages (backend/src/bookings/booking-rules.ts MESSAGES), matched exactly to place them at the bed/time or service field.
@@ -107,6 +103,10 @@ export function AdminDashboard() {
   const [editBookerName, setEditBookerName] = useState('');
   const [editBookerPhone, setEditBookerPhone] = useState('');
   const [editBookerEmail, setEditBookerEmail] = useState('');
+  const [editSource, setEditSource] = useState('');
+  const [editGuestName, setEditGuestName] = useState('');
+  const [editGuestPhone, setEditGuestPhone] = useState('');
+  const [editGuestSame, setEditGuestSame] = useState(true);
   const [editFieldError, setEditFieldError] = useState<{ field: string; message: string } | null>(null);
   const [editDate, setEditDate] = useState(today);
   const [editBedId, setEditBedId] = useState('G1');
@@ -118,8 +118,7 @@ export function AdminDashboard() {
   // UC_2.4 Tìm lịch hẹn
   const searchDialog = useRef<HTMLDialogElement>(null);
   const [searchForm, setSearchForm] = useState(EMPTY_SEARCH);
-  const [searchApplied, setSearchApplied] = useState(EMPTY_SEARCH);
-  const [searchTriggered, setSearchTriggered] = useState(false);
+  const navigate = useNavigate();
   const [searchFieldError, setSearchFieldError] = useState('');
 
   const allowed = user?.role === 'Chủ Spa' || user?.permissions.includes('Q01');
@@ -145,16 +144,17 @@ export function AdminDashboard() {
   const editInitial = editTarget
     ? { date: editTarget.startsAt.slice(0, 10), bed: editTarget.bedId ?? '', time: editTarget.startsAt.slice(11, 16), pkg: editTarget.packageId ?? '' }
     : null;
-  const editGuestsDirty =
+  // Guest name / phone: follows the booker while "= người đặt" is ticked.
+  const effGuestName = (editGuestSame ? editBookerName : editGuestName).trim();
+  const effGuestPhone = (editGuestSame ? (editTarget?.customerPhone ? editBookerPhone : '') : editGuestPhone).trim();
+  const editSlotDirty =
     editGuestsEditable &&
     !!editInitial &&
     (editDate !== editInitial.date || editBedId !== editInitial.bed || editStartTime !== editInitial.time || editPackageId !== editInitial.pkg);
+  const editGuestInfoDirty = !!editTarget && (effGuestName !== editTarget.customerName.trim() || effGuestPhone !== (editTarget.customerPhone ?? '').trim());
+  // Bed / time / service changes replace every guest row; a pure name/phone change is sent on its own (it must also work for past slots).
+  const editGuestsDirty = editSlotDirty;
 
-  const searchQuery = useQuery({
-    queryKey: ['bookings-search', searchApplied],
-    queryFn: () => searchAdminBookings(searchApplied as SearchBookingsParams),
-    enabled: searchTriggered && !!allowed,
-  });
 
   const createMutation = useMutation({
     mutationFn: createAdminBooking,
@@ -182,6 +182,7 @@ export function AdminDashboard() {
         bookerName: editBookerName.trim(),
         bookerPhone: editBookerPhone.trim(),
         bookerEmail: editBookerEmail.trim(),
+        ...(editSource !== (editTarget!.source ?? '') ? { source: editSource } : {}),
         // Only when the user changed bed/time/service/package/date: the server then replaces ALL guest rows, so send every guest.
         ...(editGuestsDirty
           ? {
@@ -189,15 +190,17 @@ export function AdminDashboard() {
               guests: editBookingItems.map((i) => {
                 const mine = i.id === editTarget!.id;
                 return {
-                  customerName: i.customerName,
-                  customerPhone: i.customerPhone || undefined,
+                  customerName: mine ? effGuestName || i.customerName : i.customerName,
+                  customerPhone: (mine ? effGuestPhone : i.customerPhone) || undefined,
                   bedId: mine ? editBedId : i.bedId!,
                   packageId: mine ? editPackageId : i.packageId!,
                   startsAt: `${editDate}T${mine ? `${editStartTime}:00` : i.startsAt.slice(11, 19)}`,
                 };
               }),
             }
-          : {}),
+          : editGuestInfoDirty
+            ? { guestDetailId: editTarget!.id, guestName: effGuestName, guestPhone: effGuestPhone }
+            : {}),
       }),
     onSuccess: async () => {
       editDialog.current?.close();
@@ -228,6 +231,8 @@ export function AdminDashboard() {
     if (editBookerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editBookerEmail.trim())) {
       return setEditFieldError({ field: 'bookerEmail', message: 'Email không hợp lệ!' });
     }
+    if (!effGuestName) return setEditFieldError({ field: 'guestName', message: 'Vui lòng nhập thông tin khách sử dụng dịch vụ!' });
+    if (effGuestPhone && !isValidVnPhone(effGuestPhone)) return setEditFieldError({ field: 'guestPhone', message: 'Số điện thoại không hợp lệ!' });
     if (editGuestsDirty && editTarget) {
       if (!editPackageId) {
         return setEditFieldError({ field: 'servicePackage', message: PACKAGE_MESSAGE });
@@ -284,8 +289,9 @@ export function AdminDashboard() {
     setCreateFieldError(null);
     setBedId(presetBed);
     setStartTime(presetHour);
-    setBookerName('');
-    setBookerPhone('');
+    // Người đặt mặc định là tài khoản đang đăng nhập (có thể sửa lại).
+    setBookerName(user?.fullName ?? '');
+    setBookerPhone(user?.phone ?? '');
     setBookerEmail('');
     setGuestName('');
     setGuestPhone('');
@@ -403,6 +409,10 @@ export function AdminDashboard() {
     setEditBookerName(item.bookerName ?? item.customerName);
     setEditBookerPhone(item.bookerPhone ?? item.customerPhone ?? '');
     setEditBookerEmail(item.bookerEmail ?? '');
+    setEditSource(item.source ?? '');
+    setEditGuestName(item.customerName);
+    setEditGuestPhone(item.customerPhone ?? '');
+    setEditGuestSame(item.customerName.trim() === (item.bookerName ?? item.customerName).trim() && (!item.customerPhone || item.customerPhone === (item.bookerPhone ?? '')));
     setEditDate(item.startsAt.slice(0, 10));
     setEditBedId(item.bedId ?? 'G1');
     setEditStartTime(item.startsAt.slice(11, 16));
@@ -457,7 +467,6 @@ export function AdminDashboard() {
             size="sm"
             variant="outline"
             onClick={() => {
-              setSearchTriggered(false);
               searchDialog.current?.showModal();
             }}
           >
@@ -887,41 +896,33 @@ export function AdminDashboard() {
             <div className="booking-form-grid-3">
               <label className={`spa-field${editFieldError?.field === 'bookerName' ? ' spa-field-invalid' : ''}`}>
                 <span>Họ tên <em>*</em></span>
-                <input
-                  value={editBookerName}
-                  onChange={(e) => setEditBookerName(e.target.value)}
-                  disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                  aria-invalid={editFieldError?.field === 'bookerName'}
-                />
+                <input value={editBookerName} onChange={(e) => setEditBookerName(e.target.value)} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} aria-invalid={editFieldError?.field === 'bookerName'} />
                 {editFieldError?.field === 'bookerName' && <p role="alert" className="spa-field-error-text">{editFieldError.message}</p>}
               </label>
               <label className={`spa-field${editFieldError?.field === 'bookerPhone' ? ' spa-field-invalid' : ''}`}>
                 <span>Số điện thoại <em>*</em></span>
-                <input
-                  value={editBookerPhone}
-                  onChange={(e) => setEditBookerPhone(e.target.value)}
-                  disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                  aria-invalid={editFieldError?.field === 'bookerPhone'}
-                />
+                <input value={editBookerPhone} onChange={(e) => setEditBookerPhone(e.target.value)} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} aria-invalid={editFieldError?.field === 'bookerPhone'} />
                 {editFieldError?.field === 'bookerPhone' && <p role="alert" className="spa-field-error-text">{editFieldError.message}</p>}
               </label>
               <label className={`spa-field${editFieldError?.field === 'bookerEmail' ? ' spa-field-invalid' : ''}`}>
                 <span>Email</span>
-                <input
-                  value={editBookerEmail}
-                  onChange={(e) => setEditBookerEmail(e.target.value)}
-                  disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                  aria-invalid={editFieldError?.field === 'bookerEmail'}
-                />
+                <input value={editBookerEmail} onChange={(e) => setEditBookerEmail(e.target.value)} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} aria-invalid={editFieldError?.field === 'bookerEmail'} />
                 {editFieldError?.field === 'bookerEmail' && <p role="alert" className="spa-field-error-text">{editFieldError.message}</p>}
               </label>
               <label className="spa-field">
-                <span>Mã lịch</span>
-                <input value={editTarget.bookingId} readOnly />
+                <span>Nguồn đặt lịch</span>
+                <select value={editSource} onChange={(e) => setEditSource(e.target.value)} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')}>
+                  <option value="">—</option>
+                  {SEARCH_SOURCES.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
               </label>
               <label className="spa-field">
                 <span>Ngày hẹn <em>*</em></span>
                 <input type="date" value={editDate} disabled={!editGuestsEditable} onChange={(e) => e.target.value && setEditDate(e.target.value)} />
+              </label>
+              <label className="spa-field">
+                <span>Ghi chú</span>
+                <input value={editNotes} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} onChange={(e) => setEditNotes(e.target.value)} maxLength={500} />
               </label>
             </div>
 
@@ -932,7 +933,23 @@ export function AdminDashboard() {
                   Lịch hẹn có {editBookingItems.length} khách; chỉ khách “{editTarget.customerName}” được chỉnh ở đây, các khách còn lại giữ nguyên.
                 </p>
               )}
-              <div className="booking-form-grid-4">
+              <div className="booking-form-grid-3">
+                <label className={`spa-field${editFieldError?.field === 'guestName' ? ' spa-field-invalid' : ''}`}>
+                  <span>Tên khách <em>*</em></span>
+                  <input value={editGuestSame ? editBookerName : editGuestName} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy') || editGuestSame} onChange={(e) => setEditGuestName(e.target.value)} aria-invalid={editFieldError?.field === 'guestName'} />
+                  {editFieldError?.field === 'guestName' && <p role="alert" className="spa-field-error-text">{editFieldError.message}</p>}
+                </label>
+                <label className={`spa-field${editFieldError?.field === 'guestPhone' ? ' spa-field-invalid' : ''}`}>
+                  <span>Số điện thoại khách</span>
+                  <input value={editGuestSame ? effGuestPhone : editGuestPhone} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy') || editGuestSame} onChange={(e) => setEditGuestPhone(e.target.value)} aria-invalid={editFieldError?.field === 'guestPhone'} />
+                  {editFieldError?.field === 'guestPhone' && <p role="alert" className="spa-field-error-text">{editFieldError.message}</p>}
+                </label>
+                <label className="booking-same-check">
+                  <input type="checkbox" checked={editGuestSame} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} onChange={(e) => { setEditGuestSame(e.target.checked); if (!e.target.checked) { setEditGuestName(editBookerName); setEditGuestPhone(editBookerPhone); } }} />
+                  <span>= người đặt</span>
+                </label>
+              </div>
+              <div className="booking-form-grid-3">
                 <label className={`spa-field booking-bed-time-field${editFieldError?.field === 'bedTime' ? ' spa-field-invalid' : ''}`}>
                   <span>Giường / khung giờ <em>*</em></span>
                   <div className="booking-bed-time-group">
@@ -1000,14 +1017,10 @@ export function AdminDashboard() {
             </div>
 
             <h3 className="spa-section-subtitle">Trạng thái &amp; thanh toán</h3>
-            <div className="booking-form-grid-2">
+            <div className="booking-form-grid-3">
               <label className="spa-field">
                 <span>Trạng thái lịch hẹn</span>
-                <select
-                  value={editStatus}
-                  disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
+                <select value={editStatus} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} onChange={(e) => setEditStatus(e.target.value)}>
                   {/* Cancelling is done only with the "Hủy lịch hẹn" button, never from this dropdown. */}
                   {[editTarget.status, ...(STATUS_TRANSITIONS[editTarget.status] ?? []).filter((st) => st !== 'Đã hủy')].map((st) => (
                     <option key={st} value={st}>{STATUS_LABELS[st] ?? st}</option>
@@ -1015,27 +1028,18 @@ export function AdminDashboard() {
                 </select>
               </label>
               <label className="spa-field">
+                <span>Thanh toán trả trước</span>
+                <input value="0đ" disabled readOnly title="Số tiền trả trước chưa được lưu trong hệ thống" />
+              </label>
+              <label className="spa-field">
                 <span>Trạng thái thanh toán</span>
-                <select
-                  value={editPaymentStatus}
-                  disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                  onChange={(e) => setEditPaymentStatus(e.target.value)}
-                >
+                <select value={editPaymentStatus} disabled={(editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy')} onChange={(e) => setEditPaymentStatus(e.target.value)}>
                   <option value="Chưa thanh toán">Chưa thanh toán</option>
                   <option value="Thanh toán một phần">Thanh toán một phần</option>
                   <option value="Đã thanh toán">Đã thanh toán</option>
                 </select>
               </label>
             </div>
-            <label className="spa-field">
-              <span>Ghi chú cập nhật</span>
-              <textarea
-                rows={2}
-                value={editNotes}
-                disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
-                onChange={(e) => setEditNotes(e.target.value)}
-              />
-            </label>
             {updateMutation.isError && !editFieldError && (
               <p role="alert" className="spa-form-error">
                 ⚠ {(updateMutation.error as { message?: string })?.message ?? 'Có lỗi khi lưu dữ liệu. Vui lòng thử lại!'}
@@ -1114,8 +1118,6 @@ export function AdminDashboard() {
               variant="outline"
               onClick={() => {
                 setSearchForm(EMPTY_SEARCH);
-                setSearchApplied(EMPTY_SEARCH);
-                setSearchTriggered(false);
                 setSearchFieldError('');
               }}
             >
@@ -1134,8 +1136,9 @@ export function AdminDashboard() {
                   return;
                 }
                 setSearchFieldError('');
-                setSearchApplied(trimmed);
-                setSearchTriggered(true);
+                const qs = new URLSearchParams(Object.entries(trimmed).filter(([, v]) => v));
+                searchDialog.current?.close();
+                navigate(`/admin/lich-hen/ket-qua?${qs.toString()}`);
               }}
             >
               Tìm kiếm
@@ -1146,60 +1149,8 @@ export function AdminDashboard() {
             <p role="alert" className="spa-form-error">⚠ {searchFieldError}</p>
           )}
 
-          {searchQuery.isPending && searchTriggered ? (
-            <p role="status">Đang tìm kiếm…</p>
-          ) : searchQuery.isError ? (
-            <p role="alert" className="spa-form-error">
-              ⚠ {(searchQuery.error as { message?: string })?.message ?? 'Không thể tìm kiếm lịch hẹn. Vui lòng thử lại sau!'}
-            </p>
-          ) : searchQuery.data ? (
-            searchQuery.data.items.length === 0 ? (
-              <p className="customer-search-empty">Không tìm thấy lịch hẹn phù hợp!</p>
-            ) : (
-              <div className="booking-search-results">
-                <h3 className="spa-section-subtitle">Kết quả tìm kiếm</h3>
-                <p className="booking-search-condition">
-                  Điều kiện: {Object.entries(searchApplied).filter(([, v]) => v).map(([k, v]) => `${SEARCH_LABELS[k]}: ${v}`).join(' · ')}
-                </p>
-                {(searchQuery.data.warnings ?? []).map((w) => <p key={w} role="status" className="booking-search-condition">ⓘ {w}</p>)}
-                <div className="customer-search-scroll">
-                <table className="customer-search-table">
-                  <thead>
-                    <tr>
-                      <th>Mã</th>
-                      <th>Khách</th>
-                      <th>SĐT</th>
-                      <th>Dịch vụ</th>
-                      <th>Giường</th>
-                      <th>Thời gian</th>
-                      <th>Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {searchQuery.data.items.map((item) => (
-                      <tr key={item.id}>
-                        <td><strong>{item.bookingId}</strong></td>
-                        <td>{item.customerName}</td>
-                        <td>{item.customerPhone ?? '—'}</td>
-                        <td>{item.serviceName}</td>
-                        <td>{item.bedId ?? '—'}</td>
-                        <td>
-                          {new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(
-                            new Date(item.startsAt),
-                          )}{' '}
-                          · {item.startsAt.slice(11, 16)}
-                        </td>
-                        <td>{statusLabel(item.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              </div>
-            )
-          ) : null}
         </div>
-        <div className="spa-modal-footer">
+        <div className="spa-modal-footer" hidden>
           <Button type="button" variant="outline" onClick={() => searchDialog.current?.close()}>
             Đóng
           </Button>

@@ -47,6 +47,9 @@ export class UpdateAdminBookingDto {
   bookerName?: string;
   @IsOptional() @Transform(phoneTransform) @Matches(PHONE, phone)
   bookerPhone?: string;
+  /** Empty string clears the booking source; undefined keeps it. */
+  @IsOptional() @IsIn(['', 'Trực tiếp', 'Facebook', 'Zalo', 'Website', 'Khác'])
+  source?: string;
   /** Empty string clears the e-mail; undefined keeps it. */
   @ValidateIf((_o, v) => v !== undefined && v !== null && v !== '') @IsEmail({}, { message: 'Email không hợp lệ!' }) @MaxLength(100)
   bookerEmail?: string;
@@ -57,6 +60,14 @@ export class UpdateAdminBookingDto {
   /** Empty string clears the notes; undefined keeps them. */
   @IsOptional() @IsString() @MaxLength(500, { message: 'Ghi chú không được quá 500 ký tự!' })
   notes?: string;
+  /** Rename / re-phone ONE guest (service line) without touching bed, time or package. Ignored when `guests` replaces them all. */
+  @IsOptional() @IsString() @MaxLength(10)
+  guestDetailId?: string;
+  @IsOptional() @IsString({ message: MESSAGES.guest }) @MinLength(1, { message: MESSAGES.guest }) @MaxLength(50, { message: 'Họ tên không được quá 50 ký tự!' })
+  guestName?: string;
+  /** Empty string clears the guest phone. */
+  @ValidateIf((_o, v) => v !== undefined && v !== null && v !== '') @Transform(phoneTransform) @Matches(PHONE, phone)
+  guestPhone?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, dateRule)
   date?: string;
   @IsOptional() @IsArray() @ArrayMinSize(1, { message: MESSAGES.guest }) @ArrayMaxSize(15) @ValidateNested({ each: true }) @Type(() => BookingGuestDto)

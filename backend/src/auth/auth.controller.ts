@@ -83,6 +83,15 @@ export class AuthController {
     };
   }
 
+  @Post('activity')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Báo hiệu người dùng còn thao tác (gia hạn phiên thêm 5 giờ)' })
+  async activity(@Req() request: Request) {
+    await this.authService.touchSession(request.cookies?.access_token ?? request.headers.authorization?.replace(/^Bearer /, ''));
+    return { success: true };
+  }
+
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất khỏi hệ thống' })

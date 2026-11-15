@@ -1415,3 +1415,44 @@ html{scroll-padding-top:90px}
 .booking-table th:first-child,.booking-table td:first-child{padding-left:clamp(10px,1.1vw,22px)}
 .booking-table th:last-child,.booking-table td:last-child{padding-right:clamp(10px,1.1vw,22px)}
 .booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .18)}
+/* UC_5.4 02_XacNhanHuy: compact, centred confirm card */
+dialog.booking-cancel-confirm-dialog{margin:auto;width:min(440px,calc(100vw - 32px));padding:28px 28px 24px;border:0;border-radius:20px;box-shadow:0 16px 48px rgb(21 61 42 / .25);text-align:center}
+dialog.booking-cancel-confirm-dialog::backdrop{background:rgb(21 61 42 / .4)}
+dialog.booking-cancel-confirm-dialog .booking-cancel-confirm-icon{display:inline-flex;margin:0 auto 12px;width:56px;height:56px;font-size:26px}
+dialog.booking-cancel-confirm-dialog>h2{margin:0 0 6px;padding:0;border:0;font:400 24px/1.3 'Noto Serif',serif;color:#1f4b33}
+dialog.booking-cancel-confirm-dialog>p{margin:0 0 14px;padding:0;font-size:14px;color:#23342a}
+dialog.booking-cancel-confirm-dialog .booking-current-info-card{margin:0 0 18px;padding:10px 14px;display:block;text-align:left;background:#eef5ea;border-radius:10px}
+dialog.booking-cancel-confirm-dialog .booking-current-info-card strong{font-size:13.5px;font-weight:700;color:#153d2a}
+dialog.booking-cancel-confirm-dialog .booking-current-info-card>div>span{font-size:12px;color:#667068;margin-top:2px}
+dialog.booking-cancel-confirm-dialog>div:last-child{padding:0;gap:12px}
+dialog.booking-cancel-confirm-dialog>div:last-child button{min-width:120px;height:44px;border-radius:10px;font-size:14px}
+dialog.booking-cancel-confirm-dialog>div:last-child button:first-child{background:#fff;border:1px solid #d9e6d3;color:#153d2a}
+
+/* UC_2.4 update form (Figma): bold title, 3-column grids, "= người đặt" tick */
+.booking-create-modal .spa-modal-header h2{font-size:22px;font-weight:700;color:#153d2a}
+.booking-create-modal .spa-section-subtitle{font-size:14px;font-weight:700;color:#4f7f3f;margin:10px 0 2px}
+.booking-same-check{display:flex;align-items:center;gap:8px;align-self:end;height:40px;font-size:13.5px;color:#23342a}
+.booking-same-check input{width:18px;height:18px;accent-color:#648f57}
+.booking-create-modal .booking-guest-box{background:#f8faf5;border:1px solid #e1ebd9;border-radius:12px;padding:14px}
+.booking-search-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px;text-align:center}
+.booking-search-empty p{margin:0;font-size:13px;font-weight:700;color:#7b857c}
+.booking-search-empty-icon{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;border:2px solid #d5dccf;color:#b7c0b2;font-size:30px;font-weight:700}
+.booking-form-grid-3 .booking-bed-time-field{grid-column:auto}.booking-form-grid-3 .booking-bed-time-group{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:8px}
+
+/* Tìm kiếm lịch hẹn: ẩn nút Đóng ở chân hộp thoại (vẫn có nút ×) */
+.spa-modal-footer[hidden]{display:none}
+
+/* Dịch vụ: banner cố định dưới header; ô tìm kiếm cuộn lên chui xuống dưới banner,
+   đến khi hàng danh mục chạm banner thì banner mới cuộn đi và thanh tìm kiếm dính lại như cũ. */
+@media(min-width:769px){
+  .uc7-catalog-page{--catalog-search-h:72px}
+  .uc7-catalog-page .catalog-hero-pin::after{content:"";display:block;height:var(--catalog-search-h)}
+  .uc7-catalog-page .catalog-hero-pin .uc7-catalog-hero{position:sticky;top:var(--catalog-header-height);z-index:25}
+  .uc7-catalog-page .catalog-main{margin-top:calc(-1 * var(--catalog-search-h))}
+}
+
+/* UC_2.4_02: trang Kết quả tìm kiếm lịch hẹn (Figma) */
+.admin-content .booking-search-back{width:auto;min-width:285px;font:inherit;text-align:left}
+.admin-content .booking-search-back span{overflow:visible;text-overflow:clip}
+.admin-content .booking-search-page{margin-top:14px;padding:20px 22px;gap:12px;display:flex;flex-direction:column}
+.admin-content .booking-search-heading{margin:0;font-size:20px;font-weight:700;color:#1f4b33}

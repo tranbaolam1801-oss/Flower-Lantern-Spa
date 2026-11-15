@@ -91,6 +91,19 @@ describe('BookingWriteService on real PostgreSQL (PGlite)', () => {
     await expect(service.updateAdmin('LHNONE', {})).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('admin update: renaming a guest changes the service line (what the calendar shows) without moving bed, time or package', async () => {
+    const id = await create({ guests: [guest({ customerName: 'tú', customerPhone: '0911111111' })] });
+    const line = async () => (await q<{ id: string; name: string; phone: string | null; bed: string }>(
+      'SELECT rtrim(MaChiTiet) AS id,TenKhach AS name,rtrim(SoDienThoai) AS phone,rtrim(MaGiuong) AS bed FROM dbo.KhachSuDungDichVu WHERE MaLichHen=$1', [id]))[0];
+    const before = await line();
+    await service.updateAdmin(id, { bookerName: 'Tú Nguyễn', guestDetailId: before.id, guestName: ' Tú Nguyễn ', guestPhone: '0922222222' });
+    expect(await line()).toEqual({ id: before.id, name: 'Tú Nguyễn', phone: '0922222222', bed: before.bed });
+    expect((await booking(id)).name).toBe('Tú Nguyễn');
+    await service.updateAdmin(id, { guestDetailId: before.id, guestPhone: '' });
+    expect((await line()).phone).toBeNull();
+    expect((await line()).name).toBe('Tú Nguyễn');
+  });
+
   it('admin update: payment status is managed by transactions once a payment exists; free edit before', async () => {
     const id = await create();
     await service.updateAdmin(id, { paymentStatus: 'Thanh toán một phần' });
@@ -180,6 +193,21 @@ describe('BookingWriteService on real PostgreSQL (PGlite)', () => {
     expect(await ids({ q: '[' })).toEqual([]);
     const full = (await service.search({ date: '2026-11-20' } as never)).items[0];
     expect(full).toMatchObject({ bedId: 'G2', customerName: 'Cúc', packageId: 'GO90', status: 'Đã xác nhận', startsAt: '2026-11-20T14:00:00', endsAt: '2026-11-20T15:30:00', startMinute: 840, endMinute: 930 });
-    expect((await service.search({ source: 'Zalo' } as never)).warnings).toHaveLength(1);
+    expect((await service.search({ source: 'Zalo' } as never)).items).toEqual([]);
+  });
+
+  it('booking source ("Nguồn đặt lịch") is stored on create, editable on update, searchable and shown on the calendar', async () => {
+    const id = await create({ source: 'Zalo' });
+    const src = async () => (await q<{ s: string | null }>('SELECT NguonDatLich AS s FROM dbo.LichHen WHERE MaLichHen=$1', [id]))[0].s;
+    expect(await src()).toBe('Zalo');
+    expect((await service.search({ source: 'Zalo' } as never)).items.map((i) => i.bookingId)).toContain(id);
+    expect((await service.search({ source: 'Facebook' } as never)).items.map((i) => i.bookingId)).not.toContain(id);
+    expect((await service.search({ code: id, source: 'Zalo' } as never)).items[0]).toMatchObject({ source: 'Zalo' });
+    await service.updateAdmin(id, { source: 'Facebook' });
+    expect(await src()).toBe('Facebook');
+    await service.updateAdmin(id, { notes: 'x' });
+    expect(await src()).toBe('Facebook');
+    await service.updateAdmin(id, { source: '' });
+    expect(await src()).toBeNull();
   });
 });

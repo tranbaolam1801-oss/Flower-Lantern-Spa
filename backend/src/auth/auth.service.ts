@@ -40,6 +40,9 @@ interface ProfileRow {
   fullName: string;
 }
 
+/** Customers (and staff) are signed out automatically after this many hours without activity. */
+export const SESSION_IDLE_HOURS = 5;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -186,7 +189,7 @@ export class AuthService {
         ));
         if (active.length === 0) return false;
         await r.query(
-          `INSERT INTO dbo.PhienDangNhap(MaPhien, MaTaiKhoan, HetHanLuc) VALUES ($1::uuid, $2, dbo.utc_now() + make_interval(days => 7))`,
+          `INSERT INTO dbo.PhienDangNhap(MaPhien, MaTaiKhoan, HetHanLuc) VALUES ($1::uuid, $2, dbo.utc_now() + make_interval(hours => ${SESSION_IDLE_HOURS}))`,
           [jti, authUser.id],
         );
         return true;
@@ -249,6 +252,20 @@ export class AuthService {
       permissions: permissionRows.map((p) => p.code),
       entityId,
     };
+  }
+
+  /**
+   * Idle timeout: a session is valid for SESSION_IDLE_HOURS after login or after the last real user activity.
+   * The browser sends a heartbeat (POST /api/auth/activity) only while the user is interacting with the page;
+   * background polling (/auth/me, notifications, dashboards) never extends the session.
+   */
+  async touchSession(token?: string) {
+    if (!this.sessionsEnabled() || !token) return;
+    let payload: JwtPayload;
+    try { payload = await this.jwtService.verifyAsync<JwtPayload>(token); } catch { return; }
+    if (!payload.jti || !isSessionId(payload.jti)) return;
+    await this.database.query(`UPDATE dbo.PhienDangNhap SET HetHanLuc = dbo.utc_now() + make_interval(hours => ${SESSION_IDLE_HOURS})
+      WHERE MaPhien=$1::uuid AND MaTaiKhoan=$2 AND ThuHoiLuc IS NULL AND HetHanLuc>dbo.utc_now()`, [payload.jti, payload.sub]);
   }
 
   sessionsEnabled() { return process.env.AUTH_SESSION_STORE === 'sql'; }

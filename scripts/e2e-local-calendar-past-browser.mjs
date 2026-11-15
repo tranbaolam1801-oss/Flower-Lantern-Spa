@@ -140,6 +140,38 @@ try {
   await page.screenshot({ path: path.join(shots, 'calendar-1030.png') });
   await page.locator('.booking-detail button').first().evaluate((el) => el.closest('.booking-detail')?.querySelector('button')).catch(() => undefined);
 
+  // ---- 4b. update form (UC_2.4 Figma layout) + renaming the booker also renames the guest shown on the calendar
+  await page.locator('.booking-detail').getByRole('button', { name: 'Cập nhật', exact: true }).click();
+  await page.locator('dialog[aria-labelledby="edit-booking-title"][open]').waitFor();
+  const editText = await page.locator('dialog[aria-labelledby="edit-booking-title"]').innerText();
+  check('update form: sections "Thông tin người đặt", "Khách sử dụng dịch vụ", "Trạng thái & thanh toán" and the fields of the Figma layout',
+    ['Thông tin người đặt', 'Khách sử dụng dịch vụ', 'Trạng thái & thanh toán', 'Họ tên', 'Nguồn đặt lịch', 'Ngày hẹn', 'Ghi chú', 'Tên khách', '= người đặt', 'Giường / khung giờ', 'Gói dịch vụ', 'Thanh toán trả trước', 'Trạng thái thanh toán'].every((t) => editText.includes(t)), editText.slice(0, 300));
+  await page.screenshot({ path: path.join(shots, 'edit-form.png') });
+  const nameInput = page.locator('dialog[aria-labelledby="edit-booking-title"] label', { hasText: 'Họ tên' }).locator('input');
+  await nameInput.fill('Tú Nguyễn');
+  const sourceSelect = page.locator('dialog[aria-labelledby="edit-booking-title"] label', { hasText: 'Nguồn đặt lịch' }).locator('select');
+  check('update form: "Nguồn đặt lịch" is selectable (enabled, 5 channels)', (await sourceSelect.isEnabled()) && (await sourceSelect.locator('option').count()) === 6);
+  await sourceSelect.selectOption('Zalo');
+  await page.locator('dialog[aria-labelledby="edit-booking-title"]').getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await page.locator('.calendar-toast-success').waitFor({ timeout: 8000 }).catch(async () => { console.log('DIALOG:', (await page.locator('dialog[aria-labelledby="edit-booking-title"]').innerText()).slice(-300)); });
+  await page.waitForTimeout(500);
+  const guestRow = (await db.query(`SELECT TenKhach AS n FROM dbo.KhachSuDungDichVu WHERE MaChiTiet='CT00000003'`)).rows[0];
+  const srcRow = (await db.query(`SELECT l.NguonDatLich AS s FROM dbo.LichHen l JOIN dbo.KhachSuDungDichVu c ON c.MaLichHen=l.MaLichHen WHERE c.MaChiTiet='CT00000003'`)).rows[0];
+  check('the chosen source is saved to the database', srcRow.s === 'Zalo', JSON.stringify(srcRow));
+  // search results open on their own page (Figma UC_2.4_02), not under the search form
+  await page.getByRole('button', { name: 'Tìm lịch hẹn' }).click();
+  await page.locator('dialog#search-booking-dialog, dialog[aria-labelledby="search-booking-title"][open]').waitFor();
+  await page.locator('dialog[aria-labelledby="search-booking-title"] label', { hasText: 'Nguồn' }).locator('select').selectOption('Zalo');
+  await page.locator('dialog[aria-labelledby="search-booking-title"]').getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.waitForURL(/\/admin\/lich-hen\/ket-qua\?/);
+  await page.locator('.booking-search-page').waitFor();
+  await page.locator('.booking-search-page tbody tr').first().waitFor();
+  const resText = await page.locator('.booking-search-page').innerText();
+  check('search results are a separate page: heading, condition chip, table with the booking', resText.includes('Kết quả tìm kiếm') && resText.includes('Điều kiện: Nguồn: Zalo') && (await page.locator('.booking-search-page tbody tr').count()) >= 1 && !(await page.locator('dialog[open]').count()), resText.slice(0, 200));
+  await page.screenshot({ path: path.join(shots, 'search-results.png') });
+  await page.goBack(); await page.locator('.calendar-appointment').first().waitFor();
+  check('renaming the booker in the update form also renames the guest (calendar shows "Tú Nguyễn")', guestRow.n === 'Tú Nguyễn' && (await page.locator('.calendar-appointment', { hasText: 'Tú Nguyễn' }).count()) === 1, JSON.stringify(guestRow));
+
   // ---- 5. legend intact
   const legend = await page.locator('.calendar-legend').innerText();
   check('the status legend is intact (5 statuses)', ['Chờ xác nhận', 'Đã xác nhận', 'Chưa đến', 'Hoàn thành', 'Đã hủy'].every((t) => legend.includes(t)), legend);
@@ -150,7 +182,7 @@ try {
   await page.waitForTimeout(500);
   const liveAfter = page.locator('.calendar-appointment', { hasText: 'Khách LH00000002' });
   check('2 hours later (12:30) with the page left open: the 10:00-11:00 booking has become past (dimmed, inert) and the 11:00 slot is now past', (await liveAfter.evaluate((e) => e.tagName)) === 'DIV' && (await cell(5, 11).getAttribute('class'))?.includes('hour-cell-past') && (await cell(5, 13).getAttribute('role')) === 'button');
-  const stillFuture = page.locator('.calendar-appointment', { hasText: 'Khách LH00000003' });
+  const stillFuture = page.locator('.calendar-appointment', { hasText: 'Tú Nguyễn' });
   check('the 14:00 booking is still a normal clickable booking at 12:30', (await stillFuture.evaluate((e) => e.tagName)) === 'BUTTON');
   await page.screenshot({ path: path.join(shots, 'calendar-1230.png') });
 
