@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import type { CalendarItem } from '../lib/booking-api';
+import { statusLabel } from '../lib/booking-status';
 
 export function BookingCancel({
   item,
@@ -62,37 +63,39 @@ export function BookingCancel({
       </button>
       <div className="booking-detail-head">
         <h2>{item.serviceName}</h2>
-        <span className="booking-status" data-status={item.status}>{item.status}</span>
+        <span className="booking-status" data-status={item.status}>{statusLabel(item.status)}</span>
       </div>
-      <p><strong>Mã lịch:</strong> {item.bookingId}</p>
-      <p><strong>Thanh toán:</strong> {item.paymentStatus}</p>
+      {/* Figma UC_2.3: only customer, time and bed. Booking code, payment and package are no longer listed here. */}
       <p>Khách: {item.customerName}</p>
-      <p>Gói: {item.packageName}</p>
       <p>Thời gian: {item.startsAt.slice(11, 16)} – {item.endsAt.slice(11, 16)}</p>
-      <p>Giường {item.bedId}</p>
+      <p>Giường {(item.bedId ?? '').replace(/^G/, '')}</p>
 
       <div className="booking-detail-actions">
         {onEdit && !isLockedStatus && (
           <Button type="button" size="sm" variant="outline" onClick={onEdit}>
-            Cập nhật / Duyệt
+            Cập nhật
           </Button>
         )}
         {onPay && item.status !== 'Đã hủy' && item.paymentStatus !== 'Đã thanh toán' && (
-          <Button type="button" size="sm" variant="outline" onClick={onPay}>
+          // Hidden to match Figma UC_2.3 (function kept; QR payment is still offered on the customer's own booking list).
+          <Button type="button" size="sm" variant="outline" hidden aria-hidden="true" tabIndex={-1} onClick={onPay}>
             Thanh toán QR
           </Button>
         )}
-        <Button
-          type="button"
-          size="sm"
-          className="cancel-booking-button"
-          onClick={() => {
-            mutation.reset();
-            dialog.current?.showModal();
-          }}
-        >
-          Hủy lịch hẹn
-        </Button>
+        {/* A completed or already cancelled booking can no longer be cancelled (the server refuses it too). */}
+        {!isLockedStatus && (
+          <Button
+            type="button"
+            size="sm"
+            className="cancel-booking-button"
+            onClick={() => {
+              mutation.reset();
+              dialog.current?.showModal();
+            }}
+          >
+            Hủy lịch hẹn
+          </Button>
+        )}
       </div>
 
       {message && <p role="status">{message}</p>}

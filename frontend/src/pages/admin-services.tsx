@@ -1,7 +1,7 @@
-import { useContinuousList, ContinuousListEnd } from '../components/continuous-list';
+import { Pagination } from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
 import { resolveApiUrl } from '../lib/api-client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ManagementLayout } from '../components/management-layout';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/auth-context';
@@ -151,10 +151,13 @@ export function AdminServicesPage() {
   }, [text]);
 
   const allowed = user?.role === 'Chủ Spa' || (user?.role === 'Quản lý' && !!user.permissions.includes('Q04')); // mirrors backend @Roles('Quản lý') @Permissions('Q04')
-  const query = useContinuousList({
-    queryKey: ['admin-services', q, category, statusFilter],
-    queryFn: (page) => listAdminServices({ q, category, status: statusFilter, page }),
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [q, category, statusFilter]); // a new search/filter always starts at page 1
+  const query = useQuery({
+    queryKey: ['admin-services', q, category, statusFilter, page],
+    queryFn: () => listAdminServices({ q, category, status: statusFilter, page }),
     enabled: !!allowed,
+    placeholderData: keepPreviousData,
   });
 
   const saveMutation = useMutation({
@@ -428,7 +431,9 @@ export function AdminServicesPage() {
                   <p className="svc-state-text">Không tìm thấy dịch vụ phù hợp.</p>
                 </div>
               )}
-              {!query.isPending && !query.isError && <ContinuousListEnd query={query} />}
+              {!query.isPending && !query.isError && (
+                <Pagination page={query.data?.page ?? page} totalPages={query.data?.totalPages ?? 1} busy={query.isFetching} onChange={(next) => { setPage(next); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+              )}
             </>
           )}
         </section>

@@ -91,8 +91,9 @@ export function MonthCalendar({ value, onChange, currentDate }: { value: string;
 export const formatDateVn = (iso: string) => (iso ? iso.split('-').reverse().join('/') : '');
 
 /** Date field that always shows dd/mm/yyyy (Vietnamese order; the native input followed the browser locale and showed mm/dd/yyyy) and opens the month calendar. */
-export function DateField({ value, onChange, invalid = false, id, currentDate }: { value: string; onChange: (iso: string) => void; invalid?: boolean; id?: string; currentDate?: string }) {
-  const [open, setOpen] = useState(false);
+export function DateField({ value, onChange, invalid = false, id, currentDate, alwaysOpen = false }: { value: string; onChange: (iso: string) => void; invalid?: boolean; id?: string; currentDate?: string; alwaysOpen?: boolean }) {
+  const [openState, setOpen] = useState(false);
+  const open = alwaysOpen || openState;
   return (
     <div className="date-field">
       <button id={id} type="button" className={`date-field-button${invalid ? ' is-invalid' : ''}`} aria-haspopup="dialog" aria-expanded={open} aria-invalid={invalid} onClick={() => setOpen((v) => !v)}>

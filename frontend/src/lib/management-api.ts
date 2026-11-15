@@ -208,6 +208,9 @@ export const listAdminServices = (params: { q?: string; category?: string; statu
     categories: { id: string; name: string }[];
     page: number;
     hasNext: boolean;
+    total: number;
+    pageSize: number;
+    totalPages: number;
   }>(`admin/services?${qs.toString()}`);
 };
 

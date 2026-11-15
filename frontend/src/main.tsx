@@ -97,3 +97,14 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
+
+// Native date inputs only open their calendar from the small indicator icon. Clicking anywhere else on the field
+// (e.g. the whole "Chủ Nhật, 15/11/2026" control) should open it too. The indicator area itself is left to the browser
+// so the picker is not toggled twice.
+document.addEventListener('click', (event) => {
+  const el = event.target;
+  if (!(el instanceof HTMLInputElement) || el.type !== 'date' || el.disabled || el.readOnly) return;
+  const rect = el.getBoundingClientRect();
+  if (event.clientX > rect.right - 32) return;
+  try { el.showPicker(); } catch { /* picker already open or not allowed */ }
+});

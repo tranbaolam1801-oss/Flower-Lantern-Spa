@@ -1,3 +1,4 @@
+import { statusLabel } from '../lib/booking-status';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -91,7 +92,7 @@ export function AdminOverviewPage() {
               <td><strong>{i.customerName}</strong></td>
               <td>{i.serviceName}</td>
               <td>{i.bedId ?? '—'}</td>
-              <td><span className={`dash-badge dash-badge-${STATUS_CLASS[i.status] ?? 'pending'}`}>{i.status}</span></td>
+              <td><span className={`dash-badge dash-badge-${STATUS_CLASS[i.status] ?? 'pending'}`}>{statusLabel(i.status)}</span></td>
             </tr>)}</tbody>
           </table>{items.length > 6 && <p className="dash-more">và {items.length - 6} lịch hẹn khác hôm nay</p>}</div>}
       </Card>

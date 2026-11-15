@@ -1324,3 +1324,94 @@ html{scroll-padding-top:90px}
 .reports-granularity button{font-size:12px;padding:5px 12px;border-color:transparent;background:transparent;color:#667068}
 .reports-granularity{background:#f1f4ee;border-radius:10px;padding:3px;gap:2px}
 .reports-granularity button[aria-pressed="true"]{border-radius:8px;background:#648f57;color:#fff}
+/* Keep the filter / search bar fixed at the top of the admin scroll area while the list scrolls under it. */
+.admin-content :is(.reports-filter-card,.figma-toolbar-card){position:sticky;top:0;z-index:15;background:#fff}
+.admin-content .emp-toolbar{position:sticky;top:0;z-index:15;padding:6px 0 10px;background:#fcfdf8}
+.admin-content .customer-search-card>.customer-search-toolbar{position:sticky;top:0;z-index:15;margin:-22px -22px 0;padding:22px 22px 18px;background:#fff;border-radius:18px 18px 0 0}
+/* Calendar: small confirmation popover next to the clicked empty slot */
+.slot-prompt{position:absolute;z-index:20;width:210px;padding:12px;border:1px solid #cfe3c9;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgb(21 61 42 / .18)}
+.slot-prompt p{margin:0 0 10px;font-size:13px;line-height:1.4;color:#23342a}
+.slot-prompt>div{display:flex;gap:8px;justify-content:flex-end}
+.slot-prompt button{height:32px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.slot-prompt-cancel{background:#fff;border:1px solid #d7e6d1;color:#23342a}
+.slot-prompt-ok{background:#648f57;border:1px solid #648f57;color:#fff}
+.slot-prompt-anchor.is-picked{background:rgb(100 143 87 / .14);outline:1.5px solid #648f57;outline-offset:-1.5px}
+.booking-detail-actions button[hidden]{display:none!important}
+/* UC_2.3 appointment popup: compact, aligned, no wrapping of title / status (Figma Chon_lich_hen) */
+.booking-detail{width:min(360px,calc(100% - 24px));padding:18px 20px 20px;top:170px;left:clamp(12px,24vw,380px);font-size:14px}
+.booking-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-right:22px;margin-bottom:12px}
+.booking-detail-head h2{margin:0;flex:1;min-width:0;font-size:17px;font-weight:700;line-height:1.3;color:#153d2a}
+.booking-detail-head .booking-status{flex:none;white-space:nowrap;padding:3px 10px;font-size:11.5px;font-weight:600;line-height:1.4;border-radius:999px}
+.booking-detail p{margin:0 0 6px;font-size:14px;line-height:1.5;color:#2a3a30}
+.booking-detail-close{right:10px;top:10px;width:24px;height:24px;font-size:18px;line-height:1}
+.booking-detail-actions{display:flex;flex-wrap:nowrap;gap:10px;margin-top:14px}
+.booking-detail-actions button{flex:1 1 0;height:36px;padding:0 12px;font-size:14px;font-weight:600;white-space:nowrap;border-radius:10px}
+/* ===== UC_5 customer: account menu, reschedule, cancel confirm (Figma 5.2 / 5.3 / 5.4) ===== */
+.account-dropdown-customer{width:min(320px,calc(100vw - 24px));padding:12px;border-radius:16px}
+.account-dropdown-card strong{font-size:15px;font-weight:700;color:#153d2a}.account-dropdown-card small{display:block;font-size:12.5px;color:#667068;margin-top:2px}
+.account-dropdown-customer .account-dropdown-item{gap:14px;padding:11px 14px;border-radius:10px;font-size:15px;font-weight:400;color:#23342a}
+.account-dropdown-customer .account-dropdown-item svg{flex:none;color:#4f7f3f}
+.account-dropdown-customer .account-dropdown-item.is-active{background:#e8f3e3;color:#153d2a;font-weight:700}
+.resch-current{justify-content:flex-start}.resch-thumb{flex:0 0 80px;width:80px;height:64px;border-radius:10px;object-fit:cover}
+.resch-current>.resch-current-main{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.resch-current-date{margin-left:auto}
+.resch-col .date-field-button{border:1.5px solid #648f57;font-weight:600}
+.resch-col .date-field .month-cal{margin-top:12px;border-radius:14px}
+.resch-col>.resch-info{margin-top:6px}
+.resch-legend{display:flex;align-items:center;gap:28px;flex-wrap:wrap;font-size:12.5px;color:#667068}.resch-legend .resch-hint,.resch-legend .resch-note{margin:0;font-size:12.5px}
+.booking-cancel-confirm-dialog{width:min(520px,calc(100vw - 24px));border-radius:22px}
+.booking-cancel-confirm-icon{width:64px;height:64px;font-size:30px;font-weight:300;background:#fde3e8;color:#c0284b}
+.booking-cancel-confirm-dialog h2{font:400 28px/1.3 'Noto Serif',serif;color:#1f4b33;padding-bottom:4px}
+.booking-cancel-confirm-dialog .booking-current-info-card{padding:12px 18px;background:#eef5ea}
+.booking-cancel-confirm-dialog .booking-current-info-card strong{font-weight:700;font-size:15px}
+.booking-cancel-confirm-dialog>div:last-child{display:flex;justify-content:center;gap:14px;padding:18px 24px 26px}
+.booking-cancel-confirm-dialog>div:last-child button{min-width:140px;height:48px;border-radius:10px;font-size:15px;font-weight:700}
+.booking-cancel-confirm-dialog .booking-cancel-confirm-ok{background:#4a7a3a;border-color:#4a7a3a;color:#fff}
+.booking-empty-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.account-menu-customer .account-dropdown.account-dropdown-customer>[role="menuitem"]{display:flex;align-items:center;gap:14px;padding:11px 14px;font-size:15px}
+.account-menu-customer .account-dropdown.account-dropdown-customer>[role="menuitem"].is-active{background:#e8f3e3;font-weight:700;color:#153d2a}
+
+/* ===== UC_5.5 customer review (Figma) ===== */
+.review-pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:#eef0ec;color:#a9afa6;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:not-allowed}
+.review-pill.is-active{background:#fff;border-color:#648f57;color:#3f6f33;cursor:pointer}.review-pill.is-active:hover{background:#eef5ea}
+.bar-toast{position:fixed;z-index:1000;top:108px;right:clamp(16px,3vw,48px);width:min(480px,calc(100vw - 32px));display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:10px;background:#fff;border-left:5px solid;box-shadow:0 4px 16px rgb(21 61 42 / .12)}
+.bar-toast p{margin:0;font-size:14.5px;font-weight:700}.bar-toast-icon{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+.bar-toast-success{border-color:#357c46}.bar-toast-success p{color:#2e6b3a}.bar-toast-success .bar-toast-icon{background:#e3f1e6;color:#357c46}
+.bar-toast-error{border-color:#c0284b}.bar-toast-error p{color:#c0284b}.bar-toast-error .bar-toast-icon{background:#fde3e8;color:#c0284b}
+.bar-toast-info{border-color:#2d6a9f}.bar-toast-info p{color:#2d6a9f}.bar-toast-info .bar-toast-icon{background:#e3eef8;color:#2d6a9f}
+.rvw-dialog{margin:auto;border:0;border-radius:24px;padding:0;width:min(700px,calc(100vw - 24px));max-height:calc(100svh - 24px);overflow:auto;box-shadow:0 16px 48px rgb(21 61 42 / .22);background:#fff;color:#23342a}.rvw-dialog::backdrop{background:rgb(21 61 42 / .4)}
+.rvw-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:32px 36px 0}.rvw-head h2{margin:0;font:400 clamp(26px,2.6vw,34px)/1.2 'Noto Serif',serif;color:#1f4b33}.rvw-head p{margin:6px 0 0;font-size:14px;color:#667068}
+.rvw-body{padding:18px 36px 8px;display:flex;flex-direction:column;gap:16px}
+.rvw-service{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:14px;background:#eef5ea;position:relative}.rvw-service img{flex:0 0 100px;width:100px;height:76px;border-radius:10px;object-fit:cover}
+.rvw-service>div{display:flex;flex-direction:column;gap:3px;min-width:0}.rvw-service strong{font:400 20px/1.3 'Noto Serif',serif;color:#1f3a2c}.rvw-service span{font-size:13.5px;color:#667068}.rvw-service b{font-size:14px;color:#153d2a}
+.rvw-code{position:absolute;top:12px;right:16px;padding:4px 14px;border-radius:999px;background:#fff;font-size:12.5px;font-weight:700;color:#153d2a}
+.rvw-field{display:flex;flex-direction:column;gap:8px}.rvw-label{font-size:14px;font-weight:700;color:#153d2a}.rvw-label em{color:#c0284b;font-style:normal}
+.rvw-stars{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border:1.5px solid transparent;border-radius:12px}.rvw-stars.is-invalid{border-color:#c0284b;background:#fdf1f3}
+.rvw-stars>div{display:flex;gap:10px}.rvw-star{background:none;border:0;padding:4px;color:#b9c4b4;cursor:pointer;line-height:0}.rvw-star.on{color:#f5ad00}
+.rvw-star-label{font-size:13.5px;color:#a0a8a0}.rvw-star-label.has-value{font-weight:700;color:#153d2a}
+.rvw-field textarea{min-height:112px;padding:14px 16px;border:1px solid #d9e6d3;border-radius:12px;font-size:15px;font-family:inherit;resize:vertical}.rvw-field textarea:focus{outline:2px solid #648f57;outline-offset:1px}
+.rvw-foot{display:flex;justify-content:flex-end;gap:14px;padding:14px 36px 28px}.rvw-foot .rvw-cancel{border:1.5px solid #d9e6d3;color:#153d2a}.rvw-foot .rvw-submit{min-width:250px;background:#4a7a3a;color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:10px}.rvw-submit:disabled{opacity:.7;cursor:progress}
+.rvw-spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgb(255 255 255 / .4);border-top-color:#fff;animation:rvw-spin .8s linear infinite}@keyframes rvw-spin{to{transform:rotate(360deg)}}
+.rvw-state-dialog{margin:auto;border:0;border-radius:24px;padding:36px 40px 32px;width:min(520px,calc(100vw - 24px));text-align:center;box-shadow:0 16px 48px rgb(21 61 42 / .28);background:#fff}.rvw-state-dialog::backdrop{background:rgb(21 61 42 / .4)}
+.rvw-state-icon{display:inline-grid;place-items:center;width:72px;height:72px;border-radius:50%;background:#fde3e8;color:#c0284b}
+.rvw-state-dialog h2{margin:16px 0 8px;font:400 28px/1.3 'Noto Serif',serif;color:#1f4b33}.rvw-state-dialog p{margin:0 0 24px;font-size:15px;color:#23342a}
+.rvw-state-dialog>div{display:flex;justify-content:center;gap:16px}.rvw-state-dialog button{min-width:150px;height:50px;border-radius:999px;font-size:15px;font-weight:700;cursor:pointer}
+.rvw-state-primary{background:#4a7a3a;color:#fff;border:0}.rvw-state-outline{background:#fff;color:#153d2a;border:1.5px solid #d9e6d3}
+.booking-table .review-pill{height:var(--fluid-control);min-height:0;padding:0 calc(var(--fluid-pad) * .8);font-size:var(--fluid-text-sm);gap:5px}.booking-table .review-pill svg{width:14px;height:14px}
+.booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .45)}
+.booking-table .payment-chip{padding:3px 9px}.booking-table .pill-action-btn{padding-inline:calc(var(--fluid-pad) * .8)}
+.booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .32)}.booking-table .review-pill{padding:0 calc(var(--fluid-pad) * .6);gap:4px}
+/* UC_5 list layout (Figma): one-line actions, compact rows, grey payment chip */
+.booking-table .table-action-row{flex-wrap:nowrap;gap:8px}.booking-table .table-action-row button[hidden]{display:none!important}
+.booking-table .table-action-row .pill-action-btn{font-weight:700;white-space:nowrap}
+.booking-table .payment-chip{background:#ecedea;color:#4d554f;font-weight:700}
+.booking-table td{vertical-align:middle}
+.booking-table .table-action-row{gap:6px}.booking-table .table-action-row .pill-action-btn{font-weight:600;padding-inline:calc(var(--fluid-pad) * .6)}
+.booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .25)}
+/* UC_5 list: breathing room at the left and right edge of the card + dimmed actions */
+.booking-table th:first-child,.booking-table td:first-child{padding-left:clamp(14px,1.6vw,24px)}
+.booking-table th:last-child,.booking-table td:last-child{padding-right:clamp(14px,1.6vw,24px)}
+.booking-table .table-action-row .pill-action-btn:disabled{opacity:.4;cursor:not-allowed;background:#fff}
+.booking-table th:first-child,.booking-table td:first-child{padding-left:clamp(10px,1.1vw,22px)}
+.booking-table th:last-child,.booking-table td:last-child{padding-right:clamp(10px,1.1vw,22px)}
+.booking-table th,.booking-table td{padding-inline:calc(var(--fluid-pad) * .18)}

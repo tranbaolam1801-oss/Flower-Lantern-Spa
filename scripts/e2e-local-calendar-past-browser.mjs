@@ -78,7 +78,7 @@ try {
   const label = await page.locator('.calendar-toolbar input, .calendar-toolbar').first().innerText().catch(() => '');
   check('the calendar shows the fixed test day (2026-11-20) loaded from the real API', (await page.locator('.calendar-appointment').count()) === 4, `${label}`);
 
-  const cell = (bed, hour) => page.locator('.hour-row').nth(hour).locator('> div').nth(bed - 1);
+  const cell = (bed, hour) => page.locator('.hour-row').nth(hour - 8).locator('> div').nth(bed - 1);
   const dialogOpen = async () => (await page.locator('dialog.booking-create-modal').evaluateAll((ds) => ds.some((d) => d.open)));
   const hasDetail = async () => (await page.locator('.booking-detail').count()) > 0;
 
@@ -99,6 +99,12 @@ try {
   const future = cell(5, 12);
   check('a future empty slot is a normal clickable slot (button role + tooltip)', (await future.getAttribute('role')) === 'button' && !!(await future.getAttribute('title')));
   await future.click();
+  await page.locator('.slot-prompt').waitFor();
+  check('clicking a future slot first shows the small "Tạo lịch hẹn / Hủy" prompt, not the form', !(await dialogOpen()) && (await page.locator('.slot-prompt').innerText()).includes('Hủy'));
+  await page.locator('.slot-prompt .slot-prompt-cancel').click();
+  check('Hủy closes the prompt and nothing else happens', (await page.locator('.slot-prompt').count()) === 0 && !(await dialogOpen()));
+  await future.click();
+  await page.locator('.slot-prompt .slot-prompt-ok').click();
   await page.locator('dialog[aria-labelledby="create-booking-title"][open]').waitFor();
   check('clicking a future slot opens the create form with that bed and time preset', (await page.locator('dialog[aria-labelledby="create-booking-title"] select').first().inputValue()).length > 0);
   await page.screenshot({ path: path.join(shots, 'create-from-future-slot.png') });

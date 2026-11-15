@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { serviceFallbackImage } from '../lib/spa-images';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/button';
@@ -15,6 +16,10 @@ import { SepayPaymentDialog } from '../components/sepay-payment-dialog';
 import { NoticeToast, errorNotice, successNotice, type NoticeState } from '../components/notice-toast';
 import { DateField, TimeSlotGrid, slotState, toMinutes, fromMinutes } from '../components/slot-picker';
 
+const RATING_LABELS = ['Rất tệ', 'Tệ', 'Bình thường', 'Tốt', 'Tuyệt vời'];
+const STAR_PATH = 'm12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z';
+const StarOutline = ({ size = 16 }: { size?: number }) => <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true"><path d={STAR_PATH} /></svg>;
+const StarFilled = ({ size = 16 }: { size?: number }) => <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" aria-hidden="true"><path d={STAR_PATH} /></svg>;
 const filters = ['Tất cả', 'Chờ xác nhận', 'Đã xác nhận', 'Hoàn thành', 'Đã hủy'];
 const day = (value: string) => value.slice(0, 10).split('-').reverse().join('/');
 const minutesBetween = (a: string, b: string) => {
@@ -38,6 +43,15 @@ export function CustomerDashboard() {
   const [reviewFieldError, setReviewFieldError] = useState('');
   const [toast, setToast] = useState<NoticeState | null>(null);
   const setToastMsg = (message: string) => setToast(successNotice(message));
+  // UC_5.5 Figma toasts: white card with a coloured left bar (success / error / info).
+  const [barToast, setBarToast] = useState<{ kind: 'success' | 'error' | 'info'; text: string } | null>(null);
+  useEffect(() => {
+    if (!barToast) return;
+    const t = setTimeout(() => setBarToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [barToast]);
+  const [reviewState, setReviewState] = useState<{ kind: 'notcompleted' | 'exists' | 'failed'; title: string; message: string } | null>(null);
+  const reviewStateDialog = useRef<HTMLDialogElement>(null);
 
   const rescheduleDialog = useRef<HTMLDialogElement>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
@@ -85,10 +99,33 @@ export function CustomerDashboard() {
       reviewDialog.current?.close();
       setReviewTarget(null);
       setComment('');
-      setToastMsg('Cảm ơn bạn đã gửi đánh giá dịch vụ!');
+      setBarToast({ kind: 'success', text: 'Gửi đánh giá thành công!' });
       await cache.invalidateQueries({ queryKey: ['my-bookings'] });
     },
+    onError: (err: unknown) => {
+      const e = err as { status?: number; message?: string } | undefined;
+      const msg = e?.message ?? '';
+      if (e?.status === 409 && /đã được đánh giá/i.test(msg)) setReviewState({ kind: 'exists', title: 'Bạn đã đánh giá rồi', message: 'Bạn đã đánh giá lịch hẹn này!' });
+      else if (e?.status === 409) setReviewState({ kind: 'notcompleted', title: 'Chưa thể đánh giá', message: 'Lịch hẹn chưa đủ điều kiện đánh giá!' });
+      else setReviewState({ kind: 'failed', title: 'Gửi đánh giá chưa thành công', message: 'Không thể gửi đánh giá. Vui lòng thử lại!' });
+      reviewStateDialog.current?.showModal();
+    },
   });
+
+  const submitReview = () => {
+    if (reviewMutation.isPending) return;
+    if (rating === 0) {
+      setReviewFieldError('Vui lòng chọn số sao đánh giá!');
+      setBarToast({ kind: 'error', text: 'Vui lòng chọn số sao đánh giá!' });
+      return;
+    }
+    setReviewFieldError('');
+    reviewMutation.mutate();
+  };
+  const cancelReview = () => {
+    reviewDialog.current?.close();
+    setBarToast({ kind: 'info', text: 'Đã hủy thao tác. Không lưu đánh giá.' });
+  };
 
   const openReschedule = (b: MyBooking) => {
     setRescheduleTarget(b);
@@ -131,6 +168,17 @@ export function CustomerDashboard() {
       </section>
       <main className="customer-bookings">
         {toast && <NoticeToast notice={toast} onClose={() => setToast(null)} />}
+        {barToast && (
+          <div role={barToast.kind === 'error' ? 'alert' : 'status'} className={`bar-toast bar-toast-${barToast.kind}`} data-testid={`review-toast-${barToast.kind}`}>
+            <span className="bar-toast-icon" aria-hidden="true">
+              {barToast.kind === 'success'
+                ? <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 12.5 4 4 8-9" /></svg>
+                : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5M12 16.2v.1" /></svg>}
+            </span>
+            <p>{barToast.text}</p>
+          </div>
+        )}
+        {!(query.isSuccess && items.length === 0) && <>
         <div className="booking-filters" role="group" aria-label="Lọc trạng thái lịch hẹn">
           {filters.map((label) => {
             const count =
@@ -151,6 +199,7 @@ export function CustomerDashboard() {
           <h2>Danh sách lịch hẹn</h2>
           {query.isSuccess && <p>{visible.length} lịch hẹn | Sắp xếp: Mới đặt nhất</p>}
         </div>
+        </>}
         {query.isPending ? (
           <p role="status">Đang tải danh sách lịch hẹn…</p>
         ) : query.isError ? (
@@ -167,7 +216,10 @@ export function CustomerDashboard() {
             </span>
             <h2>Bạn chưa có lịch hẹn nào!</h2>
             <p>Hãy đặt lịch để trải nghiệm dịch vụ tại Flower Lantern Spa.</p>
-            <Link to="/dat-lich" className="booking-empty-cta">Đặt lịch ngay</Link>
+            <Link to="/dat-lich" className="booking-empty-cta">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
+              Đặt lịch ngay
+            </Link>
           </div>
         ) : (
           <div className="booking-table-scroll">
@@ -183,6 +235,7 @@ export function CustomerDashboard() {
                     'Trạng thái',
                     'Thanh toán',
                     'Thao tác',
+                    'Đánh giá',
                   ].map((h) => (
                     <th key={h}>{h}</th>
                   ))}
@@ -224,40 +277,48 @@ export function CustomerDashboard() {
                       </td>
                       <td>
                         <div className="table-action-row">
-                          {canEdit && (
-                            <>
-                              <Button type="button" size="sm" variant="outline" className="pill-action-btn" onClick={() => openReschedule(b)}>
-                                Đổi lịch
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="pill-action-btn danger-outline-btn"
-                                onClick={() => openCancel(b)}
-                              >
-                                Hủy lịch
-                              </Button>
-                            </>
-                          )}
+                          {/* Shown on every row; dimmed and inert when the booking can no longer be changed or cancelled. */}
+                          <Button type="button" size="sm" variant="outline" className="pill-action-btn" disabled={!canEdit} onClick={() => openReschedule(b)}>
+                            Đổi lịch
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="pill-action-btn danger-outline-btn"
+                            disabled={!canEdit}
+                            onClick={() => openCancel(b)}
+                          >
+                            Hủy lịch
+                          </Button>
+                          {/* Hidden to match Figma UC_5 (function kept: SepayPaymentDialog and openers stay in place). */}
                           {canPay && (
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
+                              hidden
+                              aria-hidden="true"
+                              tabIndex={-1}
                               className="pill-action-btn"
                               onClick={() => setPayBookingId(b.id)}
                             >
                               Thanh toán QR
                             </Button>
                           )}
-                          {canReview && (
-                            <Button type="button" size="sm" className="pill-action-btn" onClick={() => openReview(b)}>
-                              Đánh giá
-                            </Button>
-                          )}
-                          {!canEdit && !canPay && !canReview && <span>—</span>}
                         </div>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`review-pill${canReview ? ' is-active' : ''}`}
+                          disabled={!canReview}
+                          aria-label={`Đánh giá lịch hẹn ${b.id}`}
+                          onClick={() => openReview(b)}
+                        >
+                          <StarOutline size={16} />
+                          Đánh giá
+                        </button>
                       </td>
                     </tr>
                   );
@@ -283,7 +344,8 @@ export function CustomerDashboard() {
         {rescheduleTarget && (
           <div className="resch-body">
             <div className="resch-current">
-              <div>
+              <img className="resch-thumb" src={serviceFallbackImage(rescheduleTarget.services[0]?.name ?? '')} alt="" />
+              <div className="resch-current-main">
                 <strong>{rescheduleTarget.services[0]?.name ?? 'Dịch vụ'}</strong>
                 <span>{rescheduleTarget.services[0]?.packageName ? `${rescheduleTarget.services[0].packageName} · ` : ''}Mã lịch hẹn {rescheduleTarget.id}</span>
               </div>
@@ -295,20 +357,22 @@ export function CustomerDashboard() {
             <div className="resch-pickers">
               <div className="resch-col">
                 <span className="resch-label">Ngày hẹn mới</span>
-                <DateField value={newDate} currentDate={rescheduleTarget.date.slice(0, 10)} invalid={Boolean(rescheduleFieldError)}
+                <DateField alwaysOpen value={newDate} currentDate={rescheduleTarget.date.slice(0, 10)} invalid={Boolean(rescheduleFieldError)}
                   onChange={(iso) => { setNewDate(iso); setRescheduleFieldError(''); if (slotState(iso, newTime, rescheduleTotalDuration) !== 'ok') setNewTime(''); }} />
-                <p className="resch-hint"><span className="resch-dot" /> Lịch hiện tại: {day(rescheduleTarget.date)}</p>
               </div>
               <div className="resch-col">
                 <span className="resch-label">Giờ hẹn mới (08:00 – 22:00)</span>
                 <TimeSlotGrid date={newDate} value={newTime} durationMin={rescheduleTotalDuration} invalid={Boolean(rescheduleFieldError)} label="Giờ hẹn mới"
                   onChange={(slot) => { setNewTime(slot); setRescheduleFieldError(''); }} />
+                {rescheduleTotalDuration > 0 && newTime && (
+                  <div className="resch-info"><span aria-hidden="true">ⓘ</span> Dịch vụ {rescheduleTotalDuration} phút · dự kiến kết thúc lúc {fromMinutes(toMinutes(newTime) + rescheduleTotalDuration)}</div>
+                )}
               </div>
             </div>
-            {rescheduleTotalDuration > 0 && newTime && (
-              <div className="resch-info"><span aria-hidden="true">ⓘ</span> Dịch vụ {rescheduleTotalDuration} phút · dự kiến kết thúc lúc {fromMinutes(toMinutes(newTime) + rescheduleTotalDuration)}</div>
-            )}
-            <p className="resch-note">Chỉ đổi ngày và giờ hẹn; dịch vụ, gói dịch vụ và thông tin khác giữ nguyên.</p>
+            <div className="resch-legend">
+              <span className="resch-hint"><span className="resch-dot" /> Lịch hiện tại</span>
+              <span className="resch-note">Chỉ đổi ngày và giờ hẹn; dịch vụ, gói dịch vụ và thông tin khác giữ nguyên.</span>
+            </div>
             {rescheduleFieldError && <p role="alert" className="resch-error" data-testid="resch-error">⚠ {rescheduleFieldError}</p>}
           </div>
         )}
@@ -338,7 +402,7 @@ export function CustomerDashboard() {
           <div className="booking-current-info-card">
             <div>
               <strong>{cancelTarget.services[0]?.name ?? 'Dịch vụ'}</strong>
-              <span>{day(cancelTarget.date)} · {cancelTarget.time} · Mã {cancelTarget.id}</span>
+              <span>{day(cancelTarget.date)} · {cancelTarget.time.slice(0, 5)} · Mã {cancelTarget.id}</span>
             </div>
           </div>
         )}
@@ -351,7 +415,7 @@ export function CustomerDashboard() {
           </Button>
           <Button
             type="button"
-            className="cancel-booking-button"
+            className="booking-cancel-confirm-ok"
             disabled={cancelMutation.isPending}
             onClick={() => cancelMutation.mutate()}
           >
@@ -360,91 +424,70 @@ export function CustomerDashboard() {
         </div>
       </dialog>
 
-      {/* UC_5.5 Đánh giá dịch vụ */}
-      <dialog ref={reviewDialog} className="spa-modal" aria-labelledby="review-title">
-        <div className="spa-modal-header">
+      {/* UC_5.5 Đánh giá dịch vụ — Figma 02 / 02b / 03 / 04 / 5a-5c / 6a */}
+      <dialog ref={reviewDialog} className="rvw-dialog" aria-labelledby="review-title" onCancel={(e) => { if (reviewMutation.isPending) e.preventDefault(); }}>
+        <div className="rvw-head">
           <div>
             <h2 id="review-title">Đánh giá dịch vụ</h2>
-            <p className="spa-modal-subtitle">Chia sẻ trải nghiệm của bạn để Flower Lantern Spa phục vụ tốt hơn.</p>
+            <p>Chia sẻ trải nghiệm của bạn để Flower Lantern Spa phục vụ tốt hơn.</p>
           </div>
-          <button type="button" className="spa-modal-close" onClick={() => reviewDialog.current?.close()}>×</button>
+          <button type="button" className="resch-close" aria-label="Đóng" disabled={reviewMutation.isPending} onClick={cancelReview}>×</button>
         </div>
         {reviewTarget && (
-          <div className="spa-modal-body">
-            <div className="booking-current-info-card">
+          <div className="rvw-body">
+            <div className="rvw-service">
+              <img src={serviceFallbackImage(reviewTarget.services[0]?.name ?? '')} alt="" />
               <div>
                 <strong>{reviewTarget.services[0]?.name ?? 'Dịch vụ'}</strong>
-                <span>
-                  {reviewTarget.services[0]?.packageName ? `${reviewTarget.services[0].packageName} · ` : ''}
-                  {day(reviewTarget.date)} · {reviewTarget.services[0]?.startsAt} – {reviewTarget.services[0]?.endsAt}
-                </span>
+                <span>{reviewTarget.services[0]?.packageName}</span>
+                <b>{day(reviewTarget.date)} · {reviewTarget.services[0]?.startsAt} – {reviewTarget.services[0]?.endsAt}</b>
               </div>
-              <span className="payment-chip">{reviewTarget.id}</span>
+              <span className="rvw-code">{reviewTarget.id}</span>
             </div>
-            <div className="spa-field">
-              <span>Mức đánh giá <em>*</em></span>
-              <div className="star-picker-row">
-                <div
-                  className={reviewFieldError ? 'star-picker star-picker-invalid' : 'star-picker'}
-                  role="radiogroup"
-                  aria-label="Số sao đánh giá"
-                >
+            <div className="rvw-field">
+              <span className="rvw-label">Mức đánh giá <em>*</em></span>
+              <div className={`rvw-stars${reviewFieldError ? ' is-invalid' : ''}`}>
+                <div role="radiogroup" aria-label="Số sao đánh giá">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      aria-checked={rating === star}
-                      role="radio"
-                      className={star <= rating ? 'star-btn active' : 'star-btn'}
-                      onClick={() => {
-                        setRating(star);
-                        setReviewFieldError('');
-                      }}
-                    >
-                      ★
+                    <button key={star} type="button" role="radio" aria-checked={rating === star} aria-label={`${star} sao`}
+                      className={star <= rating ? 'rvw-star on' : 'rvw-star'}
+                      onClick={() => { setRating(star); setReviewFieldError(''); }}>
+                      {star <= rating ? <StarFilled size={34} /> : <StarOutline size={34} />}
                     </button>
                   ))}
                 </div>
-                <span className="star-picker-hint">Chạm vào sao để chọn</span>
+                <span className={rating ? 'rvw-star-label has-value' : 'rvw-star-label'}>{rating ? RATING_LABELS[rating - 1] : 'Chạm vào sao để chọn'}</span>
               </div>
             </div>
-            <label className="spa-field">
-              <span>Nội dung bình luận</span>
-              <textarea
-                rows={4}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Hãy chia sẻ cảm nhận của bạn về dịch vụ..."
-              />
+            <label className="rvw-field">
+              <span className="rvw-label">Nội dung bình luận</span>
+              <textarea rows={4} maxLength={1000} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Hãy chia sẻ cảm nhận của bạn về dịch vụ..." />
             </label>
-            {reviewFieldError && (
-              <p role="alert" className="spa-form-error">⚠ {reviewFieldError}</p>
-            )}
-            {reviewMutation.isError && (
-              <p role="alert" className="spa-form-error">
-                {(reviewMutation.error as { message?: string })?.message ?? 'Không thể gửi đánh giá. Vui lòng thử lại!'}
-              </p>
-            )}
           </div>
         )}
-        <div className="spa-modal-footer">
-          <Button type="button" variant="outline" onClick={() => reviewDialog.current?.close()}>
-            Hủy
-          </Button>
-          <Button
-            type="button"
-            disabled={reviewMutation.isPending}
-            onClick={() => {
-              if (rating === 0) {
-                setReviewFieldError('Vui lòng chọn số sao đánh giá!');
-                return;
-              }
-              setReviewFieldError('');
-              reviewMutation.mutate();
-            }}
-          >
-            {reviewMutation.isPending ? 'Đang gửi…' : '✓ Gửi đánh giá'}
-          </Button>
+        <div className="rvw-foot">
+          <button type="button" className="resch-cancel rvw-cancel" disabled={reviewMutation.isPending} onClick={cancelReview}>Hủy</button>
+          <button type="button" className="resch-confirm rvw-submit" disabled={reviewMutation.isPending} onClick={submitReview}>
+            {reviewMutation.isPending ? <><span className="rvw-spinner" aria-hidden="true" />Đang gửi đánh giá…</> : '✓ Gửi đánh giá'}
+          </button>
+        </div>
+      </dialog>
+
+      {/* UC_5.5 5b / 5c / 6a: state dialogs */}
+      <dialog ref={reviewStateDialog} className="rvw-state-dialog" aria-labelledby="rvw-state-title">
+        <span className="rvw-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5.5M12 16.4v.1" /></svg>
+        </span>
+        <h2 id="rvw-state-title">{reviewState?.title}</h2>
+        <p>{reviewState?.message}</p>
+        <div>
+          <button type="button" className={reviewState?.kind === 'failed' ? 'rvw-state-outline' : 'rvw-state-primary'} onClick={() => {
+            reviewStateDialog.current?.close();
+            if (reviewState?.kind !== 'failed') { reviewDialog.current?.close(); void cache.invalidateQueries({ queryKey: ['my-bookings'] }); }
+          }}>Đóng</button>
+          {reviewState?.kind === 'failed' && (
+            <button type="button" className="rvw-state-primary" onClick={() => { reviewStateDialog.current?.close(); submitReview(); }}>Thử lại</button>
+          )}
         </div>
       </dialog>
 

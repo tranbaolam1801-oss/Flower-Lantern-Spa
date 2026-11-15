@@ -78,9 +78,18 @@ export function AccountMenu({ customer = false }: { customer?: boolean }) {
           <span className="account-dropdown-avatar" aria-hidden="true">{(displayName || '?').trim().charAt(0).toUpperCase()}</span>
           <div><strong>{displayName}</strong><small>{profile.data?.phone ?? user?.phone}</small></div>
         </div>
-        <Link role="menuitem" to="/ho-so" className="account-dropdown-item">Thông tin cá nhân</Link>
-        <Link role="menuitem" to="/lich-hen-cua-toi" className="account-dropdown-item">Lịch hẹn của tôi</Link>
-        <button role="menuitem" type="button" className="account-dropdown-item" onClick={() => void leave()} disabled={pending}>{pending ? 'Đang đăng xuất…' : 'Đăng xuất'}</button>
+        <Link role="menuitem" to="/ho-so" className={`account-dropdown-item${location.pathname === '/ho-so' ? ' is-active' : ''}`}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4.5 21c.7-4 3.5-6 7.5-6s6.8 2 7.5 6" /></svg>
+          Thông tin tài khoản
+        </Link>
+        <Link role="menuitem" to="/lich-hen-cua-toi" className={`account-dropdown-item${location.pathname === '/lich-hen-cua-toi' ? ' is-active' : ''}`}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
+          Lịch hẹn của tôi
+        </Link>
+        <button role="menuitem" type="button" className="account-dropdown-item" onClick={() => void leave()} disabled={pending}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9" /><path d="M15 8l4 4-4 4M19 12H9" /></svg>
+          {pending ? 'Đang đăng xuất…' : 'Đăng xuất'}
+        </button>
       </div>}
       {error && <p role="alert">{error}</p>}
     </div>;

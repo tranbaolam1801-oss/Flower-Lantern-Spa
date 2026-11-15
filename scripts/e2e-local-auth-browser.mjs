@@ -172,7 +172,7 @@ try {
     const t2 = p2.locator('.account-customer-trigger');
     await t2.click();
     const citems = await p2.locator('.account-dropdown-customer [role="menuitem"]').allInnerTexts();
-    check('Customer: the header shows ONLY the account icon; it opens a dropdown with name + phone and exactly 3 items (Thông tin cá nhân, Lịch hẹn của tôi, Đăng xuất) — Figma UC_5.2', citems.join('|') === 'Thông tin cá nhân|Lịch hẹn của tôi|Đăng xuất' && (await p2.locator('.account-dropdown-customer .account-dropdown-card').innerText()).includes('0900000004') && (await p2.locator('.account-menu a.account-text-link, .account-menu button.account-logout').count()) === 0);
+    check('Customer: the header shows ONLY the account icon; it opens a dropdown with name + phone and exactly 3 items (Thông tin tài khoản, Lịch hẹn của tôi, Đăng xuất) — Figma UC_5.2', citems.join('|') === 'Thông tin tài khoản|Lịch hẹn của tôi|Đăng xuất' && (await p2.locator('.account-dropdown-customer .account-dropdown-card').innerText()).includes('0900000004') && (await p2.locator('.account-menu a.account-text-link, .account-menu button.account-logout').count()) === 0);
     await p2.mouse.click(300, 600);
     check('Customer: the dropdown closes on click outside and on Escape', !(await p2.locator('.account-dropdown-customer').isVisible()) && await (async () => { await t2.click(); await p2.keyboard.press('Escape'); return !(await p2.locator('.account-dropdown-customer').isVisible()); })());
     await t2.click(); await p2.getByRole('menuitem', { name: 'Lịch hẹn của tôi' }).click(); await p2.waitForURL(/lich-hen-cua-toi/); await p2.waitForTimeout(400);

@@ -70,7 +70,7 @@ const browser = await chromium.launch({ headless: true, executablePath: exe, tim
 const openProfile = async (page, tap = false) => {
   const t = page.locator('.account-profile-link, .account-customer-trigger');
   if (tap) await t.tap(); else await t.click();
-  const item = page.getByRole('menuitem', { name: 'Thông tin cá nhân' });
+  const item = page.getByRole('menuitem', { name: 'Thông tin tài khoản' });
   if (await item.count()) { if (tap) await item.tap(); else await item.click(); }
 };
 const where = (page) => new URL(page.url()).pathname;

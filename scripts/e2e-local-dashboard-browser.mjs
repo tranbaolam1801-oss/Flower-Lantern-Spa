@@ -111,7 +111,7 @@ try {
   const pageText = await page.locator('.admin-content').innerText();
   check('Dashboard shows the 5 cards with the required titles', ['Lịch hẹn hôm nay', 'Tình trạng giường', 'Công việc cần xử lý', 'Nhân viên đang làm việc', 'Hoạt động gần đây'].every((x) => text.includes(x)));
   check('Today table: columns Giờ / Khách hàng / Dịch vụ / Giường / Trạng thái', ['Giờ', 'Khách hàng', 'Dịch vụ', 'Giường', 'Trạng thái'].every((h) => text.includes(h)));
-  check('Today table shows REAL bookings from the API (seeded names, beds, status badges), and tomorrow\'s booking is not listed', text.includes('Võ Thị Seed Một') && text.includes('G2') && text.includes('Đặng Seed Hai') && text.includes('Đã đến') && !text.includes('Hồ Seed Bốn Mai') && (await page.locator('.dash-table tbody tr').count()) === 4, text.slice(0, 400));
+  check('Today table shows REAL bookings from the API (seeded names, beds, status badges), and tomorrow\'s booking is not listed', text.includes('Võ Thị Seed Một') && text.includes('G2') && text.includes('Đặng Seed Hai') && text.includes('Đang thực hiện') && !text.includes('Hồ Seed Bốn Mai') && (await page.locator('.dash-table tbody tr').count()) === 4, text.slice(0, 400));
   const bedNums = await page.locator('.dash-bed strong').allInnerTexts();
   check('Beds card is computed from real data: 1 in use now (the Đã đến booking), 14 free, 15 total (cancelled/completed/future do not count)', bedNums.join(',') === '1,14,15', bedNums.join(','));
   const tasks = await page.locator('.dash-task').allInnerTexts();

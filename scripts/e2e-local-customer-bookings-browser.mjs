@@ -166,7 +166,7 @@ try {
   const moved = page.waitForResponse((r) => /\/api\/me\/bookings\/.+\/time/.test(r.url()) && r.request().method() === 'PATCH', { timeout: 15000 });
   if (newDay.slice(0, 7) !== vnDate(0).slice(0, 7)) await dlg.getByRole('button', { name: 'Tháng sau' }).click();
   await dlg.locator(`.month-cal-day[aria-label="${newDay.split('-').reverse().join('/')}"]`).click();
-  check('Reschedule: past days in the calendar are disabled and the chosen date is shown', (await dlg.locator('.date-field-button span').innerText()) === newDay.split('-').reverse().join('/') && (await dlg.locator('.month-cal').count()) === 0);
+  check('Reschedule: past days in the calendar are disabled and the chosen date is shown', (await dlg.locator('.date-field-button span').innerText()) === newDay.split('-').reverse().join('/') && (await dlg.locator('.month-cal').count()) === 1);
   await dlg.locator('.slot-chip', { hasText: '14:00' }).click();
   check('Reschedule: slot grid shows the end time hint (90 min -> 15:30)', (await dlg.locator('.resch-info').innerText()).includes('dự kiến kết thúc lúc 15:30'));
   await dlg.getByRole('button', { name: '✓ Xác nhận đổi lịch' }).dblclick();
@@ -199,11 +199,11 @@ try {
   check('The dialog X closes it without saving', (await page.locator('dialog.resch-dialog[open]').count()) === 0 && (await db.query('SELECT to_char(NgayHen,\'YYYY-MM-DD\') d FROM dbo.LichHen')).rows[0].d === newDay);
 
   // ---------------- payment QR kept (spec conflict reported, flow untouched)
-  check('"Thanh toán QR" is still offered for an unpaid booking (SePay flow kept; the old Figma has no such button — conflict reported, not removed)', (await page.getByRole('row').filter({ hasText: bookingId }).getByRole('button', { name: 'Thanh toán QR' }).count()) === 1);
+  check('"Thanh toán QR" is hidden in the list (Figma UC_5; flow kept in code)', (await page.getByRole('row').filter({ hasText: bookingId }).getByRole('button', { name: 'Thanh toán QR' }).isVisible()) === false);
 
   // ---------------- header dropdown on this page
   await page.locator('.account-customer-trigger').click();
-  check('Header: account icon opens the Figma dropdown with the three items', (await page.locator('.account-dropdown-customer [role="menuitem"]').allInnerTexts()).join('|') === 'Thông tin cá nhân|Lịch hẹn của tôi|Đăng xuất');
+  check('Header: account icon opens the Figma dropdown with the three items', (await page.locator('.account-dropdown-customer [role="menuitem"]').allInnerTexts()).join('|') === 'Thông tin tài khoản|Lịch hẹn của tôi|Đăng xuất');
   await page.screenshot({ path: path.join(custShots, 'menu.png') });
   await page.keyboard.press('Escape');
   await ctx.close();

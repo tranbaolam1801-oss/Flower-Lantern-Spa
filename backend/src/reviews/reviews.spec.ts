@@ -33,10 +33,11 @@ describe('reviews mapping and authorization', () => {
   });
   it('list paginates with hasNext', async () => {
     const rows = Array.from({ length: 21 }, (_, i) => row({ id: `DG${i}` }));
-    const { controller } = make([[{ present: false }], rows]);
+    const { controller } = make([[{ present: false }], rows, [{ n: 21 }]]);
     const result = await controller.list({ q: '', status: '', page: 1 });
     expect(result.items).toHaveLength(20);
     expect(result.hasNext).toBe(true);
+    expect(result).toMatchObject({ total: 21, pageSize: 20, totalPages: 2 });
   });
   it('detail 404 when absent', async () => {
     await expect(make([[{ present: false }], []]).controller.detail({ id: 'DG9' })).rejects.toBeInstanceOf(NotFoundException);

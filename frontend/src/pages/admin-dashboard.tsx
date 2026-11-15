@@ -13,6 +13,7 @@ import {
 } from '../lib/booking-api';
 import { getPublicServiceDetail, getPublicServices } from '../lib/catalog-api';
 import { BookingCancel } from '../components/booking-cancel';
+import { statusLabel } from '../lib/booking-status';
 import { SepayPaymentDialog } from '../components/sepay-payment-dialog';
 import { formatVnd } from '../lib/api-client';
 import { isValidVnPhone } from '../lib/phone';
@@ -37,7 +38,7 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   'Hoàn thành': [],
   'Đã hủy': [],
 };
-const STATUS_LABELS: Record<string, string> = { 'Đã xác nhận': '✓ Đã xác nhận (Duyệt lịch)' };
+const STATUS_LABELS: Record<string, string> = { 'Đã xác nhận': '✓ Đã xác nhận (Duyệt lịch)', 'Đã đến': 'Đang thực hiện' };
 const SEARCH_STATUSES = ['Chờ xác nhận', 'Đã xác nhận', 'Chưa đến', 'Đã đến', 'Hoàn thành', 'Đã hủy'];
 const SEARCH_LABELS: Record<string, string> = {
   name: 'Tên', phone: 'SĐT', email: 'Email', code: 'Mã lịch', service: 'Dịch vụ', status: 'Trạng thái', source: 'Nguồn', dateFrom: 'Từ ngày', dateTo: 'Đến ngày',
@@ -257,6 +258,26 @@ export function AdminDashboard() {
     }
     updateMutation.mutate();
   };
+
+  // Clicking anywhere outside the appointment popup closes it (no need to press ×). Clicks inside dialogs / on another appointment are left alone.
+  useEffect(() => {
+    if (!selected) return;
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.booking-detail, dialog, .calendar-appointment')) setSelected(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [selected]);
+
+  const [slotPrompt, setSlotPrompt] = useState<{ bedId: string; hour: number } | null>(null);
+  useEffect(() => {
+    if (!slotPrompt) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSlotPrompt(null); };
+    const onDown = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.slot-prompt, .slot-prompt-anchor')) setSlotPrompt(null); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onDown); };
+  }, [slotPrompt]);
 
   const openCreateModal = (presetBed = 'G1', presetHour = '09:00') => {
     setCreateError('');
@@ -513,17 +534,35 @@ export function AdminDashboard() {
                           key={b.id}
                           role="button"
                           tabIndex={-1}
+                          className={`slot-prompt-anchor${slotPrompt?.bedId === b.id && slotPrompt.hour === h ? ' is-picked' : ''}`}
                           title={`Tạo lịch giường ${b.id} lúc ${String(h).padStart(2, '0')}:00`}
-                          onClick={() => {
-                            if (h >= 8 && h < 22) {
-                              openCreateModal(b.id, `${String(h).padStart(2, '0')}:00`);
-                            }
-                          }}
+                          onClick={() => { if (h >= 8 && h < 22) setSlotPrompt({ bedId: b.id, hour: h }); }}
                         />
                       ),
                     )}
                   </div>
                 ))}
+                {slotPrompt && (() => {
+                  const idx = query.data.beds.findIndex((b) => b.id === slotPrompt.bedId);
+                  if (idx < 0) return null;
+                  const hh = `${String(slotPrompt.hour).padStart(2, '0')}:00`;
+                  const flipX = idx >= query.data.beds.length - 3;
+                  const flipY = slotPrompt.hour >= 19;
+                  return (
+                    <div
+                      role="dialog"
+                      aria-label="Xác nhận tạo lịch hẹn"
+                      className="slot-prompt"
+                      style={{ left: flipX ? 87 + idx * 75 - 150 : 87 + idx * 75, top: flipY ? (slotPrompt.hour - 8) * 56 - 108 : (slotPrompt.hour - 8) * 56 + 4 }}
+                    >
+                      <p>Bạn có muốn tạo lịch hẹn cho giường {slotPrompt.bedId} lúc {hh}?</p>
+                      <div>
+                        <button type="button" className="slot-prompt-cancel" onClick={() => setSlotPrompt(null)}>Hủy</button>
+                        <button type="button" className="slot-prompt-ok" onClick={() => { const { bedId: bd, hour } = slotPrompt; setSlotPrompt(null); openCreateModal(bd, `${String(hour).padStart(2, '0')}:00`); }}>Tạo lịch hẹn</button>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="calendar-end-hour" style={{ top: 14 * 56 }}>22:00</div>
                 {query.data.items
                   .filter((item) => item.bedId && item.endMinute > 480 && item.startMinute < 1320)
@@ -553,7 +592,7 @@ export function AdminDashboard() {
                         className="calendar-appointment"
                         data-status={item.status}
                         style={geometry}
-                        title={`${item.bookingId}: ${item.startsAt} – ${item.endsAt} · ${item.status}`}
+                        title={`${item.bookingId}: ${item.startsAt} – ${item.endsAt} · ${statusLabel(item.status)}`}
                       >
                         <strong>{item.serviceName}</strong>
                         <span>{item.customerName}</span>
@@ -969,7 +1008,8 @@ export function AdminDashboard() {
                   disabled={editTarget.status === 'Hoàn thành' || editTarget.status === 'Đã hủy'}
                   onChange={(e) => setEditStatus(e.target.value)}
                 >
-                  {[editTarget.status, ...(STATUS_TRANSITIONS[editTarget.status] ?? [])].map((st) => (
+                  {/* Cancelling is done only with the "Hủy lịch hẹn" button, never from this dropdown. */}
+                  {[editTarget.status, ...(STATUS_TRANSITIONS[editTarget.status] ?? []).filter((st) => st !== 'Đã hủy')].map((st) => (
                     <option key={st} value={st}>{STATUS_LABELS[st] ?? st}</option>
                   ))}
                 </select>
@@ -1049,7 +1089,7 @@ export function AdminDashboard() {
               <span>Trạng thái</span>
               <select value={searchForm.status} onChange={(e) => setSearchForm({ ...searchForm, status: e.target.value })}>
                 <option value="">Tất cả trạng thái</option>
-                {SEARCH_STATUSES.map((v) => <option key={v} value={v}>{v}</option>)}
+                {SEARCH_STATUSES.map((v) => <option key={v} value={v}>{statusLabel(v)}</option>)}
               </select>
             </label>
             <label className="spa-field">
@@ -1149,7 +1189,7 @@ export function AdminDashboard() {
                           )}{' '}
                           · {item.startsAt.slice(11, 16)}
                         </td>
-                        <td>{item.status}</td>
+                        <td>{statusLabel(item.status)}</td>
                       </tr>
                     ))}
                   </tbody>

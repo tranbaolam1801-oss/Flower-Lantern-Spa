@@ -38,6 +38,11 @@ export class AdminServicesService {
       OFFSET $4 ROWS FETCH NEXT ${PAGE_SIZE + 1} ROWS ONLY`,
       [q.q ?? '', q.category ?? '', q.status ?? '', (q.page - 1) * PAGE_SIZE]);
     const items = rows.slice(0, PAGE_SIZE);
+    const totalRows = await this.database.query<Row[]>(`
+      SELECT count(*)::int AS total FROM dbo.DichVu d
+      WHERE ($1::text='' OR strpos(lower(d.TenDichVu), lower($1))>0)
+        AND ($2::text='' OR d.MaDanhMuc=$2) AND ($3::text='' OR d.TrangThai=$3)`, [q.q ?? '', q.category ?? '', q.status ?? '']);
+    const total = Number(totalRows[0]?.total ?? 0);
     const ids = items.map((r) => r.id as string);
     const packages = ids.length ? await this.database.query<Row[]>(`
       SELECT rtrim(MaGoi) AS id, rtrim(MaDichVu) AS "serviceId", TenGoi AS name, ThoiLuong AS "durationMinutes", Gia::bigint AS price
@@ -51,6 +56,7 @@ export class AdminServicesService {
           .map((p) => ({ id: p.id, name: p.name, durationMinutes: Number(p.durationMinutes), price: Number(p.price) })),
       })),
       categories, page: q.page, hasNext: rows.length > PAGE_SIZE,
+      total, pageSize: PAGE_SIZE, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
     };
   }
 
